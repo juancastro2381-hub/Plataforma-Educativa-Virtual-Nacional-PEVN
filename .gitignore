@@ -1,0 +1,180 @@
+# ============================================================
+# PEVN — Plataforma Educativa Virtual Nacional
+# .gitignore
+# ============================================================
+# SECURITY: This file must NEVER allow real secrets or credentials
+# to be committed to the repository.
+# ============================================================
+
+# ------------------------------------------------------------
+# Environment files — NEVER commit real secrets
+# ------------------------------------------------------------
+.env
+.env.*
+!.env.example
+# Also guard common local override patterns
+*.env.local
+*.env.production
+*.env.staging
+
+# ------------------------------------------------------------
+# Python
+# ------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+*.pyo
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+.python-version
+
+# pytest / coverage
+.pytest_cache/
+.coverage
+.coverage.*
+coverage.xml
+coverage/
+htmlcov/
+*.cover
+.hypothesis/
+pytest-results/
+
+# Type checking caches
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pytype/
+.pyre/
+
+# Linting / formatting caches
+.ruff_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# ------------------------------------------------------------
+# Node.js / Frontend
+# ------------------------------------------------------------
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.yarn/
+.pnp.*
+package-lock.json.bak
+
+# Frontend build outputs
+frontend/dist/
+frontend/.vite/
+frontend/coverage/
+frontend/storybook-static/
+
+# ------------------------------------------------------------
+# Docker local data volumes
+# ------------------------------------------------------------
+.docker-data/
+postgres-data/
+redis-data/
+docker-volumes/
+
+# ------------------------------------------------------------
+# IDEs and editors
+# ------------------------------------------------------------
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json.example
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+*.sublime-project
+.cursor/
+.windsurf/
+
+# ------------------------------------------------------------
+# Operating System
+# ------------------------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V1
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# ------------------------------------------------------------
+# Logs
+# ------------------------------------------------------------
+*.log
+logs/
+*.pid
+*.seed
+*.pid.lock
+
+# ------------------------------------------------------------
+# Secrets and certificates — NEVER commit
+# ------------------------------------------------------------
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+*.jks
+secrets/
+.secrets/
+private/
+credentials/
+
+# ------------------------------------------------------------
+# Temporary files
+# ------------------------------------------------------------
+tmp/
+temp/
+.tmp/
+*.tmp
+*.bak
+*.orig
+*.rej
+
+# ------------------------------------------------------------
+# Test / QA artifacts
+# ------------------------------------------------------------
+test-results/
+playwright-report/
+allure-results/

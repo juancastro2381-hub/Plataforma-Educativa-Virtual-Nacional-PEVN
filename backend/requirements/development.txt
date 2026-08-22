@@ -1,0 +1,73 @@
+# ============================================================
+# PEVN Backend — Development Dependencies
+# ============================================================
+# Extends base.txt with tooling for development, testing,
+# code quality, and security analysis.
+# These MUST NOT be installed in production images.
+# ============================================================
+
+-r base.txt
+
+# ------------------------------------------------------------
+# Testing
+# ------------------------------------------------------------
+
+# Test runner
+# License: MIT
+pytest>=8.3.4,<8.4.0
+
+# Async test support
+# License: Apache-2.0
+pytest-asyncio>=0.24.0,<0.25.0
+
+# Test coverage reporting
+# License: MIT
+pytest-cov>=6.0.0,<7.0.0
+
+# Async I/O support (used by pytest-asyncio)
+# License: MIT
+anyio[trio]>=4.7.0,<5.0.0
+
+# ASGI test transport for httpx — allows testing FastAPI without starting a server
+# License: BSD-3-Clause
+# httpx is already in base.txt
+
+# ------------------------------------------------------------
+# Code Formatting
+# ------------------------------------------------------------
+
+# Opinionated code formatter
+# License: MIT
+black>=25.1.0,<26.0.0
+
+# Import sorter (configured to be black-compatible)
+# License: MIT
+isort>=5.13.2,<6.0.0
+
+# ------------------------------------------------------------
+# Linting
+# ------------------------------------------------------------
+
+# Fast Python linter (replaces flake8, pylint, and more)
+# License: MIT
+ruff>=0.9.0,<1.0.0
+
+# ------------------------------------------------------------
+# Type Checking
+# ------------------------------------------------------------
+
+# Static type checker for Python
+# License: MIT
+mypy>=1.14.0,<2.0.0
+
+# Type stubs for Redis
+# License: MIT
+types-redis>=4.6.0,<5.0.0
+
+# ------------------------------------------------------------
+# Security Scanning
+# ------------------------------------------------------------
+
+# Dependency vulnerability scanner
+# License: Apache-2.0
+pip-audit>=2.7.3,<3.0.0

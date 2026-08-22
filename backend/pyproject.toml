@@ -1,0 +1,138 @@
+[build-system]
+requires = ["setuptools>=75.0", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "pevn-backend"
+version = "0.1.0"
+description = "Plataforma Educativa Virtual Nacional — Backend Service"
+readme = "README.md"
+license = { text = "Apache-2.0" }
+requires-python = ">=3.12"
+authors = [{ name = "PEVN Development Team" }]
+keywords = ["education", "fastapi", "postgresql", "colombia"]
+classifiers = [
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Framework :: FastAPI",
+]
+
+# Dependencies are managed in requirements/*.txt files.
+# This section is intentionally minimal for now.
+dependencies = []
+
+# ------------------------------------------------------------
+# Tool: pytest
+# ------------------------------------------------------------
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--strict-markers",
+    "--tb=short",
+    "-v",
+]
+markers = [
+    "unit: Fast, isolated unit tests",
+    "integration: Tests that require external services (DB, Redis)",
+    "slow: Tests that are expected to take significant time",
+]
+
+# ------------------------------------------------------------
+# Tool: black
+# ------------------------------------------------------------
+[tool.black]
+line-length = 88
+target-version = ["py312"]
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+    migrations/versions
+  | \.venv
+)/
+'''
+
+# ------------------------------------------------------------
+# Tool: isort
+# ------------------------------------------------------------
+[tool.isort]
+profile = "black"
+line_length = 88
+known_first_party = ["app"]
+skip_glob = ["migrations/versions/*"]
+
+# ------------------------------------------------------------
+# Tool: ruff
+# ------------------------------------------------------------
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "N",   # pep8-naming
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "A",   # flake8-builtins
+    "C4",  # flake8-comprehensions
+    "DTZ", # flake8-datetimez
+    "T20", # flake8-print (no print statements in production code)
+    "RET", # flake8-return
+    "SIM", # flake8-simplify
+    "PTH", # flake8-use-pathlib
+    "PL",  # pylint
+    "RUF", # ruff-specific
+    "S",   # flake8-bandit (security)
+]
+ignore = [
+    "S101",   # assert allowed in tests
+    "PLR0913", # too many arguments (relax for complex constructors)
+    "RUF012",  # mutable class attributes (SQLAlchemy pattern)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["S101", "S106", "T20", "PLR2004"]
+"migrations/**/*.py" = ["I001"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
+
+# ------------------------------------------------------------
+# Tool: mypy
+# ------------------------------------------------------------
+[tool.mypy]
+python_version = "3.12"
+strict = true
+ignore_missing_imports = true
+show_error_codes = true
+exclude = ["migrations/", "tests/"]
+
+[[tool.mypy.overrides]]
+module = ["asyncpg.*", "structlog.*", "alembic.*"]
+ignore_missing_imports = true
+
+# ------------------------------------------------------------
+# Tool: coverage
+# ------------------------------------------------------------
+[tool.coverage.run]
+source = ["app"]
+omit = ["tests/*", "migrations/*", "*/__init__.py"]
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 60
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "@abstractmethod",
+]

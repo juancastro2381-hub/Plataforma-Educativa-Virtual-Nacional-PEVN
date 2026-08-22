@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="es" dir="ltr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="PEVN" />
+    <meta name="theme-color" content="#010066" />
+    <meta name="color-scheme" content="light" />
+
+    <!-- SEO -->
+    <title>Plataforma Educativa Virtual Nacional — PEVN</title>
+    <meta
+      name="description"
+      content="Sistema educativo virtual para instituciones educativas públicas de Colombia. Gestión académica, aulas virtuales y comunicación institucional."
+    />
+    <meta name="robots" content="noindex, nofollow" />
+
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+
+    <!-- Preload Inter font for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+    />
+  </head>
+  <body>
+    <!-- Skip to main content — accessibility requirement -->
+    <a
+      href="#main-content"
+      class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-pevn-blue focus:text-white focus:rounded focus:outline-none focus:ring-2 focus:ring-pevn-gold"
+      id="skip-to-content"
+    >
+      Ir al contenido principal
+    </a>
+
+    <!-- React application root -->
+    <div id="root" role="application" aria-label="Plataforma Educativa Virtual Nacional"></div>
+
+    <!-- Application entry point -->
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

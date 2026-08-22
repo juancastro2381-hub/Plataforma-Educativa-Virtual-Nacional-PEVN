@@ -1,0 +1,15 @@
+# ============================================================
+# PEVN Backend — Production Dependencies
+# ============================================================
+# Extends base.txt with production-only server components.
+# Do NOT include development/test tooling here.
+# ============================================================
+
+-r base.txt
+
+# Production ASGI process manager.
+# Gunicorn manages multiple uvicorn worker processes for
+# horizontal scaling within a single instance.
+# Use: gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker
+# License: MIT
+gunicorn>=23.0.0,<24.0.0

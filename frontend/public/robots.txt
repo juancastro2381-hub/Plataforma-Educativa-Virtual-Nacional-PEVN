@@ -1,0 +1,9 @@
+User-agent: *
+# Phase 1: Disallow all crawlers during development.
+# Update for production deployment when the platform is public.
+Disallow: /
+
+# API documentation (disabled in production) should not be indexed
+Disallow: /docs
+Disallow: /redoc
+Disallow: /openapi.json

@@ -1,0 +1,35 @@
+{
+  "name": "Plataforma Educativa Virtual Nacional",
+  "short_name": "PEVN",
+  "description": "Sistema educativo virtual para instituciones educativas públicas de Colombia",
+  "theme_color": "#010066",
+  "background_color": "#FCFBFA",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "start_url": "/",
+  "lang": "es",
+  "dir": "ltr",
+  "categories": ["education", "productivity"],
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Inicio",
+      "url": "/",
+      "description": "Ir al inicio de la plataforma"
+    }
+  ]
+}
