@@ -50,8 +50,8 @@ psql -v ON_ERROR_STOP=1 \
     -- Grant connection privilege on the database
     GRANT CONNECT ON DATABASE "${POSTGRES_DB}" TO "${POSTGRES_APP_USER}";
 
-    -- Grant schema usage
-    GRANT USAGE ON SCHEMA public TO "${POSTGRES_APP_USER}";
+    -- Grant schema usage and creation
+    GRANT USAGE, CREATE ON SCHEMA public TO "${POSTGRES_APP_USER}";
 
     -- Grant DML on existing tables (for any tables already present)
     GRANT SELECT, INSERT, UPDATE, DELETE

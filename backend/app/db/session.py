@@ -29,6 +29,7 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
+from sqlalchemy.pool import StaticPool
 
 from app.core.config import get_settings
 from app.core.logging import get_logger
@@ -85,6 +86,14 @@ def _create_engine() -> AsyncEngine:
         max_overflow=settings.DB_MAX_OVERFLOW,
         pool_recycle=settings.DB_POOL_RECYCLE,
     )
+
+    if settings.DATABASE_URL.startswith("sqlite"):
+        return create_async_engine(
+            settings.DATABASE_URL,
+            echo=settings.DB_ECHO,
+            connect_args={"check_same_thread": False},
+            poolclass=StaticPool,
+        )
 
     return create_async_engine(
         settings.DATABASE_URL,

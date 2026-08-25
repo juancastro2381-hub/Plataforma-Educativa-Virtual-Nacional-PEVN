@@ -114,7 +114,11 @@ class OrganizationalScope:
 
     def is_national(self) -> bool:
         """True if the scope covers all institutions in the country."""
-        return self.department_id is None
+        return (
+            self.department_id is None
+            and self.municipality_id is None
+            and self.institution_id is None
+        )
 
     def is_department(self) -> bool:
         """True if the scope is limited to a specific department."""

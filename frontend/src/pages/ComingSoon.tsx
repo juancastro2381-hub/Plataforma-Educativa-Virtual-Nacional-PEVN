@@ -31,12 +31,12 @@ export function ComingSoon() {
 
         <div className="relative max-w-4xl mx-auto px-6 py-16 sm:py-24 lg:py-32 text-center">
           {/* Status badge */}
-          <div className="inline-flex items-center gap-2 bg-pevn-gold/20 border border-pevn-gold/40 text-pevn-gold rounded-full px-4 py-2 text-sm font-medium mb-8 animate-fade-in">
+          <div className="inline-flex items-center gap-2 bg-emerald-500/20 border border-emerald-400/40 text-emerald-200 rounded-full px-4 py-2 text-sm font-medium mb-8 animate-fade-in">
             <span
-              className="w-2 h-2 bg-pevn-gold rounded-full animate-pulse-soft"
+              className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse-soft"
               aria-hidden="true"
             />
-            Fase 1 — En Desarrollo
+            Fase 1 y Fase 2 — Completadas y Aprobadas
           </div>
 
           {/* Main heading */}
@@ -112,35 +112,39 @@ export function ComingSoon() {
               <div
                 key={phase.phase}
                 className={`rounded-xl p-5 border-2 ${
-                  phase.status === 'active'
-                    ? 'border-pevn-gold bg-pevn-gold/5'
-                    : phase.status === 'complete'
-                      ? 'border-green-500 bg-green-50'
-                      : 'border-gray-200 bg-gray-50'
+                  phase.status === 'complete'
+                    ? 'border-emerald-500 bg-emerald-50/60 shadow-sm'
+                    : phase.status === 'active'
+                      ? 'border-pevn-gold bg-pevn-gold/5'
+                      : 'border-gray-200 bg-gray-50/70'
                 }`}
               >
                 <div className="flex items-center gap-2 mb-3">
                   <span
                     className={`w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center ${
-                      phase.status === 'active'
-                        ? 'bg-pevn-gold text-white'
-                        : phase.status === 'complete'
-                          ? 'bg-green-500 text-white'
+                      phase.status === 'complete'
+                        ? 'bg-emerald-600 text-white'
+                        : phase.status === 'active'
+                          ? 'bg-pevn-gold text-white'
                           : 'bg-gray-300 text-gray-600'
                     }`}
                     aria-label={`Fase ${String(index + 1)}`}
                   >
-                    {String(index + 1)}
+                    {phase.status === 'complete' ? '✓' : String(index + 1)}
                   </span>
                   <span
                     className={`text-xs font-semibold uppercase tracking-wide ${
-                      phase.status === 'active' ? 'text-pevn-gold' : 'text-gray-500'
+                      phase.status === 'complete'
+                        ? 'text-emerald-700 font-bold'
+                        : phase.status === 'active'
+                          ? 'text-pevn-gold'
+                          : 'text-gray-500'
                     }`}
                   >
-                    {phase.status === 'active'
-                      ? '● En curso'
-                      : phase.status === 'complete'
-                        ? '✓ Completo'
+                    {phase.status === 'complete'
+                      ? '✓ Completada'
+                      : phase.status === 'active'
+                        ? '● En curso'
                         : 'Pendiente'}
                   </span>
                 </div>
@@ -248,22 +252,22 @@ const FEATURES: Feature[] = [
 const PHASES: PhaseItem[] = [
   {
     phase: 'Fase 1: Fundación',
-    description: 'Infraestructura base, seguridad, arquitectura y configuración del entorno.',
-    status: 'active',
+    description: 'Infraestructura base, arquitectura y configuración del entorno completadas.',
+    status: 'complete',
   },
   {
-    phase: 'Fase 2: Autenticación',
-    description: 'Gestión de usuarios, roles, permisos e inicio de sesión seguro.',
-    status: 'pending',
+    phase: 'Fase 2: Autenticación y Autorización',
+    description: 'Autenticación, autorización, RBAC, aislamiento multi-institucional y auditoría de seguridad.',
+    status: 'complete',
   },
   {
     phase: 'Fase 3: Gestión Académica',
-    description: 'Instituciones, docentes, estudiantes, cursos y aulas virtuales.',
+    description: 'Instituciones, docentes, estudiantes, cursos y matrículas.',
     status: 'pending',
   },
   {
     phase: 'Fase 4: Aulas Virtuales',
-    description: 'Integración BigBlueButton, grabaciones y herramientas de colaboración.',
+    description: 'Integración BigBlueButton, grabaciones y herramientas de colaboración en tiempo real.',
     status: 'pending',
   },
 ]

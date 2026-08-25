@@ -62,9 +62,9 @@ def build_security_headers(settings: Settings) -> dict[str, str]:
     )
 
     # ---- Cross-Origin Policies ----------------------------------------------
-    # Mitigates Spectre-class side-channel attacks.
+    # Mitigates Spectre-class side-channel attacks while allowing API access.
     headers["Cross-Origin-Opener-Policy"] = "same-origin"
-    headers["Cross-Origin-Resource-Policy"] = "same-origin"
+    headers["Cross-Origin-Resource-Policy"] = "cross-origin"
 
     # ---- Disable legacy XSS filter ------------------------------------------
     # Modern recommendation: disable the browser's built-in XSS filter

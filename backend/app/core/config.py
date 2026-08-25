@@ -67,6 +67,8 @@ class Settings(BaseSettings):
     # Default generates a random key so the app can start without config,
     # but tokens signed with it won't survive a restart. Always set in production.
     SECRET_KEY: str = ""
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
     # ---- API ---------------------------------------------------------------
     API_V1_PREFIX: str = "/api/v1"
@@ -79,7 +81,9 @@ class Settings(BaseSettings):
     REDOC_URL: str | None = "/redoc"
 
     # ---- Database ----------------------------------------------------------
-    DATABASE_URL: str = "postgresql+asyncpg://pevn_app:change_me@localhost:5432/pevn_db"
+    DATABASE_URL: str = (
+        "postgresql+asyncpg://pevn_app:pevn_app_dev_pass@localhost:5433/pevn_db"
+    )
     DB_POOL_SIZE: int = 10
     DB_MAX_OVERFLOW: int = 20
     DB_POOL_TIMEOUT: int = 30
@@ -94,7 +98,7 @@ class Settings(BaseSettings):
 
     # ---- Security / CORS ---------------------------------------------------
     CORS_ORIGINS: list[str] | str = ["http://localhost:3000"]
-    CORS_ALLOW_CREDENTIALS: bool = False
+    CORS_ALLOW_CREDENTIALS: bool = True
     CORS_ALLOW_METHODS: list[str] = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
     CORS_ALLOW_HEADERS: list[str] = ["*"]
     ALLOWED_HOSTS: list[str] | str = ["localhost", "127.0.0.1"]
@@ -106,6 +110,13 @@ class Settings(BaseSettings):
     # ---- Rate Limiting -----------------------------------------------------
     RATE_LIMIT_BACKEND: str = "memory://"
     RATE_LIMIT_DEFAULT: str = "100/minute"
+
+    # ---- Virtual Classroom / BigBlueButton Provider ------------------------
+    MEETING_PROVIDER_TYPE: str = "mock"  # "mock" or "bbb"
+    BBB_API_URL: str = "http://localhost:8090/bigbluebutton/api"
+    BBB_SHARED_SECRET: str = ""
+    BBB_SIGNING_ALGORITHM: str = "sha1"  # "sha1" or "sha256"
+    BBB_TIMEOUT_SECONDS: float = 10.0
 
     # ---- Validators --------------------------------------------------------
 

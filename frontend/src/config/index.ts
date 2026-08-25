@@ -11,7 +11,10 @@
 
 const config = {
   /** Backend API base URL */
-  apiBaseUrl: import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000',
+  apiBaseUrl:
+    import.meta.env.VITE_API_BASE_URL !== undefined
+      ? import.meta.env.VITE_API_BASE_URL
+      : (import.meta.env.DEV ? '' : 'http://localhost:8000'),
 
   /** API v1 endpoint prefix */
   apiV1Prefix: '/api/v1',

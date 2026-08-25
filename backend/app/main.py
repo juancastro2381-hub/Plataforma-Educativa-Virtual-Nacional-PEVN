@@ -149,21 +149,7 @@ def create_application() -> FastAPI:
     # Security headers (applied to all responses)
     application.add_middleware(SecurityHeadersMiddleware)
 
-    # CORS — allows the frontend origin to make API requests
-    cors_origins = (
-        settings.CORS_ORIGINS
-        if isinstance(settings.CORS_ORIGINS, list)
-        else [settings.CORS_ORIGINS]
-    )
-    application.add_middleware(
-        CORSMiddleware,
-        allow_origins=cors_origins,
-        allow_credentials=settings.CORS_ALLOW_CREDENTIALS,
-        allow_methods=settings.CORS_ALLOW_METHODS,
-        allow_headers=settings.CORS_ALLOW_HEADERS,
-    )
-
-    # Outermost: trusted host validation (rejects bad Host headers before CORS)
+    # Trusted host validation (rejects bad Host headers)
     allowed_hosts = (
         settings.ALLOWED_HOSTS
         if isinstance(settings.ALLOWED_HOSTS, list)
@@ -172,6 +158,20 @@ def create_application() -> FastAPI:
     application.add_middleware(
         TrustedHostMiddleware,
         allowed_hosts=allowed_hosts,
+    )
+
+    # Outermost: CORS — handles preflight OPTIONS and allows credentials from frontend
+    cors_origins = (
+        settings.CORS_ORIGINS
+        if isinstance(settings.CORS_ORIGINS, list)
+        else [settings.CORS_ORIGINS]
+    )
+    application.add_middleware(
+        CORSMiddleware,
+        allow_origins=cors_origins,
+        allow_credentials=True,
+        allow_methods=settings.CORS_ALLOW_METHODS,
+        allow_headers=settings.CORS_ALLOW_HEADERS,
     )
 
     # ---- Routes -----------------------------------------------------------

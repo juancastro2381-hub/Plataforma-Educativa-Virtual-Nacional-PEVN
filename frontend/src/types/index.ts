@@ -70,12 +70,18 @@ export interface AsyncState<T> {
 }
 
 // ---------------------------------------------------------------------------
-// Future Domain Types (Phase 2+)
+// Auth & Identity Types (Phase 2)
 // ---------------------------------------------------------------------------
-// These will be added as the educational domain is implemented.
-// Do not add placeholder types that don't map to real implementations.
+export * from './auth'
 
-// export interface User { ... }           // Phase 2
-// export interface Institution { ... }    // Phase 2
-// export interface Course { ... }         // Phase 3
-// export interface Student { ... }        // Phase 3
+// ---------------------------------------------------------------------------
+// Academic Management Types (Phase 3)
+// ---------------------------------------------------------------------------
+export * from './academic'
+
+// ---------------------------------------------------------------------------
+// Virtual Classroom & Meetings Types (Phase 4)
+// ---------------------------------------------------------------------------
+export * from './virtual_classroom'
+
+

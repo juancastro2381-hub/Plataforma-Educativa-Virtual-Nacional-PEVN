@@ -53,3 +53,12 @@ httpx>=0.28.0,<0.29.0
 # Environment file loading
 # License: BSD-3-Clause
 python-dotenv>=1.0.0,<2.0.0
+
+# Password hashing (Argon2id)
+# License: MIT
+argon2-cffi>=25.1.0,<26.0.0
+
+# Cryptographic JWT creation and validation
+# License: Apache-2.0
+pyjwt[crypto]>=2.10.0,<3.0.0
+

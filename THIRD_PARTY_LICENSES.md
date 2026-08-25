@@ -31,6 +31,9 @@ The PEVN platform is licensed under Apache-2.0.
 | structlog | ~24.4 | Apache-2.0 OR MIT | https://github.com/hynek/structlog/blob/main/LICENSE |
 | slowapi | ~0.1 | MIT | https://github.com/laurents/slowapi/blob/master/LICENSE |
 | python-multipart | ~0.0 | Apache-2.0 | https://github.com/Kludex/python-multipart/blob/master/LICENSE.txt |
+| argon2-cffi | ~25.1 | MIT OR Apache-2.0 | https://github.com/hynek/argon2-cffi/blob/main/LICENSE |
+| pyjwt | ~2.10 | Apache-2.0 | https://github.com/jpadilla/pyjwt/blob/master/LICENSE |
+
 
 ### Development Dependencies (`requirements/development.txt`)
 
@@ -38,6 +41,7 @@ The PEVN platform is licensed under Apache-2.0.
 |---------|---------|---------|-------|
 | pytest | ~8.3 | MIT | Test framework |
 | pytest-asyncio | ~0.24 | Apache-2.0 | Async test support |
+| aiosqlite | ~0.22 | MIT | In-memory async SQLite driver for tests |
 | pytest-cov | ~6.0 | MIT | Coverage |
 | httpx | ~0.28 | BSD-3-Clause | Test HTTP client |
 | anyio | ~4.7 | MIT | Async test backend |

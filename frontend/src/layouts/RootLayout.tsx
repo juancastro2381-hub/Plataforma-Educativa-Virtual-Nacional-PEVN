@@ -2,53 +2,165 @@
  * PEVN Frontend — Root Layout
  *
  * The base layout shell for all application pages.
- * Provides:
- *   - Skip navigation link (accessibility)
- *   - Semantic <header>, <main>, <footer> structure
- *   - Outlet for child routes (React Router)
- *   - Consistent page structure
+ * Integrates institutional header branding, auth navigation state,
+ * and responsive container layout.
  */
 
 import { Suspense } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Link, Outlet } from 'react-router-dom'
 import { PageLoader } from '@components/ui/LoadingSpinner'
+import { useAuth } from '@/hooks/useAuth'
 import config from '@config/index'
 
 export function RootLayout() {
+  const { user, isAuthenticated, logout } = useAuth()
+
   return (
-    <div className="min-h-screen flex flex-col bg-pevn-white">
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: '#F8FAFC' }}>
+      {/* Colombian Flag Bar */}
+      <div style={{ height: '4px', width: '100%', display: 'flex' }}>
+        <div style={{ flex: 2, backgroundColor: '#FCD116' }} />
+        <div style={{ flex: 1, backgroundColor: '#003893' }} />
+        <div style={{ flex: 1, backgroundColor: '#CE1126' }} />
+      </div>
+
       {/* Accessible page header */}
       <header
-        className="bg-pevn-blue shadow-lg"
+        style={{
+          backgroundColor: '#0F172A',
+          color: '#FFFFFF',
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+        }}
         role="banner"
         aria-label="Encabezado de la aplicación"
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            {/* Brand */}
-            <div className="flex items-center gap-3">
-              <span className="text-xl font-bold text-white tracking-wide" aria-label="PEVN">
-                PEVN
-              </span>
-              <span className="hidden sm:block text-pevn-gold text-xs font-medium border-l border-pevn-blue-400 pl-3">
-                {config.appName}
-              </span>
-            </div>
+        <div
+          style={{
+            maxWidth: '1280px',
+            margin: '0 auto',
+            padding: '0 1rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            height: '64px',
+          }}
+        >
+          {/* Brand */}
+          <Link
+            to="/"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.75rem',
+              textDecoration: 'none',
+              color: '#FFFFFF',
+            }}
+          >
+            <span
+              style={{
+                fontSize: '1.25rem',
+                fontWeight: 800,
+                letterSpacing: '0.05em',
+                backgroundColor: 'rgba(255,255,255,0.1)',
+                padding: '0.25rem 0.5rem',
+                borderRadius: '6px',
+              }}
+              aria-label="PEVN"
+            >
+              PEVN
+            </span>
+            <span
+              style={{
+                fontSize: '0.875rem',
+                fontWeight: 600,
+                color: '#FCD116',
+                borderLeft: '1px solid #334155',
+                paddingLeft: '0.75rem',
+              }}
+            >
+              {config.appName}
+            </span>
+          </Link>
 
-            {/* Navigation placeholder — Phase 2+ */}
-            <nav aria-label="Navegación principal">
-              {/* Navigation items will be added in Phase 2 */}
-            </nav>
-          </div>
+          {/* Navigation */}
+          <nav aria-label="Navegación principal">
+            {isAuthenticated && user ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <Link
+                  to="/academic"
+                  style={{
+                    color: '#FCD116',
+                    textDecoration: 'none',
+                    fontSize: '0.875rem',
+                    fontWeight: 600,
+                  }}
+                >
+                  Gestión Académica
+                </Link>
+                <Link
+                  to="/virtual-classrooms"
+                  style={{
+                    color: '#38BDF8',
+                    textDecoration: 'none',
+                    fontSize: '0.875rem',
+                    fontWeight: 600,
+                  }}
+                >
+                  Aulas Virtuales
+                </Link>
+                <Link
+                  to="/dashboard"
+                  style={{
+                    color: '#F8FAFC',
+                    textDecoration: 'none',
+                    fontSize: '0.875rem',
+                    fontWeight: 600,
+                  }}
+                >
+                  Panel ({user.username})
+                </Link>
+                <button
+                  onClick={() => void logout()}
+                  style={{
+                    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                    color: '#FCA5A5',
+                    border: '1px solid rgba(239, 68, 68, 0.4)',
+                    padding: '0.35rem 0.75rem',
+                    borderRadius: '6px',
+                    fontSize: '0.8125rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Salir
+                </button>
+              </div>
+            ) : (
+              <Link
+                to="/login"
+                style={{
+                  backgroundColor: '#2563EB',
+                  color: '#FFFFFF',
+                  padding: '0.45rem 1rem',
+                  borderRadius: '6px',
+                  textDecoration: 'none',
+                  fontSize: '0.875rem',
+                  fontWeight: 600,
+                }}
+              >
+                Iniciar Sesión
+              </Link>
+            )}
+          </nav>
         </div>
       </header>
 
       {/* Main content area */}
       <main
         id="main-content"
-        className="flex-1 flex flex-col"
+        style={{ flex: 1, display: 'flex', flexDirection: 'column' }}
         role="main"
-        tabIndex={-1} // Allows programmatic focus from skip link
+        tabIndex={-1}
       >
         <Suspense fallback={<PageLoader />}>
           <Outlet />
@@ -57,18 +169,32 @@ export function RootLayout() {
 
       {/* Footer */}
       <footer
-        className="bg-pevn-blue-900 text-white py-6"
+        style={{
+          backgroundColor: '#0F172A',
+          color: '#94A3B8',
+          padding: '1.5rem 0',
+          borderTop: '1px solid #1E293B',
+        }}
         role="contentinfo"
         aria-label="Pie de página"
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm">
-            <p className="text-pevn-white/80 text-center sm:text-left">
-              © {String(new Date().getFullYear())} Plataforma Educativa Virtual Nacional. Todos los
-              derechos reservados.
-            </p>
-            <p className="text-pevn-white/60 text-xs">v{config.version}</p>
-          </div>
+        <div
+          style={{
+            maxWidth: '1280px',
+            margin: '0 auto',
+            padding: '0 1rem',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            fontSize: '0.8125rem',
+            flexWrap: 'wrap',
+            gap: '0.5rem',
+          }}
+        >
+          <p style={{ margin: 0 }}>
+            © {String(new Date().getFullYear())} Plataforma Educativa Virtual Nacional. República de Colombia.
+          </p>
+          <p style={{ margin: 0 }}>v{config.version}</p>
         </div>
       </footer>
     </div>

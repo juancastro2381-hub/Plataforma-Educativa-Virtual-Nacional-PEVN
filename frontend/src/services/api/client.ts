@@ -3,22 +3,21 @@
  *
  * Centralized Axios instance for all backend API calls.
  *
- * Features:
- *   - Automatic base URL from configuration
- *   - Request correlation ID injection
- *   - Standardized error response transformation
- *   - Timeout enforcement
- *   - Content-Type defaults
- *
- * Security:
- *   - Never log response data that may contain PII
- *   - Never store tokens in localStorage (Phase 2: use HttpOnly cookies or memory)
- *   - Authorization headers will be added in Phase 2 via interceptors
+ * Security & Design:
+ *   - Access token stored STRICTLY in memory (never localStorage or sessionStorage)
+ *   - Automatic request correlation ID injection
+ *   - withCredentials: true ensures HttpOnly refresh token cookie is sent
+ *   - Silent refresh queue handles concurrent 401s without race conditions
+ *   - Zero PII logging
  */
 
-import axios, { type AxiosError, type AxiosResponse } from 'axios'
-import config from '@config/index'
-import type { ApiError, ApiErrorDetail, ApiErrorResponse } from '@/types'
+import axios, {
+  type AxiosError,
+  type AxiosResponse,
+  type InternalAxiosRequestConfig,
+} from 'axios'
+import config, { API_V1_URL } from '@config/index'
+import type { ApiError, ApiErrorDetail, ApiErrorResponse, RefreshTokenResponse } from '@/types'
 
 // ---------------------------------------------------------------------------
 // Error Class
@@ -40,12 +39,32 @@ export class AppApiError extends Error implements ApiError {
 }
 
 // ---------------------------------------------------------------------------
-// Client instance
+// In-Memory Access Token Store (Zero-Persistence)
+// ---------------------------------------------------------------------------
+
+let inMemoryAccessToken: string | null = null
+let onAuthFailureCallback: (() => void) | null = null
+
+export function setAccessToken(token: string | null): void {
+  inMemoryAccessToken = token
+}
+
+export function getAccessToken(): string | null {
+  return inMemoryAccessToken
+}
+
+export function setOnAuthFailure(callback: (() => void) | null): void {
+  onAuthFailureCallback = callback
+}
+
+// ---------------------------------------------------------------------------
+// Client Instance
 // ---------------------------------------------------------------------------
 
 export const apiClient = axios.create({
   baseURL: config.apiBaseUrl,
   timeout: config.apiTimeoutMs,
+  withCredentials: true, // Send HttpOnly cookies for refresh / auth endpoints
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',
@@ -53,19 +72,20 @@ export const apiClient = axios.create({
 })
 
 // ---------------------------------------------------------------------------
-// Request interceptor — add correlation ID
+// Request Interceptor
 // ---------------------------------------------------------------------------
 
 apiClient.interceptors.request.use(
-  (requestConfig) => {
-    // Generate a client-side correlation ID for tracing requests
+  (requestConfig: InternalAxiosRequestConfig) => {
+    // Generate correlation ID for end-to-end tracing
     if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
       requestConfig.headers['X-Correlation-ID'] = crypto.randomUUID()
     }
 
-    // Phase 2: Add Authorization header here
-    // const token = getAccessToken()
-    // if (token) { requestConfig.headers['Authorization'] = `Bearer ${token}` }
+    // Attach in-memory JWT Access Token if present
+    if (inMemoryAccessToken && !requestConfig.headers.Authorization) {
+      requestConfig.headers.Authorization = `Bearer ${inMemoryAccessToken}`
+    }
 
     return requestConfig
   },
@@ -73,22 +93,97 @@ apiClient.interceptors.request.use(
 )
 
 // ---------------------------------------------------------------------------
-// Response interceptor — normalize errors
+// Response Interceptor & Silent Refresh Queue
 // ---------------------------------------------------------------------------
+
+interface QueuedRequest {
+  resolve: (value?: unknown) => void
+  reject: (reason?: unknown) => void
+}
+
+let isRefreshing = false
+let failedQueue: QueuedRequest[] = []
+
+function processQueue(error: Error | null): void {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error)
+    } else {
+      prom.resolve()
+    }
+  })
+  failedQueue = []
+}
 
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => response,
-  (error: unknown) => Promise.reject(normalizeError(error))
+  async (error: unknown) => {
+    if (!axios.isAxiosError(error)) {
+      return Promise.reject(normalizeError(error))
+    }
+
+    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean }
+    const status = error.response?.status
+
+    // If 401 Unauthorized and not already retried and not auth login/refresh endpoint
+    const isAuthEndpoint =
+      originalRequest.url?.includes('/api/v1/auth/login') ||
+      originalRequest.url?.includes('/api/v1/auth/refresh')
+
+    if (status === 401 && !originalRequest._retry && !isAuthEndpoint) {
+      if (isRefreshing) {
+        // Queue the request until refresh finishes
+        return await new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject })
+        })
+          .then(async () => {
+            if (inMemoryAccessToken) {
+              originalRequest.headers.Authorization = `Bearer ${inMemoryAccessToken}`
+            }
+            return await apiClient(originalRequest)
+          })
+          .catch(async (err: unknown) => {
+            return await Promise.reject(normalizeError(err))
+          })
+      }
+
+      originalRequest._retry = true
+      isRefreshing = true
+
+      try {
+        // Attempt silent refresh via HttpOnly cookie
+        const refreshResponse = await axios.post<RefreshTokenResponse>(
+          `${API_V1_URL}/auth/refresh`,
+          {},
+          { withCredentials: true }
+        )
+
+        const newAccessToken = refreshResponse.data.access_token
+        setAccessToken(newAccessToken)
+        processQueue(null)
+
+        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`
+        return await apiClient(originalRequest)
+      } catch (refreshErr: unknown) {
+        setAccessToken(null)
+        processQueue(new Error('Session refresh failed'))
+        if (onAuthFailureCallback) {
+          onAuthFailureCallback()
+        }
+        return await Promise.reject(normalizeError(refreshErr))
+      } finally {
+        isRefreshing = false
+      }
+    }
+
+    return await Promise.reject(normalizeError(error))
+  }
 )
 
 // ---------------------------------------------------------------------------
-// Error normalization
+// Error Normalization
 // ---------------------------------------------------------------------------
 
-/**
- * Normalize any error into a consistent AppApiError structure.
- * Ensures the rest of the application always deals with the same error shape.
- */
 export function normalizeError(error: unknown): AppApiError {
   if (error instanceof AppApiError) {
     return error
@@ -98,8 +193,13 @@ export function normalizeError(error: unknown): AppApiError {
     const axiosError = error as AxiosError<ApiErrorResponse>
 
     // Backend returned a structured error response
-    if (axiosError.response?.data.error) {
-      return new AppApiError(axiosError.response.data.error)
+    const resData = axiosError.response?.data as unknown
+    if (
+      typeof resData === 'object' &&
+      resData !== null &&
+      'error' in resData
+    ) {
+      return new AppApiError((resData as ApiErrorResponse).error)
     }
 
     // Network error or timeout

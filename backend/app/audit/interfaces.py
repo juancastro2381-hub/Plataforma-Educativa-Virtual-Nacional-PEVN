@@ -73,12 +73,15 @@ class AuditEventType(StrEnum):
     Naming convention: NOUN_VERB (e.g., USER_LOGIN, GRADE_UPDATED)
     """
 
-    # Authentication events
+    # Authentication & Token events
     USER_LOGIN_SUCCESS = "user.login.success"
     USER_LOGIN_FAILURE = "user.login.failure"
     USER_LOGOUT = "user.logout"
+    TOKEN_REFRESH_SUCCESS = "token.refresh.success"  # noqa: S105
+    TOKEN_REUSE_DETECTED = "token.reuse.detected"  # noqa: S105
     USER_PASSWORD_CHANGED = "user.password.changed"  # noqa: S105
     USER_PASSWORD_RESET_REQUESTED = "user.password_reset.requested"  # noqa: S105
+    USER_PASSWORD_RESET_CONFIRMED = "user.password_reset.confirmed"  # noqa: S105
     USER_ACCOUNT_LOCKED = "user.account.locked"
     USER_ACCOUNT_UNLOCKED = "user.account.unlocked"
 
@@ -94,6 +97,30 @@ class AuditEventType(StrEnum):
     INSTITUTION_UPDATED = "institution.updated"
     INSTITUTION_DEACTIVATED = "institution.deactivated"
 
+    # Academic Management (Phase 3)
+    ACADEMIC_YEAR_CREATED = "academic_year.created"
+    ACADEMIC_YEAR_UPDATED = "academic_year.updated"
+    ACADEMIC_YEAR_ACTIVATED = "academic_year.activated"
+    ACADEMIC_YEAR_CLOSED = "academic_year.closed"
+    GROUP_CREATED = "group.created"
+    GROUP_UPDATED = "group.updated"
+    GROUP_DIRECTOR_ASSIGNED = "group.director.assigned"
+    STUDENT_CREATED = "student.created"
+    STUDENT_UPDATED = "student.updated"
+    TEACHER_CREATED = "teacher.created"
+    TEACHER_UPDATED = "teacher.updated"
+    GUARDIAN_CREATED = "guardian.created"
+    GUARDIAN_UPDATED = "guardian.updated"
+    GUARDIAN_ASSOCIATED = "guardian.associated"
+    ENROLLMENT_CREATED = "enrollment.created"
+    ENROLLMENT_ACTIVATED = "enrollment.activated"
+    ENROLLMENT_WITHDRAWN = "enrollment.withdrawn"
+    ENROLLMENT_TRANSFERRED = "enrollment.transferred"
+    ENROLLMENT_GRADUATED = "enrollment.graduated"
+    ACADEMIC_ASSIGNMENT_CREATED = "academic_assignment.created"
+    ACADEMIC_ASSIGNMENT_REPLACED = "academic_assignment.replaced"
+    ACADEMIC_ASSIGNMENT_DEACTIVATED = "academic_assignment.deactivated"
+
     # Academic data (high sensitivity)
     GRADE_CREATED = "grade.created"
     GRADE_UPDATED = "grade.updated"
@@ -101,9 +128,14 @@ class AuditEventType(StrEnum):
     ATTENDANCE_RECORDED = "attendance.recorded"
     ATTENDANCE_UPDATED = "attendance.updated"
 
-    # Virtual classroom (Phase 3+)
+    # Virtual classroom & Real-Time Collaboration (Phase 4)
     MEETING_CREATED = "meeting.created"
+    MEETING_LAUNCHED = "meeting.launched"
+    MEETING_JOINED = "meeting.joined"
     MEETING_ENDED = "meeting.ended"
+    RECORDING_SYNCED = "recording.synced"
+    RECORDING_PUBLISHED = "recording.published"
+    RECORDING_DELETED = "recording.deleted"
     RECORDING_ACCESSED = "recording.accessed"
     RECORDING_DOWNLOADED = "recording.downloaded"
 
@@ -156,7 +188,11 @@ class IAuditService(ABC):
     """
 
     @abstractmethod
-    async def record(self, event: AuditEvent) -> None:
+    async def record(
+        self,
+        event: AuditEvent,
+        session: Any | None = None,
+    ) -> None:
         """
         Record an audit event.
 
@@ -170,7 +206,11 @@ class IAuditService(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def record_many(self, events: list[AuditEvent]) -> None:
+    async def record_many(
+        self,
+        events: list[AuditEvent],
+        session: Any | None = None,
+    ) -> None:
         """Record multiple audit events in a single batch."""
         raise NotImplementedError
 
@@ -186,7 +226,11 @@ class NoOpAuditService(IAuditService):
     processed in staging or production environments.
     """
 
-    async def record(self, event: AuditEvent) -> None:
+    async def record(
+        self,
+        event: AuditEvent,
+        session: Any | None = None,
+    ) -> None:
         """Log the audit event at DEBUG level (development only)."""
         _logger.debug(
             "AUDIT (no-op)",
@@ -197,7 +241,11 @@ class NoOpAuditService(IAuditService):
             success=event.success,
         )
 
-    async def record_many(self, events: list[AuditEvent]) -> None:
+    async def record_many(
+        self,
+        events: list[AuditEvent],
+        session: Any | None = None,
+    ) -> None:
         """Log each audit event."""
         for event in events:
             await self.record(event)

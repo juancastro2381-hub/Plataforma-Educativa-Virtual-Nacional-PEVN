@@ -67,7 +67,7 @@ class TestProductionConstraints:
         with pytest.raises(ValueError, match="DEBUG must be False"):
             Settings(  # type: ignore[call-arg]
                 _env_file=None,
-                ENVIRONMENT="production",
+                ENVIRONMENT=Environment.PRODUCTION,
                 DEBUG=True,
                 CORS_ORIGINS=["https://example.gov.co"],
                 SECRET_KEY="a" * 128,
@@ -78,7 +78,7 @@ class TestProductionConstraints:
         with pytest.raises(ValueError, match="Wildcard"):
             Settings(  # type: ignore[call-arg]
                 _env_file=None,
-                ENVIRONMENT="production",
+                ENVIRONMENT=Environment.PRODUCTION,
                 DEBUG=False,
                 CORS_ORIGINS=["*"],
                 SECRET_KEY="a" * 128,
@@ -88,7 +88,7 @@ class TestProductionConstraints:
         """OpenAPI documentation endpoints must be disabled in production."""
         settings = Settings(  # type: ignore[call-arg]
             _env_file=None,
-            ENVIRONMENT="production",
+            ENVIRONMENT=Environment.PRODUCTION,
             DEBUG=False,
             CORS_ORIGINS=["https://example.gov.co"],
             SECRET_KEY="a" * 128,
@@ -101,7 +101,7 @@ class TestProductionConstraints:
         """DB SQL echo must be disabled in production."""
         settings = Settings(  # type: ignore[call-arg]
             _env_file=None,
-            ENVIRONMENT="production",
+            ENVIRONMENT=Environment.PRODUCTION,
             DEBUG=False,
             CORS_ORIGINS=["https://example.gov.co"],
             SECRET_KEY="a" * 128,
