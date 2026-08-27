@@ -450,6 +450,10 @@ async def test_enrollment_service_and_transfer_service_atomicity(
         start_date=date(2028, 2, 1),
         end_date=date(2028, 11, 30),
     )
+    await ay_service.activate_academic_year(
+        year_id=ay.id,
+        institution_id=inst1.id,
+    )
     await db_session.flush()
 
     group_a = await group_service.create_group(

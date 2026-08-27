@@ -519,6 +519,13 @@ async def test_enrollments_transfers_and_assignments_api(
     )
     ay_id = ay_res.json()["id"]
 
+    # Activate Academic Year to allow enrollments
+    act_res = await client.post(
+        f"/api/v1/academic-years/{ay_id}/activate",
+        headers=headers,
+    )
+    assert act_res.status_code == 200
+
     # Setup Group A (capacity 2) and Group B (capacity 5)
     grp_a_res = await client.post(
         "/api/v1/groups",

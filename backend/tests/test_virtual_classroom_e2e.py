@@ -136,10 +136,11 @@ async def e2e_vc_fixture(  # noqa: PLR0915
     await db_session.flush()
 
     subject_phys = Subject(
+        institution_id=inst_a.id,
         knowledge_area_id=area.id,
-        code="FIS-10",
+        grade_id=grade10.id,
         name="Física Clásica",
-        weekly_hours_default=4,
+        weekly_hours=4,
     )
     db_session.add(subject_phys)
     await db_session.flush()

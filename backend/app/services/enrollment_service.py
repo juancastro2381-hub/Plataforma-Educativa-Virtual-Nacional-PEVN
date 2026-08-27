@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import UTC, date, datetime
+from http import HTTPStatus
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -27,7 +28,7 @@ from app.core.exceptions import (
     StudentNotFoundError,
 )
 from app.core.logging import get_logger
-from app.models.academic_year import AcademicYear
+from app.models.academic_year import AcademicYear, AcademicYearStatus
 from app.models.enrollment import Enrollment, EnrollmentStatus
 from app.models.group import Group
 from app.models.institution import Campus
@@ -87,7 +88,7 @@ class EnrollmentService:
                 f"Estudiante {student_id} no pertenece a la institución."
             )
 
-        # 2. Validate Academic Year Tenant Ownership
+        # 2. Validate Academic Year Tenant Ownership & Active Status
         ay = (
             await self._session.execute(
                 select(AcademicYear).where(
@@ -99,6 +100,12 @@ class EnrollmentService:
         if not ay:
             raise CrossTenantMismatchError(
                 "El año lectivo no pertenece a la institución."
+            )
+        if ay.status != AcademicYearStatus.ACTIVE:
+            raise AcademicDomainError(
+                "No se pueden crear matrículas en un año lectivo que no esté activo.",
+                code="ACADEMIC_YEAR_NOT_ACTIVE",
+                status_code=HTTPStatus.BAD_REQUEST,
             )
 
         # 3. Validate Group and Campus Tenant Ownership WITH ROW LOCKING

@@ -278,6 +278,59 @@ export const Dashboard: React.FC = () => {
         </div>
       </div>
 
+      {/* National Administration Module Access Card (Fase 3C) */}
+      {(user.scope.is_national || user.roles.includes('national_admin') || user.roles.includes('superadmin')) && (
+        <div
+          style={{
+            marginTop: '2rem',
+            backgroundColor: '#0F172A',
+            color: '#FFFFFF',
+            borderRadius: '16px',
+            border: '1px solid #1E293B',
+            padding: '2rem',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+            <div>
+              <div
+                style={{
+                  display: 'inline-block',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  backgroundColor: 'rgba(252, 209, 22, 0.2)',
+                  color: '#FCD116',
+                  padding: '0.25rem 0.75rem',
+                  borderRadius: '9999px',
+                  marginBottom: '0.5rem',
+                }}
+              >
+                Nivel Nacional • Fase 3C
+              </div>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#FFFFFF', margin: '0 0 0.25rem 0' }}>
+                Aprovisionamiento Institucional y Rectores
+              </h2>
+              <p style={{ fontSize: '0.875rem', color: '#94A3B8', margin: 0 }}>
+                Catálogo general de colegios, registro oficial DANE, creación de sedes e invitaciones seguras a Rectores.
+              </p>
+            </div>
+            <Link to="/admin/institutions" style={{ textDecoration: 'none' }}>
+              <Button
+                variant="primary"
+                style={{
+                  backgroundColor: '#2563EB',
+                  fontWeight: 700,
+                }}
+              >
+                Abrir Catálogo Nacional →
+              </Button>
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* Academic Management Module Access Card */}
       <div
         style={{

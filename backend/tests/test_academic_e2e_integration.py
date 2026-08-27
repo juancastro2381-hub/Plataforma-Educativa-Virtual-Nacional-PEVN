@@ -11,6 +11,7 @@ from typing import Any
 
 import pytest
 from httpx import AsyncClient
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security.interfaces import SystemRole
@@ -95,16 +96,18 @@ async def e2e_fixture(  # noqa: PLR0915
     await db_session.flush()
 
     subject_bio = Subject(
+        institution_id=inst_a.id,
         knowledge_area_id=area_a.id,
-        code="BIO-10",
+        grade_id=grade10.id,
         name="Biología General",
-        weekly_hours_default=4,
+        weekly_hours=4,
     )
     subject_chem = Subject(
+        institution_id=inst_a.id,
         knowledge_area_id=area_a.id,
-        code="QUI-10",
+        grade_id=grade10.id,
         name="Química Orgánica",
-        weekly_hours_default=3,
+        weekly_hours=3,
     )
     db_session.add_all([subject_bio, subject_chem])
     await db_session.flush()
@@ -143,14 +146,22 @@ async def e2e_fixture(  # noqa: PLR0915
     db_session.add_all(perm_objs)
     await db_session.flush()
 
-    # Roles
-    role_rector = Role(name="rector_e2e", display_name="Rector E2E", level=50)
-    role_student = Role(name="student_e2e", display_name="Student E2E", level=10)
-    role_superadmin = Role(
-        name="superadmin_e2e", display_name="SuperAdmin E2E", level=100
-    )
-    db_session.add_all([role_rector, role_student, role_superadmin])
-    await db_session.flush()
+    # Roles (Canonical SystemRoles seeded by conftest)
+    role_rector = (
+        await db_session.execute(
+            select(Role).where(Role.name == SystemRole.RECTOR.value)
+        )
+    ).scalar_one()
+    role_student = (
+        await db_session.execute(
+            select(Role).where(Role.name == SystemRole.STUDENT.value)
+        )
+    ).scalar_one()
+    role_superadmin = (
+        await db_session.execute(
+            select(Role).where(Role.name == SystemRole.SUPERADMIN.value)
+        )
+    ).scalar_one()
 
     for p in perm_objs:
         db_session.add(RolePermission(role_id=role_rector.id, permission_id=p.id))
@@ -566,7 +577,7 @@ async def test_complete_academic_e2e_lifecycle(  # noqa: PLR0915
             "status": "ACTIVE",
         },
     )
-    assert enr3_blocked.status_code == 400
+    assert enr3_blocked.status_code == 409
     assert enr3_blocked.json()["error"]["code"] == "GROUP_CAPACITY_EXCEEDED"
 
     # 7. Atomic Classroom Transfer
@@ -693,7 +704,7 @@ async def test_complete_academic_e2e_lifecycle(  # noqa: PLR0915
     )
     assert dup_assign_res.status_code == 409
     assert (
-        dup_assign_res.json()["error"]["code"] == "ACADEMIC_ASSIGNMENT_DUPLICATE_ACTIVE"
+        dup_assign_res.json()["error"]["code"] == "DUPLICATE_ACTIVE_ASSIGNMENT"
     )
 
     # 10. Atomic Teacher Replacement

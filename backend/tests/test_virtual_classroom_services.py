@@ -133,10 +133,11 @@ async def vc_service_fixture(
     await db_session.flush()
 
     subject = Subject(
+        institution_id=inst1.id,
         knowledge_area_id=area.id,
-        code="BIO-10-VC",
+        grade_id=grade10.id,
         name="Biología Virtual",
-        weekly_hours_default=3,
+        weekly_hours=3,
     )
     db_session.add(subject)
     await db_session.flush()

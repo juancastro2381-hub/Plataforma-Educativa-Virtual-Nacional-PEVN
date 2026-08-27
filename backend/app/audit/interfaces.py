@@ -92,10 +92,14 @@ class AuditEventType(StrEnum):
     USER_ROLE_ASSIGNED = "user.role.assigned"
     USER_ROLE_REVOKED = "user.role.revoked"
 
-    # Institution management
+    # Institution & Rector management
     INSTITUTION_CREATED = "institution.created"
     INSTITUTION_UPDATED = "institution.updated"
     INSTITUTION_DEACTIVATED = "institution.deactivated"
+    OFFICIAL_DANE_RESOLVED = "official_dane.resolved"
+    INSTITUTION_PROVISIONED_FROM_CATALOG = "institution.provisioned_from_catalog"
+    RECTOR_INVITED = "rector.invited"
+    RECTOR_ONBOARDING_COMPLETED = "rector.onboarding.completed"
 
     # Academic Management (Phase 3)
     ACADEMIC_YEAR_CREATED = "academic_year.created"

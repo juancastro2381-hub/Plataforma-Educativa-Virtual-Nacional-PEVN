@@ -122,10 +122,11 @@ async def vc_api_fixture(  # noqa: PLR0915
     await db_session.flush()
 
     subject_calc = Subject(
+        institution_id=inst1.id,
         knowledge_area_id=area.id,
-        code="CALC-11",
+        grade_id=grade11.id,
         name="Cálculo Diferencial",
-        weekly_hours_default=4,
+        weekly_hours=4,
     )
     db_session.add(subject_calc)
     await db_session.flush()

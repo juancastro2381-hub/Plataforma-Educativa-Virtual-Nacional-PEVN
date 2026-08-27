@@ -27,6 +27,13 @@ from app.models.guardian import (
     StudentGuardian,
 )
 from app.models.institution import Campus, Institution
+from app.models.invitation import RectorInvitation
+from app.models.official_catalog import (
+    OfficialCampusCatalog,
+    OfficialCatalogSyncBatch,
+    OfficialCatalogSyncChunk,
+    OfficialInstitutionCatalog,
+)
 from app.models.role import Permission, Role, RolePermission, UserRole
 from app.models.student import Student, StudentGender
 from app.models.subject import KnowledgeArea, Subject
@@ -66,8 +73,13 @@ __all__ = [
     "MeetingParticipantRole",
     "MeetingRecording",
     "Municipality",
+    "OfficialCampusCatalog",
+    "OfficialCatalogSyncBatch",
+    "OfficialCatalogSyncChunk",
+    "OfficialInstitutionCatalog",
     "PasswordResetToken",
     "Permission",
+    "RectorInvitation",
     "RefreshToken",
     "Role",
     "RolePermission",

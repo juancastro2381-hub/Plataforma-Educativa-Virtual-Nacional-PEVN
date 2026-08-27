@@ -97,6 +97,19 @@ export function RootLayout() {
                 >
                   Gestión Académica
                 </Link>
+                {(user.scope.is_national || user.roles.includes('national_admin') || user.roles.includes('superadmin')) && (
+                  <Link
+                    to="/admin/institutions"
+                    style={{
+                      color: '#4ADE80',
+                      textDecoration: 'none',
+                      fontSize: '0.875rem',
+                      fontWeight: 600,
+                    }}
+                  >
+                    Instituciones
+                  </Link>
+                )}
                 <Link
                   to="/virtual-classrooms"
                   style={{

@@ -7,6 +7,8 @@
 
 import apiClient, { setAccessToken } from '@/services/api/client'
 import type {
+  AcceptInvitationRequest,
+  AcceptInvitationResponse,
   ChangePasswordRequest,
   InstitutionResponse,
   LoginRequest,
@@ -15,6 +17,7 @@ import type {
   PasswordResetRequest,
   RefreshTokenResponse,
   User,
+  VerifyInvitationResponse,
 } from '@/types'
 
 export const authApi = {
@@ -102,6 +105,31 @@ export const authApi = {
     )
     return response.data
   },
+
+  /**
+   * Public endpoint to verify cryptographic rector invitation token.
+   */
+  async verifyInvitation(token: string): Promise<VerifyInvitationResponse> {
+    const response = await apiClient.post<VerifyInvitationResponse>(
+      '/api/v1/auth/verify-invitation',
+      { token }
+    )
+    return response.data
+  },
+
+  /**
+   * Public endpoint to redeem invitation, set password with Argon2id and activate account.
+   */
+  async acceptInvitation(
+    payload: AcceptInvitationRequest
+  ): Promise<AcceptInvitationResponse> {
+    const response = await apiClient.post<AcceptInvitationResponse>(
+      '/api/v1/auth/accept-invitation',
+      payload
+    )
+    return response.data
+  },
 }
 
 export default authApi
+

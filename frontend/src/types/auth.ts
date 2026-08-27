@@ -84,14 +84,3 @@ export interface CampusResponse {
   is_active: boolean
 }
 
-export interface InstitutionResponse {
-  id: string
-  municipality_id: string
-  dane_code: string
-  name: string
-  email: string
-  phone: string | null
-  address: string | null
-  is_active: boolean
-  campuses: CampusResponse[]
-}

@@ -11,7 +11,9 @@ import uuid
 from datetime import UTC, datetime
 
 import pytest
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.core.security.password import password_hasher
 from app.models.academic_assignment import AcademicAssignment
@@ -108,10 +110,11 @@ async def test_virtual_classroom_models_and_relationships(  # noqa: PLR0915
     await db_session.flush()
 
     subject = Subject(
+        institution_id=inst.id,
         knowledge_area_id=area.id,
-        code="INF-11",
+        grade_id=grade.id,
         name="Informática Avanzada",
-        weekly_hours_default=3,
+        weekly_hours=3,
     )
     db_session.add(subject)
     await db_session.flush()
@@ -227,7 +230,20 @@ async def test_virtual_classroom_models_and_relationships(  # noqa: PLR0915
     await db_session.commit()
 
     # 8. Verify Queries & Relationships
-    refreshed_room = await db_session.get(VirtualClassroom, vroom.id)
+    query = (
+        select(VirtualClassroom)
+        .where(VirtualClassroom.id == vroom.id)
+        .options(
+            selectinload(VirtualClassroom.attendances).selectinload(
+                MeetingAttendance.user
+            ),
+            selectinload(VirtualClassroom.recordings),
+            selectinload(VirtualClassroom.academic_assignment).selectinload(
+                AcademicAssignment.subject
+            ),
+        )
+    )
+    refreshed_room = (await db_session.execute(query)).scalar_one()
     assert refreshed_room is not None
     assert refreshed_room.academic_assignment is not None
     assert refreshed_room.academic_assignment.subject.name == "Informática Avanzada"

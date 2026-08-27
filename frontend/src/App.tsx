@@ -14,6 +14,8 @@ import { Login } from '@/pages/Login'
 import { Dashboard } from '@/pages/Dashboard'
 import { AcademicHub } from '@/pages/academic/AcademicHub'
 import { VirtualClassroomsView } from '@/pages/virtual-classrooms/VirtualClassroomsView'
+import { InstitutionsView } from '@/pages/admin/InstitutionsView'
+import { AcceptInvitation } from '@/pages/auth/AcceptInvitation'
 import { AuthProvider } from '@/context/AuthContext'
 import { RequireAuth } from '@/components/auth/RequireAuth'
 
@@ -24,7 +26,9 @@ import { RequireAuth } from '@/components/auth/RequireAuth'
  *   /                     → RootLayout
  *     /                   → ComingSoon (Landing)
  *     /login              → Login (Authentication)
+ *     /auth/accept-invitation → AcceptInvitation (Public Rector Onboarding)
  *     /dashboard          → Dashboard (Protected by RequireAuth)
+ *     /admin/institutions → InstitutionsView (Protected by RequireAuth)
  *     /academic           → AcademicHub (Protected by RequireAuth)
  *     /virtual-classrooms → VirtualClassroomsView (Protected by RequireAuth)
  *     /*                  → NotFound (404)
@@ -44,10 +48,22 @@ const router = createBrowserRouter([
         element: <Login />,
       },
       {
+        path: 'auth/accept-invitation',
+        element: <AcceptInvitation />,
+      },
+      {
         path: 'dashboard',
         element: (
           <RequireAuth>
             <Dashboard />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: 'admin/institutions',
+        element: (
+          <RequireAuth>
+            <InstitutionsView />
           </RequireAuth>
         ),
       },

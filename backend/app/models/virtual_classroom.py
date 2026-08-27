@@ -22,6 +22,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    func,
     text,
 )
 from sqlalchemy import (
@@ -204,12 +205,12 @@ class VirtualClassroom(Base):
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        server_default=text("now()"),
+        server_default=func.now(),
         nullable=False,
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        server_default=text("now()"),
+        server_default=func.now(),
         onupdate=datetime.now,
         nullable=False,
     )
@@ -301,7 +302,7 @@ class MeetingAttendance(Base):
     )
     joined_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        server_default=text("now()"),
+        server_default=func.now(),
         nullable=False,
         doc="Timestamp when the user joined the session.",
     )
@@ -317,7 +318,7 @@ class MeetingAttendance(Base):
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        server_default=text("now()"),
+        server_default=func.now(),
         nullable=False,
     )
 
@@ -416,13 +417,13 @@ class MeetingRecording(Base):
     )
     recorded_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        server_default=text("now()"),
+        server_default=func.now(),
         nullable=False,
         doc="Timestamp when recording was captured.",
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        server_default=text("now()"),
+        server_default=func.now(),
         nullable=False,
     )
 

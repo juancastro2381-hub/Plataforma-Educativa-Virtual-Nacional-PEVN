@@ -32,7 +32,14 @@ from app.schemas.auth import (
     TokenRefreshResponse,
     UserMeResponse,
 )
+from app.schemas.invitation import (
+    AcceptInvitationRequest,
+    AcceptInvitationResponse,
+    VerifyInvitationRequest,
+    VerifyInvitationResponse,
+)
 from app.services.auth_service import auth_service
+from app.services.rector_onboarding_service import RectorOnboardingService
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -298,3 +305,52 @@ async def get_my_profile(
     current_user: CurrentUserDep,
 ) -> UserMeResponse:
     return auth_service.build_user_me_response(current_user)
+
+
+@router.post(
+    "/verify-invitation",
+    response_model=VerifyInvitationResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Validar token de invitación de Rector",
+    description="Valida si el token recibido en el enlace de invitación es válido y no ha expirado.",
+)
+async def verify_invitation_endpoint(
+    payload: VerifyInvitationRequest,
+    db: SessionDep,
+) -> VerifyInvitationResponse:
+    onboarding_service = RectorOnboardingService(session=db)
+    result = await onboarding_service.verify_invitation(token=payload.token)
+    return VerifyInvitationResponse(**result)
+
+
+@router.post(
+    "/accept-invitation",
+    response_model=AcceptInvitationResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Aceptar invitación y definir contraseña de Rector",
+    description="Canjea el token de un solo uso, establece la contraseña con Argon2id y activa la cuenta.",
+)
+async def accept_invitation_endpoint(
+    payload: AcceptInvitationRequest,
+    db: SessionDep,
+    request: Request,
+    client_ip: ClientIpDep,
+) -> AcceptInvitationResponse:
+    correlation_id = getattr(request.state, "correlation_id", None)
+    onboarding_service = RectorOnboardingService(session=db)
+    user = await onboarding_service.accept_invitation(
+        token=payload.token,
+        password=payload.password,
+        password_confirmation=payload.password_confirmation,
+        client_ip=client_ip,
+        correlation_id=correlation_id,
+    )
+    await db.commit()
+
+    return AcceptInvitationResponse(
+        message="Onboarding completado exitosamente. La cuenta ha sido activada y vinculada a la institución.",
+        user_id=user.id,
+        email=user.email,
+        is_active=user.is_active,
+    )
+

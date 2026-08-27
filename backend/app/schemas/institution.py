@@ -28,12 +28,25 @@ class InstitutionCreate(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    municipality_id: uuid.UUID
-    dane_code: str = Field(..., min_length=5, max_length=20)
+    municipality_id: uuid.UUID | str = Field(
+        ...,
+        description="ID interno (UUID) o Código DANE de 5 dígitos del municipio",
+    )
+    dane_code: str = Field(..., min_length=12, max_length=12, description="Código DANE oficial de 12 dígitos")
     name: str = Field(..., min_length=3, max_length=255)
     email: EmailStr
     phone: str | None = Field(None, max_length=50)
     address: str | None = Field(None, max_length=255)
+    main_campus_name: str = Field("Sede Principal", max_length=255)
+    main_campus_dane: str | None = Field(None, max_length=20)
+
+
+class InstitutionStatusUpdateRequest(BaseModel):
+    """Payload for updating institution operational status."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    is_active: bool
 
 
 class InstitutionUpdate(BaseModel):
@@ -64,3 +77,12 @@ class InstitutionResponse(BaseModel):
     campuses: list[CampusResponse] = Field(default_factory=list)
     created_at: datetime
     updated_at: datetime
+
+
+class InstitutionListResponse(BaseModel):
+    """Paginated list of institutions."""
+
+    items: list[InstitutionResponse]
+    total: int
+    page: int
+    page_size: int

@@ -92,6 +92,7 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
             ("users", "read"),
             ("users", "update"),
             ("users", "delete"),
+            ("institutions", "create"),
             ("institutions", "read"),
             ("institutions", "update"),
             ("grades", "read"),
