@@ -25,7 +25,7 @@ import type {
 } from '@/types'
 
 export const VirtualClassroomsView: React.FC = () => {
-  const { user } = useAuth()
+  const { hasPermission } = useAuth()
 
   const [classrooms, setClassrooms] = useState<VirtualClassroomResponse[]>([])
   const [total, setTotal] = useState<number>(0)
@@ -54,11 +54,7 @@ export const VirtualClassroomsView: React.FC = () => {
   const [isLoadingDetail, setIsLoadingDetail] = useState<boolean>(false)
   const [isSyncingRecordings, setIsSyncingRecordings] = useState<boolean>(false)
 
-  const isStaff = Boolean(
-    user?.roles.some(r =>
-      ['rector', 'academic_coordinator', 'teacher', 'superadmin'].includes(r)
-    )
-  )
+  const isStaff = hasPermission('virtual_classrooms:manage') || hasPermission('virtual_classrooms:create')
 
   const loadClassrooms = useCallback(async () => {
     setIsLoading(true)

@@ -133,3 +133,18 @@ class PasswordResetConfirmRequest(BaseModel):
 
     token: str = Field(..., min_length=10, description="Single-use reset token")
     new_password: str = Field(..., min_length=8, max_length=255)
+
+
+class PasswordResetVerifyRequest(BaseModel):
+    """Password reset token verification payload."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    token: str = Field(..., min_length=10, description="Single-use reset token")
+
+
+class PasswordResetVerifyResponse(BaseModel):
+    """Token validation status response."""
+
+    valid: bool
+    message: str

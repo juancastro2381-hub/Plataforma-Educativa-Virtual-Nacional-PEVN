@@ -11,13 +11,14 @@ from __future__ import annotations
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, Depends, Query, status
 
 from app.api.deps import (
     AuthContextDep,
     ClientIpDep,
     CurrentUserDep,
     SessionDep,
+    require_permission,
 )
 from app.core.logging import correlation_id_ctx
 from app.core.security.interfaces import SystemRole
@@ -47,7 +48,11 @@ def _resolve_institution_id(
     institution_id_override: uuid.UUID | None = None,
 ) -> uuid.UUID:
     """Resolve active institution context adhering to tenant isolation."""
-    if SystemRole.SUPERADMIN in auth.roles and institution_id_override:
+    if (
+        SystemRole.SUPERADMIN in auth.roles
+        or SystemRole.NATIONAL_ADMIN in auth.roles
+        or auth.scope.is_national()
+    ) and institution_id_override:
         return institution_id_override
     if current_user.institution_id:
         return current_user.institution_id
@@ -63,6 +68,7 @@ def _resolve_institution_id(
         "Programa o crea una nueva sesión de aula virtual asociada o no a una "
         "asignación académica."
     ),
+    dependencies=[Depends(require_permission("virtual_classrooms", "create"))],
 )
 async def create_virtual_classroom(
     payload: VirtualClassroomCreateRequest,
@@ -101,6 +107,7 @@ async def create_virtual_classroom(
     response_model=VirtualClassroomListResponse,
     summary="Listar aulas virtuales",
     description="Consulta aulas virtuales del tenant con filtros y paginación.",
+    dependencies=[Depends(require_permission("virtual_classrooms", "read"))],
 )
 async def list_virtual_classrooms(
     auth: AuthContextDep,
@@ -138,6 +145,7 @@ async def list_virtual_classrooms(
     response_model=VirtualClassroomResponse,
     summary="Consultar aula virtual",
     description="Obtiene el detalle de un aula virtual con aislamiento ciego.",
+    dependencies=[Depends(require_permission("virtual_classrooms", "read"))],
 )
 async def get_virtual_classroom(
     classroom_id: uuid.UUID,
@@ -162,6 +170,7 @@ async def get_virtual_classroom(
     response_model=VirtualClassroomResponse,
     summary="Iniciar sesión de aula virtual",
     description="Inicia la reunión en el proveedor y transiciona el estado a RUNNING.",
+    dependencies=[Depends(require_permission("virtual_classrooms", "manage"))],
 )
 async def launch_virtual_classroom(
     classroom_id: uuid.UUID,
@@ -194,6 +203,7 @@ async def launch_virtual_classroom(
         "Resuelve la autorización (docente moderador vs estudiante activo "
         "matriculado) y genera la URL firmada de entrada."
     ),
+    dependencies=[Depends(require_permission("virtual_classrooms", "join"))],
 )
 async def join_virtual_classroom(
     classroom_id: uuid.UUID,
@@ -225,7 +235,7 @@ async def join_virtual_classroom(
         institution_id=inst_id,
     )
     is_host = current_user.id == classroom.host_user_id
-    is_admin = any(r in ("rector", "academic_coordinator", "superadmin") for r in roles)
+    is_admin = any(r in ("rector", "academic_coordinator", "coordinator", "superadmin", "national_admin") for r in roles)
     resolved_role = (
         MeetingParticipantRole.MODERATOR
         if (is_host or is_admin)
@@ -245,6 +255,7 @@ async def join_virtual_classroom(
     response_model=VirtualClassroomResponse,
     summary="Finalizar aula virtual",
     description="Termina la reunión activa, cierra asistencias y pasa a ENDED.",
+    dependencies=[Depends(require_permission("virtual_classrooms", "manage"))],
 )
 async def end_virtual_classroom(
     classroom_id: uuid.UUID,
@@ -276,6 +287,7 @@ async def end_virtual_classroom(
     response_model=MeetingAttendanceListResponse,
     summary="Listar asistencias de aula virtual",
     description="Consulta los registros de ingreso, salida y duración de la sesión.",
+    dependencies=[Depends(require_permission("virtual_classrooms", "read"))],
 )
 async def list_classroom_attendances(
     classroom_id: uuid.UUID,

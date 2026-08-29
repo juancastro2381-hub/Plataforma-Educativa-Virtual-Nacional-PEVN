@@ -75,17 +75,27 @@ async def lifespan(application: FastAPI) -> AsyncGenerator[None, None]:
         debug=settings.DEBUG,
     )
 
-    # Warm up the database connection pool on startup
+    # Warm up the database connection pool on startup & bootstrap canonical RBAC catalog
     # This catches misconfigured DATABASE_URL before the first request
     try:
-        _ = get_engine()
+        engine = get_engine()
         logger.info("Database connection pool initialized")
+
+        # Idempotent RBAC Catalog Bootstrap
+        from app.db.session import get_session_factory
+        from app.services.rbac_bootstrap_service import RbacBootstrapService
+
+        factory = get_session_factory()
+        async with factory() as session:
+            bootstrap = RbacBootstrapService(session=session)
+            await bootstrap.seed_canonical_rbac_if_needed()
+            await session.commit()
+        logger.info("Canonical RBAC catalog verified/bootstrapped")
     except Exception as exc:
-        logger.error(
-            "Failed to initialize database connection pool",
+        logger.warning(
+            "Database startup warm-up / RBAC bootstrap deferred",
             error_type=type(exc).__name__,
-            # Safe URL only (password masked)
-            database=settings.get_safe_database_url(),
+            detail=str(exc),
         )
         # Do not raise — allow the app to start and report via /ready
 

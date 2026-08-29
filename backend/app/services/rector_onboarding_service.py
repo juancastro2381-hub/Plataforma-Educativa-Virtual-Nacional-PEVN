@@ -99,9 +99,15 @@ class RectorOnboardingService:
                 code="INSTITUTION_INACTIVE",
             )
 
-        # 2. Verify Rector Role exists in database
+        # 2. Verify Rector Role exists in database (auto-bootstrapping if role catalog is unseeded)
         role_stmt = select(Role).where(Role.name == SystemRole.RECTOR.value)
         rector_role = (await self._session.execute(role_stmt)).scalar_one_or_none()
+        if not rector_role:
+            from app.services.rbac_bootstrap_service import RbacBootstrapService
+            bootstrap_svc = RbacBootstrapService(session=self._session)
+            await bootstrap_svc.seed_canonical_rbac_if_needed()
+            rector_role = (await self._session.execute(role_stmt)).scalar_one_or_none()
+
         if not rector_role:
             raise NotFoundError(
                 "Rol canónico 'rector' no encontrado en el catálogo de roles.",
@@ -426,3 +432,96 @@ class RectorOnboardingService:
         )
 
         return user
+
+    async def revoke_rector(
+        self,
+        *,
+        institution_id: uuid.UUID,
+        reason: str,
+        justification: str | None = None,
+        revoked_by_id: uuid.UUID | str,
+        revoked_by_ip: str = "0.0.0.0",  # noqa: S104
+        correlation_id: str | None = None,
+    ) -> tuple[User, str]:
+        """
+        Revokes/deactivates the active Rector of an institution, enabling immediate succession.
+
+        Validates that the institution exists, locates the active Rector UserRole association,
+        deactivates the association atomically, revokes all pending unredeemed invitations,
+        records an auditable event, and returns the revoked user entity.
+        """
+        # 1. Verify Institution exists
+        inst_stmt = select(Institution).where(Institution.id == institution_id)
+        inst = (await self._session.execute(inst_stmt)).scalar_one_or_none()
+        if not inst:
+            raise NotFoundError(
+                f"Institución educativa {institution_id} no encontrada.",
+                code="INSTITUTION_NOT_FOUND",
+            )
+
+        # 2. Verify Rector Role exists in database
+        role_stmt = select(Role).where(Role.name == SystemRole.RECTOR.value)
+        rector_role = (await self._session.execute(role_stmt)).scalar_one_or_none()
+        if not rector_role:
+            raise NotFoundError(
+                "Rol canónico 'rector' no encontrado en el catálogo de roles.",
+                code="ROLE_NOT_FOUND",
+            )
+
+        # 3. Locate currently active Rector for this institution
+        active_ur_stmt = (
+            select(UserRole)
+            .where(
+                UserRole.institution_id == institution_id,
+                UserRole.role_id == rector_role.id,
+                UserRole.is_active == True,  # noqa: E712
+            )
+            .options(selectinload(UserRole.user))
+        )
+        active_user_role = (await self._session.execute(active_ur_stmt)).scalar_one_or_none()
+        if not active_user_role:
+            raise NotFoundError(
+                "La institución educativa no cuenta con un Rector titular activo para revocar.",
+                code="NO_ACTIVE_RECTOR_FOUND",
+            )
+
+        revoked_user = active_user_role.user
+
+        # 4. Atomically deactivate active Rector UserRole
+        active_user_role.is_active = False
+
+        # 5. Revoke any pending invitations for this institution
+        await self._session.execute(
+            update(RectorInvitation)
+            .where(
+                RectorInvitation.institution_id == institution_id,
+                RectorInvitation.is_used == False,  # noqa: E712
+                RectorInvitation.is_revoked == False,  # noqa: E712
+            )
+            .values(is_revoked=True, revoked_at=datetime.now(UTC))
+        )
+
+        await self._session.flush()
+
+        # 6. Record audit trail
+        await self._audit.record(
+            AuditEvent(
+                event_type=AuditEventType.RECTOR_REVOKED,
+                actor_id=str(revoked_by_id),
+                actor_ip=revoked_by_ip,
+                target_id=str(revoked_user.id),
+                target_type="User",
+                institution_id=str(institution_id),
+                correlation_id=correlation_id,
+                metadata={
+                    "rector_email": revoked_user.email,
+                    "rector_name": f"{revoked_user.first_name} {revoked_user.last_name}",
+                    "reason": reason,
+                    "justification": justification,
+                    "revoked_at": datetime.now(UTC).isoformat(),
+                },
+            ),
+            session=self._session,
+        )
+
+        return revoked_user, reason

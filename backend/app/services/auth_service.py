@@ -616,6 +616,23 @@ class AuthService:
         await db.commit()
         return raw_reset_token
 
+    async def verify_password_reset_token(
+        self,
+        db: AsyncSession,
+        raw_reset_token: str,
+    ) -> bool:
+        """
+        Verify if a password reset token exists, is unused, and is not expired.
+        """
+        reset_token_hash = hash_token(raw_reset_token)
+        query = (
+            select(PasswordResetToken)
+            .where(PasswordResetToken.token_hash == reset_token_hash)
+        )
+        result = await db.execute(query)
+        reset_record = result.scalar_one_or_none()
+        return bool(reset_record and reset_record.is_valid)
+
     async def confirm_password_reset(
         self,
         db: AsyncSession,

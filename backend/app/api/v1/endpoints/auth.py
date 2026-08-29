@@ -29,16 +29,25 @@ from app.schemas.auth import (
     PasswordChangeRequest,
     PasswordResetConfirmRequest,
     PasswordResetRequest,
+    PasswordResetVerifyRequest,
+    PasswordResetVerifyResponse,
     TokenRefreshResponse,
     UserMeResponse,
 )
 from app.schemas.invitation import (
     AcceptInvitationRequest,
     AcceptInvitationResponse,
+    GuardianAcceptActivationRequest,
+    GuardianAcceptActivationResponse,
+    GuardianActivationRequest,
+    GuardianActivationResponse,
+    VerifyGuardianTokenRequest,
+    VerifyGuardianTokenResponse,
     VerifyInvitationRequest,
     VerifyInvitationResponse,
 )
 from app.services.auth_service import auth_service
+from app.services.guardian_onboarding_service import GuardianOnboardingService
 from app.services.rector_onboarding_service import RectorOnboardingService
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -260,6 +269,34 @@ async def request_password_reset(
 
 
 @router.post(
+    "/password/reset/verify-token",
+    response_model=PasswordResetVerifyResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Verificar validez de token de restablecimiento de contraseña",
+    description=(
+        "Verifica que el token de recuperación exista, no haya sido consumido y "
+        "no haya expirado."
+    ),
+)
+async def verify_password_reset_token(
+    payload: PasswordResetVerifyRequest,
+    db: SessionDep,
+) -> PasswordResetVerifyResponse:
+    is_valid = await auth_service.verify_password_reset_token(
+        db=db, raw_reset_token=payload.token
+    )
+    if not is_valid:
+        raise AuthenticationError(
+            "El token de restablecimiento es inválido o ha expirado.",
+            code="INVALID_RESET_TOKEN",
+        )
+    return PasswordResetVerifyResponse(
+        valid=True,
+        message="Token válido para restablecimiento de contraseña.",
+    )
+
+
+@router.post(
     "/password/reset/confirm",
     status_code=status.HTTP_200_OK,
     summary="Confirmar restablecimiento de contraseña",
@@ -349,6 +386,85 @@ async def accept_invitation_endpoint(
 
     return AcceptInvitationResponse(
         message="Onboarding completado exitosamente. La cuenta ha sido activada y vinculada a la institución.",
+        user_id=user.id,
+        email=user.email,
+        is_active=user.is_active,
+    )
+
+
+@router.post(
+    "/guardians/request-activation",
+    response_model=GuardianActivationResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Solicitar activación de cuenta de Acudiente",
+    description="Valida la vinculación acudiente-estudiante matriculado y genera un token criptográfico de un solo uso.",
+)
+async def request_guardian_activation_endpoint(
+    payload: GuardianActivationRequest,
+    db: SessionDep,
+    request: Request,
+    client_ip: ClientIpDep,
+) -> GuardianActivationResponse:
+    correlation_id = getattr(request.state, "correlation_id", None)
+    onboarding_service = GuardianOnboardingService(session=db)
+    _invitation, raw_token = await onboarding_service.request_activation(
+        student_code_simat=payload.student_code_simat,
+        guardian_document_type=payload.guardian_document_type,
+        guardian_document_number=payload.guardian_document_number,
+        email=payload.email,
+        client_ip=client_ip,
+        correlation_id=correlation_id,
+    )
+    await db.commit()
+
+    return GuardianActivationResponse(
+        message="Solicitud de activación procesada exitosamente.",
+        raw_activation_token=raw_token,
+    )
+
+
+@router.post(
+    "/guardians/verify-token",
+    response_model=VerifyGuardianTokenResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Validar token de activación de Acudiente",
+    description="Valida si el token de activación de acudiente es válido, vigente y no ha sido utilizado.",
+)
+async def verify_guardian_token_endpoint(
+    payload: VerifyGuardianTokenRequest,
+    db: SessionDep,
+) -> VerifyGuardianTokenResponse:
+    onboarding_service = GuardianOnboardingService(session=db)
+    result = await onboarding_service.verify_token(token=payload.token)
+    return VerifyGuardianTokenResponse(**result)  # type: ignore[arg-type]
+
+
+@router.post(
+    "/guardians/accept-activation",
+    response_model=GuardianAcceptActivationResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Completar activación y definir contraseña de Acudiente",
+    description="Redime el token de activación, crea la cuenta de usuario con Argon2id, asigna el rol 'guardian' y vincula la entidad.",
+)
+async def accept_guardian_activation_endpoint(
+    payload: GuardianAcceptActivationRequest,
+    db: SessionDep,
+    request: Request,
+    client_ip: ClientIpDep,
+) -> GuardianAcceptActivationResponse:
+    correlation_id = getattr(request.state, "correlation_id", None)
+    onboarding_service = GuardianOnboardingService(session=db)
+    user = await onboarding_service.accept_activation(
+        token=payload.token,
+        password=payload.password,
+        password_confirmation=payload.password_confirmation,
+        client_ip=client_ip,
+        correlation_id=correlation_id,
+    )
+    await db.commit()
+
+    return GuardianAcceptActivationResponse(
+        message="Cuenta de acudiente activada exitosamente. Ahora puede iniciar sesión con sus credenciales.",
         user_id=user.id,
         email=user.email,
         is_active=user.is_active,

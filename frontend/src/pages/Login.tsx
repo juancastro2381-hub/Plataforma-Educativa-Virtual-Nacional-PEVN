@@ -222,7 +222,7 @@ export const Login: React.FC = () => {
                   Contraseña
                 </label>
                 <Link
-                  to="/recuperar-contrasena"
+                  to="/auth/forgot-password"
                   style={{
                     fontSize: '0.8125rem',
                     color: '#2563EB',

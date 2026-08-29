@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 
 export const Dashboard: React.FC = () => {
-  const { user, logout, changePassword } = useAuth()
+  const { user, logout, changePassword, hasPermission } = useAuth()
 
   // Change password modal / state
   const [showPasswordModal, setShowPasswordModal] = useState(
@@ -331,133 +331,196 @@ export const Dashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Academic Management Module Access Card */}
-      <div
-        style={{
-          marginTop: '2rem',
-          backgroundColor: '#FFFFFF',
-          borderRadius: '16px',
-          border: '1px solid #E2E8F0',
-          padding: '2rem',
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
-          <div>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0F172A', margin: '0 0 0.25rem 0' }}>
-              Módulo de Gestión Académica (Fase 3B)
-            </h2>
-            <p style={{ fontSize: '0.875rem', color: '#64748B', margin: 0 }}>
-              Acceso a la administración de años lectivos, salones de clase, libro de matrículas y planta docente.
-            </p>
-          </div>
-          <Link to="/academic" style={{ textDecoration: 'none' }}>
-            <Button variant="primary">
-              Abrir Portal Académico →
-            </Button>
-          </Link>
-        </div>
+      {/* Academic Management Module Access Card (Permission-Filtered) */}
+      {(() => {
+        const availableAcademicCards = [
+          {
+            tab: 'years',
+            title: 'Años Lectivos',
+            desc: 'Calendario, vigencias y cierres',
+            icon: '📅',
+            permission: 'academic_years:read',
+          },
+          {
+            tab: 'groups',
+            title: 'Grupos y Cupos',
+            desc: 'Salones, cupos y directores',
+            icon: '🏫',
+            permission: 'groups:read',
+          },
+          {
+            tab: 'students',
+            title: 'Estudiantes (SIMAT)',
+            desc: 'Fichas y datos de inclusión',
+            icon: '🎓',
+            permission: 'students:read',
+          },
+          {
+            tab: 'teachers',
+            title: 'Planta Docente',
+            desc: 'Nombramientos y aptitud',
+            icon: '👩‍🏫',
+            permission: 'teachers:read',
+          },
+          {
+            tab: 'enrollments',
+            title: 'Libro de Matrículas',
+            desc: 'Contratos, retiros y grados',
+            icon: '📑',
+            permission: 'enrollments:read',
+          },
+          {
+            tab: 'transfers',
+            title: 'Traslados de Salón',
+            desc: 'Reubicaciones y auditoría',
+            icon: '🔄',
+            permission: 'enrollments:read',
+          },
+          {
+            tab: 'assignments',
+            title: 'Carga Académica',
+            desc: 'Asignaturas y sustituciones',
+            icon: '📚',
+            permission: 'academic_assignments:read',
+          },
+          {
+            tab: 'guardians',
+            title: 'Acudientes',
+            desc: 'Contactos y autorizaciones',
+            icon: '👪',
+            permission: 'guardians:read',
+          },
+        ].filter((c) => hasPermission(c.permission))
 
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-            gap: '1rem',
-          }}
-        >
-          <Link to="/academic?tab=years" style={{ textDecoration: 'none' }}>
-            <div style={{ padding: '1rem', backgroundColor: '#F8FAFC', borderRadius: '10px', border: '1px solid #E2E8F0', transition: 'border-color 150ms' }}>
-              <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>📅</div>
-              <div style={{ fontWeight: 700, color: '#0F172A', fontSize: '0.9375rem' }}>Años Lectivos</div>
-              <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '0.25rem' }}>Calendario, vigencias y cierres</div>
-            </div>
-          </Link>
+        if (availableAcademicCards.length > 0) {
+          return (
+            <div
+              style={{
+                marginTop: '2rem',
+                backgroundColor: '#FFFFFF',
+                borderRadius: '16px',
+                border: '1px solid #E2E8F0',
+                padding: '2rem',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: '1rem',
+                  marginBottom: '1.5rem',
+                }}
+              >
+                <div>
+                  <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0F172A', margin: '0 0 0.25rem 0' }}>
+                    Módulo de Gestión Académica (Fase 3B)
+                  </h2>
+                  <p style={{ fontSize: '0.875rem', color: '#64748B', margin: 0 }}>
+                    Acceso a los módulos de administración académica autorizados para su rol institucional.
+                  </p>
+                </div>
+                <Link to={`/academic?tab=${availableAcademicCards[0].tab}`} style={{ textDecoration: 'none' }}>
+                  <Button variant="primary">
+                    Abrir Portal Académico →
+                  </Button>
+                </Link>
+              </div>
 
-          <Link to="/academic?tab=groups" style={{ textDecoration: 'none' }}>
-            <div style={{ padding: '1rem', backgroundColor: '#F8FAFC', borderRadius: '10px', border: '1px solid #E2E8F0', transition: 'border-color 150ms' }}>
-              <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>🏫</div>
-              <div style={{ fontWeight: 700, color: '#0F172A', fontSize: '0.9375rem' }}>Grupos y Cupos</div>
-              <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '0.25rem' }}>Salones, cupos y directores</div>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                  gap: '1rem',
+                }}
+              >
+                {availableAcademicCards.map((card) => (
+                  <Link key={card.tab} to={`/academic?tab=${card.tab}`} style={{ textDecoration: 'none' }}>
+                    <div
+                      style={{
+                        padding: '1rem',
+                        backgroundColor: '#F8FAFC',
+                        borderRadius: '10px',
+                        border: '1px solid #E2E8F0',
+                        transition: 'border-color 150ms, box-shadow 150ms',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>{card.icon}</div>
+                      <div style={{ fontWeight: 700, color: '#0F172A', fontSize: '0.9375rem' }}>{card.title}</div>
+                      <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '0.25rem' }}>{card.desc}</div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
             </div>
-          </Link>
+          )
+        }
 
-          <Link to="/academic?tab=students" style={{ textDecoration: 'none' }}>
-            <div style={{ padding: '1rem', backgroundColor: '#F8FAFC', borderRadius: '10px', border: '1px solid #E2E8F0', transition: 'border-color 150ms' }}>
-              <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>🎓</div>
-              <div style={{ fontWeight: 700, color: '#0F172A', fontSize: '0.9375rem' }}>Estudiantes (SIMAT)</div>
-              <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '0.25rem' }}>Fichas y datos de inclusión</div>
+        if (user.roles.includes('guardian')) {
+          return (
+            <div
+              style={{
+                marginTop: '2rem',
+                backgroundColor: '#FFFFFF',
+                borderRadius: '16px',
+                border: '1px solid #E2E8F0',
+                padding: '2rem',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                <span style={{ fontSize: '1.75rem' }}>👪</span>
+                <div>
+                  <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0F172A', margin: 0 }}>
+                    Portal de Acompañamiento Familiar
+                  </h2>
+                  <p style={{ fontSize: '0.875rem', color: '#64748B', margin: '0.25rem 0 0 0' }}>
+                    Rol de Acudiente Legal vinculado a su establecimiento educativo.
+                  </p>
+                </div>
+              </div>
+              <p style={{ fontSize: '0.875rem', color: '#334155', lineHeight: 1.6, margin: 0 }}>
+                Su cuenta se encuentra debidamente autenticada como Acudiente. El seguimiento a calificaciones, reportes de asistencia y citaciones institucionales de sus tutorados se canaliza a través de los directores de grupo y los boletines emitidos por la institución educativa.
+              </p>
             </div>
-          </Link>
+          )
+        }
 
-          <Link to="/academic?tab=teachers" style={{ textDecoration: 'none' }}>
-            <div style={{ padding: '1rem', backgroundColor: '#F8FAFC', borderRadius: '10px', border: '1px solid #E2E8F0', transition: 'border-color 150ms' }}>
-              <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>👩‍🏫</div>
-              <div style={{ fontWeight: 700, color: '#0F172A', fontSize: '0.9375rem' }}>Planta Docente</div>
-              <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '0.25rem' }}>Nombramientos y aptitud</div>
-            </div>
-          </Link>
-
-          <Link to="/academic?tab=enrollments" style={{ textDecoration: 'none' }}>
-            <div style={{ padding: '1rem', backgroundColor: '#F8FAFC', borderRadius: '10px', border: '1px solid #E2E8F0', transition: 'border-color 150ms' }}>
-              <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>📑</div>
-              <div style={{ fontWeight: 700, color: '#0F172A', fontSize: '0.9375rem' }}>Libro de Matrículas</div>
-              <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '0.25rem' }}>Contratos, retiros y grados</div>
-            </div>
-          </Link>
-
-          <Link to="/academic?tab=transfers" style={{ textDecoration: 'none' }}>
-            <div style={{ padding: '1rem', backgroundColor: '#F8FAFC', borderRadius: '10px', border: '1px solid #E2E8F0', transition: 'border-color 150ms' }}>
-              <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>🔄</div>
-              <div style={{ fontWeight: 700, color: '#0F172A', fontSize: '0.9375rem' }}>Traslados de Salón</div>
-              <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '0.25rem' }}>Reubicaciones y auditoría</div>
-            </div>
-          </Link>
-
-          <Link to="/academic?tab=assignments" style={{ textDecoration: 'none' }}>
-            <div style={{ padding: '1rem', backgroundColor: '#F8FAFC', borderRadius: '10px', border: '1px solid #E2E8F0', transition: 'border-color 150ms' }}>
-              <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>📚</div>
-              <div style={{ fontWeight: 700, color: '#0F172A', fontSize: '0.9375rem' }}>Carga Académica</div>
-              <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '0.25rem' }}>Asignaturas y sustituciones</div>
-            </div>
-          </Link>
-
-          <Link to="/academic?tab=guardians" style={{ textDecoration: 'none' }}>
-            <div style={{ padding: '1rem', backgroundColor: '#F8FAFC', borderRadius: '10px', border: '1px solid #E2E8F0', transition: 'border-color 150ms' }}>
-              <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>👪</div>
-              <div style={{ fontWeight: 700, color: '#0F172A', fontSize: '0.9375rem' }}>Acudientes</div>
-              <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '0.25rem' }}>Contactos y autorizaciones</div>
-            </div>
-          </Link>
-        </div>
-      </div>
+        return null
+      })()}
 
       {/* Virtual Classrooms & Real-Time Collaboration Access Card (Phase 4) */}
-      <div
-        style={{
-          marginTop: '2rem',
-          backgroundColor: '#FFFFFF',
-          borderRadius: '16px',
-          border: '1px solid #E2E8F0',
-          padding: '2rem',
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-          <div>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0F172A', margin: '0 0 0.25rem 0' }}>
-              Aulas Virtuales y Clases en Vivo (Fase 4)
-            </h2>
-            <p style={{ fontSize: '0.875rem', color: '#64748B', margin: 0 }}>
-              Videoconferencias en tiempo real, registro de asistencia automática y repositorio de grabaciones.
-            </p>
+      {hasPermission('virtual_classrooms:read') && (
+        <div
+          style={{
+            marginTop: '2rem',
+            backgroundColor: '#FFFFFF',
+            borderRadius: '16px',
+            border: '1px solid #E2E8F0',
+            padding: '2rem',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+            <div>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0F172A', margin: '0 0 0.25rem 0' }}>
+                Aulas Virtuales y Clases en Vivo (Fase 4)
+              </h2>
+              <p style={{ fontSize: '0.875rem', color: '#64748B', margin: 0 }}>
+                Videoconferencias en tiempo real, registro de asistencia automática y repositorio de grabaciones.
+              </p>
+            </div>
+            <Link to="/virtual-classrooms" style={{ textDecoration: 'none' }}>
+              <Button variant="primary">
+                Ingresar a Aulas Virtuales →
+              </Button>
+            </Link>
           </div>
-          <Link to="/virtual-classrooms" style={{ textDecoration: 'none' }}>
-            <Button variant="primary">
-              Ingresar a Aulas Virtuales →
-            </Button>
-          </Link>
         </div>
-      </div>
+      )}
 
       {/* Change Password Modal */}
       {showPasswordModal && (

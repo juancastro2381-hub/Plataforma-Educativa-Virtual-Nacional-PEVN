@@ -8,6 +8,7 @@ and rector onboarding invitations for National Administrators.
 from __future__ import annotations
 
 import uuid
+from datetime import UTC, datetime
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Query, Request, status
@@ -21,7 +22,11 @@ from app.api.deps import (
     require_permission,
 )
 from app.core.security.authorization import authorization_service
-from app.core.security.interfaces import OrganizationalScope, SystemRole
+from app.core.security.interfaces import (
+    OrganizationalScope,
+    Permission as SecurityPermission,
+    SystemRole,
+)
 from app.exceptions.errors import AuthorizationError, NotFoundError
 from app.models.institution import Institution
 from app.schemas.institution import (
@@ -33,6 +38,8 @@ from app.schemas.institution import (
 from app.schemas.invitation import (
     RectorInvitationCreateRequest,
     RectorInvitationResponse,
+    RectorRevocationRequest,
+    RectorRevocationResponse,
 )
 from app.schemas.official_catalog import (
     OfficialCatalogSyncRequest,
@@ -614,7 +621,7 @@ async def get_institution_by_id(
     target_scope = OrganizationalScope(institution_id=str(institution_id))
     await authorization_service.require(
         auth,
-        required_permission=auth.permissions[0] if auth.permissions else None,  # type: ignore[arg-type]
+        required_permission=SecurityPermission(resource="institutions", action="read"),
         target_scope=target_scope,
     )
 
@@ -704,4 +711,53 @@ async def invite_rector_endpoint(
         expires_at=invitation.expires_at,
         is_used=invitation.is_used,
         raw_invitation_token=raw_token,
+    )
+
+
+@router.post(
+    "/{institution_id}/rector/revoke",
+    response_model=RectorRevocationResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Revocar la titularidad del Rector activo",
+    description="Desactiva la asociación de Rector activo para la institución, revocando invitaciones pendientes y habilitando la emisión de una nueva invitación.",
+)
+async def revoke_rector_endpoint(
+    institution_id: uuid.UUID,
+    payload: RectorRevocationRequest,
+    current_user: CurrentUserDep,
+    auth: Annotated[
+        AuthContextDep, Depends(require_permission("users", "create"))
+    ],
+    db: SessionDep,
+    request: Request,
+) -> RectorRevocationResponse:
+    if not (
+        auth.scope.is_national()
+        or SystemRole.SUPERADMIN in auth.roles
+        or SystemRole.NATIONAL_ADMIN in auth.roles
+    ):
+        raise AuthorizationError(
+            "Solo administradores nacionales pueden revocar la titularidad de un Rector.",
+            code="PERMISSION_DENIED",
+        )
+
+    onboarding_service = RectorOnboardingService(session=db)
+    revoked_user, reason = await onboarding_service.revoke_rector(
+        institution_id=institution_id,
+        reason=payload.reason,
+        justification=payload.justification,
+        revoked_by_id=current_user.id,
+        revoked_by_ip=request.client.host if request.client else "0.0.0.0",
+        correlation_id=request.headers.get("X-Correlation-ID"),
+    )
+    await db.commit()
+
+    return RectorRevocationResponse(
+        institution_id=institution_id,
+        revoked_user_id=revoked_user.id,
+        revoked_rector_email=revoked_user.email,
+        revoked_rector_name=f"{revoked_user.first_name} {revoked_user.last_name}",
+        reason=reason,
+        revoked_at=datetime.now(UTC),
+        message=f"Titularidad de Rector para {revoked_user.first_name} {revoked_user.last_name} revocada exitosamente. La institución se encuentra disponible para nueva designación.",
     )

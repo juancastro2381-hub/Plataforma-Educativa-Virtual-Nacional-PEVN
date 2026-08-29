@@ -16,12 +16,11 @@ import type {
   ChangePasswordRequest,
   LoginRequest,
   LoginResponse,
-  RefreshTokenResponse,
   User,
 } from '@/types'
 
 const mockLoginFn = vi.fn<(req: LoginRequest) => Promise<LoginResponse>>()
-const mockRefreshFn = vi.fn<() => Promise<RefreshTokenResponse>>()
+const mockRefreshFn = vi.fn<() => Promise<string>>()
 const mockLogoutFn = vi.fn<() => Promise<void>>()
 const mockGetMyProfileFn = vi.fn<() => Promise<User>>()
 const mockChangePasswordFn = vi.fn<(req: ChangePasswordRequest) => Promise<void>>()
@@ -30,7 +29,7 @@ const mockChangePasswordFn = vi.fn<(req: ChangePasswordRequest) => Promise<void>
 vi.mock('@/services/auth', () => {
   const api = {
     login: (req: LoginRequest): Promise<LoginResponse> => mockLoginFn(req),
-    refresh: (): Promise<RefreshTokenResponse> => mockRefreshFn(),
+    refresh: (): Promise<string> => mockRefreshFn(),
     logout: (): Promise<void> => mockLogoutFn(),
     getMyProfile: (): Promise<User> => mockGetMyProfileFn(),
     changePassword: (req: ChangePasswordRequest): Promise<void> => mockChangePasswordFn(req),
@@ -156,12 +155,8 @@ describe('Route Guards', () => {
   })
 
   it('RequireRole blocks access when user lacks role', async () => {
-    mockRefreshFn.mockResolvedValue({
-      access_token: 'valid-token',
-      token_type: 'bearer',
-      expires_in: 900,
-      user: mockTeacherUser,
-    })
+    mockRefreshFn.mockResolvedValue('valid-token')
+    mockGetMyProfileFn.mockResolvedValue(mockTeacherUser)
 
     render(
       <MemoryRouter initialEntries={['/admin-only']}>
@@ -187,12 +182,8 @@ describe('Route Guards', () => {
   })
 
   it('RequirePermission grants access when user has permission', async () => {
-    mockRefreshFn.mockResolvedValue({
-      access_token: 'valid-token',
-      token_type: 'bearer',
-      expires_in: 900,
-      user: mockTeacherUser,
-    })
+    mockRefreshFn.mockResolvedValue('valid-token')
+    mockGetMyProfileFn.mockResolvedValue(mockTeacherUser)
 
     render(
       <MemoryRouter initialEntries={['/grades']}>

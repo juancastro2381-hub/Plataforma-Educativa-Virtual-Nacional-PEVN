@@ -5,7 +5,7 @@
  * session lifecycle, password management, and institutional profile.
  */
 
-import apiClient, { setAccessToken } from '@/services/api/client'
+import apiClient, { requestTokenRefresh, setAccessToken } from '@/services/api/client'
 import type {
   AcceptInvitationRequest,
   AcceptInvitationResponse,
@@ -15,7 +15,8 @@ import type {
   LoginResponse,
   PasswordResetConfirmRequest,
   PasswordResetRequest,
-  RefreshTokenResponse,
+  PasswordResetVerifyRequest,
+  PasswordResetVerifyResponse,
   User,
   VerifyInvitationResponse,
 } from '@/types'
@@ -35,15 +36,10 @@ export const authApi = {
   },
 
   /**
-   * Request silent token refresh using the HttpOnly cookie.
+   * Request silent token refresh using the single-flight coordinator.
    */
-  async refresh(): Promise<RefreshTokenResponse> {
-    const response = await apiClient.post<RefreshTokenResponse>(
-      '/api/v1/auth/refresh',
-      {}
-    )
-    setAccessToken(response.data.access_token)
-    return response.data
+  async refresh(): Promise<string> {
+    return await requestTokenRefresh()
   },
 
   /**
@@ -77,6 +73,19 @@ export const authApi = {
    */
   async requestPasswordReset(data: PasswordResetRequest): Promise<void> {
     await apiClient.post('/api/v1/auth/password/reset/request', data)
+  },
+
+  /**
+   * Verify password reset token validity before showing reset form.
+   */
+  async verifyPasswordResetToken(
+    data: PasswordResetVerifyRequest
+  ): Promise<PasswordResetVerifyResponse> {
+    const response = await apiClient.post<PasswordResetVerifyResponse>(
+      '/api/v1/auth/password/reset/verify-token',
+      data
+    )
+    return response.data
   },
 
   /**
@@ -132,4 +141,3 @@ export const authApi = {
 }
 
 export default authApi
-

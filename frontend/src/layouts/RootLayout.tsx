@@ -13,7 +13,7 @@ import { useAuth } from '@/hooks/useAuth'
 import config from '@config/index'
 
 export function RootLayout() {
-  const { user, isAuthenticated, logout } = useAuth()
+  const { user, isAuthenticated, logout, hasPermission } = useAuth()
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: '#F8FAFC' }}>
@@ -110,17 +110,32 @@ export function RootLayout() {
                     Instituciones
                   </Link>
                 )}
-                <Link
-                  to="/virtual-classrooms"
-                  style={{
-                    color: '#38BDF8',
-                    textDecoration: 'none',
-                    fontSize: '0.875rem',
-                    fontWeight: 600,
-                  }}
-                >
-                  Aulas Virtuales
-                </Link>
+                {hasPermission('institutions:read') && (
+                  <Link
+                    to="/analytics/territorial"
+                    style={{
+                      color: '#A78BFA',
+                      textDecoration: 'none',
+                      fontSize: '0.875rem',
+                      fontWeight: 600,
+                    }}
+                  >
+                    Analítica Territorial
+                  </Link>
+                )}
+                {hasPermission('virtual_classrooms:read') && (
+                  <Link
+                    to="/virtual-classrooms"
+                    style={{
+                      color: '#38BDF8',
+                      textDecoration: 'none',
+                      fontSize: '0.875rem',
+                      fontWeight: 600,
+                    }}
+                  >
+                    Aulas Virtuales
+                  </Link>
+                )}
                 <Link
                   to="/dashboard"
                   style={{

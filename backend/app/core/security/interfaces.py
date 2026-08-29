@@ -65,10 +65,12 @@ class SystemRole(StrEnum):
     # Educational actors
     TEACHER = "teacher"
     STUDENT = "student"
+    GUARDIAN = "guardian"
 
     # Support roles
     SUPPORT = "support"
     OBSERVER = "observer"
+    COORDINATOR = "coordinator"
 
 
 @dataclass(frozen=True)

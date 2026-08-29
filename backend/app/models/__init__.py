@@ -27,7 +27,7 @@ from app.models.guardian import (
     StudentGuardian,
 )
 from app.models.institution import Campus, Institution
-from app.models.invitation import RectorInvitation
+from app.models.invitation import GuardianInvitation, RectorInvitation
 from app.models.official_catalog import (
     OfficialCampusCatalog,
     OfficialCatalogSyncBatch,
@@ -66,6 +66,7 @@ __all__ = [
     "Group",
     "GroupTransferHistory",
     "Guardian",
+    "GuardianInvitation",
     "GuardianRelationshipType",
     "Institution",
     "KnowledgeArea",

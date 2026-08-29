@@ -16,7 +16,6 @@ import type {
   MeetingAttendanceListResponse,
   MeetingRecordingListResponse,
   MeetingRecordingResponse,
-  RefreshTokenResponse,
   User,
   VirtualClassroomListResponse,
   VirtualClassroomResponse,
@@ -51,22 +50,12 @@ const mockTeacherUser: User = {
 // Mock auth service
 vi.mock('@/services/auth', () => ({
   authApi: {
-    refresh: (): Promise<RefreshTokenResponse> =>
-      Promise.resolve({
-        access_token: 'mock-token',
-        token_type: 'bearer',
-        expires_in: 900,
-        user: mockTeacherUser,
-      }),
+    refresh: (): Promise<string> => Promise.resolve('mock-token'),
+    getMyProfile: (): Promise<User> => Promise.resolve(mockTeacherUser),
   },
   default: {
-    refresh: (): Promise<RefreshTokenResponse> =>
-      Promise.resolve({
-        access_token: 'mock-token',
-        token_type: 'bearer',
-        expires_in: 900,
-        user: mockTeacherUser,
-      }),
+    refresh: (): Promise<string> => Promise.resolve('mock-token'),
+    getMyProfile: (): Promise<User> => Promise.resolve(mockTeacherUser),
   },
 }))
 

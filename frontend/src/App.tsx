@@ -16,6 +16,9 @@ import { AcademicHub } from '@/pages/academic/AcademicHub'
 import { VirtualClassroomsView } from '@/pages/virtual-classrooms/VirtualClassroomsView'
 import { InstitutionsView } from '@/pages/admin/InstitutionsView'
 import { AcceptInvitation } from '@/pages/auth/AcceptInvitation'
+import { ForgotPassword } from '@/pages/auth/ForgotPassword'
+import { ResetPassword } from '@/pages/auth/ResetPassword'
+import { TerritorialAnalyticsView } from '@/pages/analytics/TerritorialAnalyticsView'
 import { AuthProvider } from '@/context/AuthContext'
 import { RequireAuth } from '@/components/auth/RequireAuth'
 
@@ -26,11 +29,14 @@ import { RequireAuth } from '@/components/auth/RequireAuth'
  *   /                     → RootLayout
  *     /                   → ComingSoon (Landing)
  *     /login              → Login (Authentication)
+ *     /auth/forgot-password → ForgotPassword (Password Recovery Request)
+ *     /auth/reset-password → ResetPassword (Password Reset Execution)
  *     /auth/accept-invitation → AcceptInvitation (Public Rector Onboarding)
  *     /dashboard          → Dashboard (Protected by RequireAuth)
  *     /admin/institutions → InstitutionsView (Protected by RequireAuth)
  *     /academic           → AcademicHub (Protected by RequireAuth)
  *     /virtual-classrooms → VirtualClassroomsView (Protected by RequireAuth)
+ *     /analytics/territorial → TerritorialAnalyticsView (Protected by RequireAuth)
  *     /*                  → NotFound (404)
  */
 const router = createBrowserRouter([
@@ -48,6 +54,14 @@ const router = createBrowserRouter([
         element: <Login />,
       },
       {
+        path: 'auth/forgot-password',
+        element: <ForgotPassword />,
+      },
+      {
+        path: 'auth/reset-password',
+        element: <ResetPassword />,
+      },
+      {
         path: 'auth/accept-invitation',
         element: <AcceptInvitation />,
       },
@@ -62,7 +76,7 @@ const router = createBrowserRouter([
       {
         path: 'admin/institutions',
         element: (
-          <RequireAuth>
+          <RequireAuth roles={['superadmin', 'national_admin']}>
             <InstitutionsView />
           </RequireAuth>
         ),
@@ -78,8 +92,16 @@ const router = createBrowserRouter([
       {
         path: 'virtual-classrooms',
         element: (
-          <RequireAuth>
+          <RequireAuth permissions={['virtual_classrooms:read']}>
             <VirtualClassroomsView />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: 'analytics/territorial',
+        element: (
+          <RequireAuth permissions={['institutions:read']}>
+            <TerritorialAnalyticsView />
           </RequireAuth>
         ),
       },

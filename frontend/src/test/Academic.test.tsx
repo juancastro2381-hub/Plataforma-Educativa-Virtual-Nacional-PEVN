@@ -26,7 +26,6 @@ import type {
   GroupCapacityResponse,
   GroupListResponse,
   GuardianListResponse,
-  RefreshTokenResponse,
   StudentListResponse,
   TeacherListResponse,
   User,
@@ -58,25 +57,17 @@ const mockAdminUser: User = {
   },
 }
 
+let activeUser: User = mockAdminUser
+
 // Mock auth service
 vi.mock('@/services/auth', () => ({
   authApi: {
-    refresh: (): Promise<RefreshTokenResponse> =>
-      Promise.resolve({
-        access_token: 'mock-token',
-        token_type: 'bearer',
-        expires_in: 900,
-        user: mockAdminUser,
-      }),
+    refresh: (): Promise<string> => Promise.resolve('mock-token'),
+    getMyProfile: (): Promise<User> => Promise.resolve(activeUser),
   },
   default: {
-    refresh: (): Promise<RefreshTokenResponse> =>
-      Promise.resolve({
-        access_token: 'mock-token',
-        token_type: 'bearer',
-        expires_in: 900,
-        user: mockAdminUser,
-      }),
+    refresh: (): Promise<string> => Promise.resolve('mock-token'),
+    getMyProfile: (): Promise<User> => Promise.resolve(activeUser),
   },
 }))
 
@@ -117,6 +108,7 @@ vi.mock('@/services/academic', () => ({
 
 describe('Academic Management Views', () => {
   beforeEach(() => {
+    activeUser = mockAdminUser
     vi.clearAllMocks()
 
     mockListYears.mockResolvedValue({
@@ -423,6 +415,59 @@ describe('Academic Management Views', () => {
     await waitFor(() => {
       expect(screen.getByText('4 h/sem')).toBeInTheDocument()
       expect(screen.getByText('ACTIVA')).toBeInTheDocument()
+    })
+  })
+
+  it('renders unauthorized notice banner when navigating directly to a restricted tab', async () => {
+    // User with only academic_assignments:read (Teacher profile)
+    activeUser = {
+      ...mockAdminUser,
+      roles: ['teacher'],
+      permissions: ['academic_assignments:read'],
+    }
+
+    render(
+      <MemoryRouter initialEntries={['/academic?tab=years']}>
+        <AuthProvider>
+          <AcademicHub />
+        </AuthProvider>
+      </MemoryRouter>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toBeInTheDocument()
+      expect(
+        screen.getByText(/La sección "Años Lectivos" no se encuentra disponible para su rol/i)
+      ).toBeInTheDocument()
+    })
+
+    // Dismiss notice banner
+    const closeBtn = screen.getByRole('button', { name: /Cerrar notificación/i })
+    await userEvent.click(closeBtn)
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('renders zero-state restricted access message when user has no academic permissions', async () => {
+    // User with no academic permissions (Guardian profile)
+    activeUser = {
+      ...mockAdminUser,
+      roles: ['guardian'],
+      permissions: [],
+    }
+
+    render(
+      <MemoryRouter initialEntries={['/academic']}>
+        <AuthProvider>
+          <AcademicHub />
+        </AuthProvider>
+      </MemoryRouter>
+    )
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/Portal de Gestión Académica — Acceso Restringido/i)
+      ).toBeInTheDocument()
+      expect(screen.getByText(/Volver al Panel Principal/i)).toBeInTheDocument()
     })
   })
 })

@@ -100,6 +100,7 @@ class AuditEventType(StrEnum):
     INSTITUTION_PROVISIONED_FROM_CATALOG = "institution.provisioned_from_catalog"
     RECTOR_INVITED = "rector.invited"
     RECTOR_ONBOARDING_COMPLETED = "rector.onboarding.completed"
+    RECTOR_REVOKED = "rector.revoked"
 
     # Academic Management (Phase 3)
     ACADEMIC_YEAR_CREATED = "academic_year.created"
@@ -116,6 +117,8 @@ class AuditEventType(StrEnum):
     GUARDIAN_CREATED = "guardian.created"
     GUARDIAN_UPDATED = "guardian.updated"
     GUARDIAN_ASSOCIATED = "guardian.associated"
+    GUARDIAN_ACTIVATION_REQUESTED = "guardian.activation.requested"
+    GUARDIAN_ONBOARDING_COMPLETED = "guardian.onboarding.completed"
     ENROLLMENT_CREATED = "enrollment.created"
     ENROLLMENT_ACTIVATED = "enrollment.activated"
     ENROLLMENT_WITHDRAWN = "enrollment.withdrawn"

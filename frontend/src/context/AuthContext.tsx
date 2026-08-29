@@ -39,15 +39,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, [])
 
-  // Silent session restore on app load
+  // Silent session restore on app load (Single-Flight refresh + Canonical Profile)
   useEffect(() => {
     let isMounted = true
 
     const initAuth = async () => {
       try {
-        const data = await authApi.refresh()
+        await authApi.refresh()
+        const userProfile = await authApi.getMyProfile()
         if (isMounted) {
-          setUser(data.user)
+          setUser(userProfile)
         }
       } catch {
         if (isMounted) {

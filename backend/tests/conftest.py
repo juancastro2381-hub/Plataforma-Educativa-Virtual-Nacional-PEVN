@@ -70,41 +70,10 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
     )
 
     async with session_maker() as session:
-        # Seed standard roles & permissions
-        roles_data = [
-            (SystemRole.SUPERADMIN.value, "Super Administrador", 100),
-            (SystemRole.NATIONAL_ADMIN.value, "Administrador Nacional", 90),
-            (SystemRole.DEPARTMENT_ADMIN.value, "Administrador Departamental", 80),
-            (SystemRole.MUNICIPALITY_ADMIN.value, "Administrador Municipal", 70),
-            (SystemRole.INSTITUTION_ADMIN.value, "Administrador Institucional", 60),
-            (SystemRole.RECTOR.value, "Rector", 50),
-            (SystemRole.ACADEMIC_COORDINATOR.value, "Coordinador Académico", 40),
-            (SystemRole.TEACHER.value, "Docente", 30),
-            (SystemRole.STUDENT.value, "Estudiante", 10),
-        ]
-        for name, display, rlevel in roles_data:
-            role = Role(name=name, display_name=display, level=rlevel)
-            session.add(role)
-
-        # Seed standard permissions
-        perms_data = [
-            ("users", "create"),
-            ("users", "read"),
-            ("users", "update"),
-            ("users", "delete"),
-            ("institutions", "create"),
-            ("institutions", "read"),
-            ("institutions", "update"),
-            ("grades", "read"),
-            ("grades", "write"),
-        ]
-        for res, act in perms_data:
-            perm = Permission(
-                resource=res,
-                action=act,
-                description=f"Permite {act} en {res}",
-            )
-            session.add(perm)
+        # Seed canonical roles, permissions, and role_permissions via RbacBootstrapService
+        from app.services.rbac_bootstrap_service import RbacBootstrapService
+        bootstrap = RbacBootstrapService(session=session)
+        await bootstrap.seed_canonical_rbac_if_needed()
 
         # Seed standard national grades
         grades_data = [

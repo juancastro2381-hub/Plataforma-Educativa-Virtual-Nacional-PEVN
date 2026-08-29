@@ -6,8 +6,8 @@
  * Matrículas, Traslados de Salón y Carga Académica.
  */
 
-import React, { useState } from 'react'
-import { useSearchParams, Link } from 'react-router-dom'
+import React, { useEffect, useMemo, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { Tabs, type TabItem } from '@/components/ui/Tabs'
 import { useAuth } from '@/hooks/useAuth'
 import { AcademicYearsView } from './AcademicYearsView'
@@ -20,24 +20,54 @@ import { TransfersView } from './TransfersView'
 import { AcademicAssignmentsView } from './AcademicAssignmentsView'
 
 export const AcademicHub: React.FC = () => {
-  const { user } = useAuth()
+  const { user, hasPermission } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
+  const [unauthorizedMessage, setUnauthorizedMessage] = useState<string | null>(null)
 
-  const currentTab = searchParams.get('tab') || 'years'
-  const [activeTab, setActiveTab] = useState<string>(currentTab)
-
-  const academicTabs: TabItem[] = [
-    { id: 'years', label: 'Años Lectivos', icon: '📅' },
-    { id: 'groups', label: 'Grupos y Cupos', icon: '🏫' },
-    { id: 'students', label: 'Estudiantes (SIMAT)', icon: '🎓' },
-    { id: 'teachers', label: 'Planta Docente', icon: '👩‍🏫' },
-    { id: 'guardians', label: 'Acudientes', icon: '👪' },
-    { id: 'enrollments', label: 'Libro de Matrículas', icon: '📑' },
-    { id: 'transfers', label: 'Traslados de Salón', icon: '🔄' },
-    { id: 'assignments', label: 'Carga Académica', icon: '📚' },
+  const allTabs: (TabItem & { permission?: string })[] = [
+    { id: 'years', label: 'Años Lectivos', icon: '📅', permission: 'academic_years:read' },
+    { id: 'groups', label: 'Grupos y Cupos', icon: '🏫', permission: 'groups:read' },
+    { id: 'students', label: 'Estudiantes (SIMAT)', icon: '🎓', permission: 'students:read' },
+    { id: 'teachers', label: 'Planta Docente', icon: '👩‍🏫', permission: 'teachers:read' },
+    { id: 'guardians', label: 'Acudientes', icon: '👪', permission: 'guardians:read' },
+    { id: 'enrollments', label: 'Libro de Matrículas', icon: '📑', permission: 'enrollments:read' },
+    { id: 'transfers', label: 'Traslados de Salón', icon: '🔄', permission: 'enrollments:read' },
+    { id: 'assignments', label: 'Carga Académica', icon: '📚', permission: 'academic_assignments:read' },
   ]
 
+  const academicTabs = useMemo<TabItem[]>(() => {
+    return allTabs.filter(t => !t.permission || hasPermission(t.permission))
+  }, [hasPermission])
+
+  const currentTab = searchParams.get('tab')
+  const defaultTab = academicTabs[0]?.id || 'years'
+  const validTab = academicTabs.some(t => t.id === currentTab) ? (currentTab as string) : defaultTab
+  const [activeTab, setActiveTab] = useState<string>(validTab)
+
+  useEffect(() => {
+    if (currentTab) {
+      const requestedTab = allTabs.find(t => t.id === currentTab)
+      const isAuthorized = academicTabs.some(t => t.id === currentTab)
+
+      if (requestedTab && !isAuthorized) {
+        const fallbackLabel = academicTabs[0]?.label ? `"${academicTabs[0].label}"` : 'su panel institucional'
+        setUnauthorizedMessage(
+          `La sección "${requestedTab.label}" no se encuentra disponible para su rol institucional o nivel de permisos actual. Ha sido redirigido a ${fallbackLabel}.`
+        )
+      } else {
+        setUnauthorizedMessage(null)
+      }
+    }
+  }, [currentTab, academicTabs])
+
+  useEffect(() => {
+    if (academicTabs.length > 0 && !academicTabs.some(t => t.id === activeTab)) {
+      setActiveTab(academicTabs[0].id)
+    }
+  }, [academicTabs, activeTab])
+
   const handleTabChange = (tabId: string) => {
+    setUnauthorizedMessage(null)
     setActiveTab(tabId)
     setSearchParams({ tab: tabId })
   }
@@ -162,11 +192,98 @@ export const AcademicHub: React.FC = () => {
         )}
       </div>
 
-      {/* Module Tabs Navigation */}
-      <Tabs tabs={academicTabs} activeTab={activeTab} onChange={handleTabChange} />
+      {/* Unauthorized Access Notification Banner */}
+      {unauthorizedMessage && (
+        <div
+          role="alert"
+          aria-live="polite"
+          style={{
+            backgroundColor: '#EFF6FF',
+            border: '1px solid #93C5FD',
+            borderLeft: '4px solid #3B82F6',
+            borderRadius: '8px',
+            padding: '1rem 1.25rem',
+            marginBottom: '1.5rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '1rem',
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <span style={{ fontSize: '1.25rem' }}>ℹ️</span>
+            <span style={{ color: '#1E40AF', fontSize: '0.875rem', fontWeight: 500 }}>
+              {unauthorizedMessage}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setUnauthorizedMessage(null)}
+            aria-label="Cerrar notificación"
+            style={{
+              backgroundColor: 'transparent',
+              border: 'none',
+              color: '#3B82F6',
+              fontWeight: 700,
+              fontSize: '1rem',
+              cursor: 'pointer',
+              padding: '0.25rem 0.5rem',
+              borderRadius: '4px',
+            }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
-      {/* Render Selected Academic Module */}
-      <div>{renderActiveModule()}</div>
+      {/* Zero State for users without Academic Management Permissions */}
+      {academicTabs.length === 0 ? (
+        <div
+          style={{
+            backgroundColor: '#FFFFFF',
+            borderRadius: '16px',
+            border: '1px solid #E2E8F0',
+            padding: '3rem 2rem',
+            textAlign: 'center',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
+          }}
+        >
+          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔒</div>
+          <h2 style={{ fontSize: '1.375rem', fontWeight: 700, color: '#0F172A', marginBottom: '0.75rem' }}>
+            Portal de Gestión Académica — Acceso Restringido
+          </h2>
+          <p style={{ color: '#64748B', maxWidth: '600px', margin: '0 auto 1.5rem auto', lineHeight: 1.6, fontSize: '0.9375rem' }}>
+            Su cuenta de usuario ({user?.email}) no dispone de módulos de administración académica asignados para su rol actual ({user?.roles.join(', ') || 'Usuario'}). 
+            Las funciones de gestión de salones, matrículas y personal están reservadas para directivos y coordinadores de la institución educativa.
+          </p>
+          <Link to="/dashboard" style={{ textDecoration: 'none' }}>
+            <button
+              type="button"
+              style={{
+                backgroundColor: '#2563EB',
+                color: '#FFFFFF',
+                border: 'none',
+                padding: '0.625rem 1.5rem',
+                borderRadius: '8px',
+                fontSize: '0.875rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              ← Volver al Panel Principal
+            </button>
+          </Link>
+        </div>
+      ) : (
+        <>
+          {/* Module Tabs Navigation */}
+          <Tabs tabs={academicTabs} activeTab={activeTab} onChange={handleTabChange} />
+
+          {/* Render Selected Academic Module */}
+          <div>{renderActiveModule()}</div>
+        </>
+      )}
     </div>
   )
 }

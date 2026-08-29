@@ -112,40 +112,6 @@ async def e2e_fixture(  # noqa: PLR0915
     db_session.add_all([subject_bio, subject_chem])
     await db_session.flush()
 
-    # Roles and Permissions
-    academic_perms = [
-        ("academic_years", "read"),
-        ("academic_years", "create"),
-        ("academic_years", "update"),
-        ("academic_years", "close"),
-        ("groups", "read"),
-        ("groups", "create"),
-        ("groups", "update"),
-        ("groups", "assign_director"),
-        ("students", "read"),
-        ("students", "create"),
-        ("students", "update"),
-        ("teachers", "read"),
-        ("teachers", "create"),
-        ("teachers", "update"),
-        ("guardians", "read"),
-        ("guardians", "create"),
-        ("guardians", "link_student"),
-        ("enrollments", "read"),
-        ("enrollments", "create"),
-        ("enrollments", "transfer"),
-        ("enrollments", "withdraw"),
-        ("academic_assignments", "read"),
-        ("academic_assignments", "create"),
-        ("academic_assignments", "update"),
-    ]
-    perm_objs = []
-    for r, a in academic_perms:
-        p = Permission(resource=r, action=a, description=f"{a} on {r}")
-        perm_objs.append(p)
-    db_session.add_all(perm_objs)
-    await db_session.flush()
-
     # Roles (Canonical SystemRoles seeded by conftest)
     role_rector = (
         await db_session.execute(
@@ -162,10 +128,6 @@ async def e2e_fixture(  # noqa: PLR0915
             select(Role).where(Role.name == SystemRole.SUPERADMIN.value)
         )
     ).scalar_one()
-
-    for p in perm_objs:
-        db_session.add(RolePermission(role_id=role_rector.id, permission_id=p.id))
-    await db_session.flush()
 
     # Users
     pwd = password_hasher.hash("Seguro123456*!")

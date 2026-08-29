@@ -12,10 +12,16 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 
 export interface RequireAuthProps {
   children: React.ReactNode
+  roles?: string | string[]
+  permissions?: string | string[]
 }
 
-export const RequireAuth: React.FC<RequireAuthProps> = ({ children }) => {
-  const { isAuthenticated, isLoading } = useAuth()
+export const RequireAuth: React.FC<RequireAuthProps> = ({
+  children,
+  roles,
+  permissions,
+}) => {
+  const { isAuthenticated, isLoading, hasRole, hasPermission } = useAuth()
   const location = useLocation()
 
   if (isLoading) {
@@ -36,6 +42,14 @@ export const RequireAuth: React.FC<RequireAuthProps> = ({ children }) => {
 
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />
+  }
+
+  if (roles && !hasRole(roles)) {
+    return <Navigate to="/dashboard" replace />
+  }
+
+  if (permissions && !hasPermission(permissions)) {
+    return <Navigate to="/dashboard" replace />
   }
 
   return <>{children}</>

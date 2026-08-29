@@ -7,7 +7,7 @@
  *   - Access token stored STRICTLY in memory (never localStorage or sessionStorage)
  *   - Automatic request correlation ID injection
  *   - withCredentials: true ensures HttpOnly refresh token cookie is sent
- *   - Silent refresh queue handles concurrent 401s without race conditions
+ *   - Single-Flight Refresh Coordinator prevents race conditions and token family revocation
  *   - Zero PII logging
  */
 
@@ -58,6 +58,59 @@ export function setOnAuthFailure(callback: (() => void) | null): void {
 }
 
 // ---------------------------------------------------------------------------
+// Raw Non-Intercepted Client (For Auth Refresh Loop Prevention)
+// ---------------------------------------------------------------------------
+
+export const rawAuthClient = axios.create({
+  baseURL: config.apiBaseUrl,
+  timeout: config.apiTimeoutMs,
+  withCredentials: true,
+  headers: {
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+  },
+})
+
+// ---------------------------------------------------------------------------
+// Single-Flight Refresh Coordinator
+// ---------------------------------------------------------------------------
+
+let refreshPromise: Promise<string> | null = null
+
+/**
+ * Executes a single-flight token refresh operation.
+ * All concurrent callers await the same Promise, guaranteeing exactly one in-flight
+ * refresh HTTP request and preventing accidental token family revocation.
+ */
+export async function requestTokenRefresh(): Promise<string> {
+  if (refreshPromise) {
+    return await refreshPromise
+  }
+
+  refreshPromise = (async () => {
+    try {
+      const response = await rawAuthClient.post<RefreshTokenResponse>(
+        `${API_V1_URL}/auth/refresh`,
+        {}
+      )
+      const newAccessToken = response.data.access_token
+      setAccessToken(newAccessToken)
+      return newAccessToken
+    } catch (err: unknown) {
+      setAccessToken(null)
+      if (onAuthFailureCallback) {
+        onAuthFailureCallback()
+      }
+      throw normalizeError(err)
+    } finally {
+      refreshPromise = null
+    }
+  })()
+
+  return await refreshPromise
+}
+
+// ---------------------------------------------------------------------------
 // Client Instance
 // ---------------------------------------------------------------------------
 
@@ -93,27 +146,8 @@ apiClient.interceptors.request.use(
 )
 
 // ---------------------------------------------------------------------------
-// Response Interceptor & Silent Refresh Queue
+// Response Interceptor & Single-Flight Retry
 // ---------------------------------------------------------------------------
-
-interface QueuedRequest {
-  resolve: (value?: unknown) => void
-  reject: (reason?: unknown) => void
-}
-
-let isRefreshing = false
-let failedQueue: QueuedRequest[] = []
-
-function processQueue(error: Error | null): void {
-  failedQueue.forEach((prom) => {
-    if (error) {
-      prom.reject(error)
-    } else {
-      prom.resolve()
-    }
-  })
-  failedQueue = []
-}
 
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => response,
@@ -125,54 +159,21 @@ apiClient.interceptors.response.use(
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean }
     const status = error.response?.status
 
-    // If 401 Unauthorized and not already retried and not auth login/refresh endpoint
-    const isAuthEndpoint =
+    // Explicitly bypass retry on authentication endpoints to prevent recursion
+    const isAuthBypassEndpoint =
       originalRequest.url?.includes('/api/v1/auth/login') ||
-      originalRequest.url?.includes('/api/v1/auth/refresh')
+      originalRequest.url?.includes('/api/v1/auth/refresh') ||
+      originalRequest.url?.includes('/api/v1/auth/logout')
 
-    if (status === 401 && !originalRequest._retry && !isAuthEndpoint) {
-      if (isRefreshing) {
-        // Queue the request until refresh finishes
-        return await new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject })
-        })
-          .then(async () => {
-            if (inMemoryAccessToken) {
-              originalRequest.headers.Authorization = `Bearer ${inMemoryAccessToken}`
-            }
-            return await apiClient(originalRequest)
-          })
-          .catch(async (err: unknown) => {
-            return await Promise.reject(normalizeError(err))
-          })
-      }
-
+    if (status === 401 && !originalRequest._retry && !isAuthBypassEndpoint) {
       originalRequest._retry = true
-      isRefreshing = true
 
       try {
-        // Attempt silent refresh via HttpOnly cookie
-        const refreshResponse = await axios.post<RefreshTokenResponse>(
-          `${API_V1_URL}/auth/refresh`,
-          {},
-          { withCredentials: true }
-        )
-
-        const newAccessToken = refreshResponse.data.access_token
-        setAccessToken(newAccessToken)
-        processQueue(null)
-
+        const newAccessToken = await requestTokenRefresh()
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`
         return await apiClient(originalRequest)
       } catch (refreshErr: unknown) {
-        setAccessToken(null)
-        processQueue(new Error('Session refresh failed'))
-        if (onAuthFailureCallback) {
-          onAuthFailureCallback()
-        }
         return await Promise.reject(normalizeError(refreshErr))
-      } finally {
-        isRefreshing = false
       }
     }
 

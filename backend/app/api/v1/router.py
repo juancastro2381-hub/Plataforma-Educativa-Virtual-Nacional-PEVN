@@ -12,6 +12,7 @@ from fastapi import APIRouter
 from app.api.v1.endpoints import (
     academic_assignments,
     academic_years,
+    analytics,
     auth,
     enrollments,
     groups,
@@ -91,4 +92,9 @@ api_v1_router.include_router(
 
 api_v1_router.include_router(
     recordings.router,
+)
+
+# ---- Territorial Analytics endpoints (Phase 7 Step 4) ---------------------
+api_v1_router.include_router(
+    analytics.router,
 )

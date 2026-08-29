@@ -10,13 +10,14 @@ from __future__ import annotations
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, Depends, Query, status
 
 from app.api.deps import (
     AuthContextDep,
     ClientIpDep,
     CurrentUserDep,
     SessionDep,
+    require_permission,
 )
 from app.core.logging import correlation_id_ctx
 from app.core.security.interfaces import SystemRole
@@ -37,7 +38,11 @@ def _resolve_institution_id(
     institution_id_override: uuid.UUID | None = None,
 ) -> uuid.UUID:
     """Resolve active institution context adhering to tenant isolation."""
-    if SystemRole.SUPERADMIN in auth.roles and institution_id_override:
+    if (
+        SystemRole.SUPERADMIN in auth.roles
+        or SystemRole.NATIONAL_ADMIN in auth.roles
+        or auth.scope.is_national()
+    ) and institution_id_override:
         return institution_id_override
     if current_user.institution_id:
         return current_user.institution_id
@@ -52,6 +57,7 @@ def _resolve_institution_id(
         "Consulta las grabaciones de una sesión. Los estudiantes solo ven "
         "grabaciones publicadas; el personal docente y directivo ve todas."
     ),
+    dependencies=[Depends(require_permission("recordings", "read"))],
 )
 async def list_recordings(
     classroom_id: uuid.UUID,
@@ -85,6 +91,7 @@ async def list_recordings(
     response_model=MeetingRecordingListResponse,
     summary="Sincronizar grabaciones desde el proveedor",
     description="Descubre y registra nuevas grabaciones procesadas por el servidor.",
+    dependencies=[Depends(require_permission("recordings", "manage"))],
 )
 async def sync_recordings(
     classroom_id: uuid.UUID,
@@ -118,6 +125,7 @@ async def sync_recordings(
     response_model=MeetingRecordingResponse,
     summary="Publicar u ocultar grabación",
     description="Controla la visibilidad de la grabación para los estudiantes.",
+    dependencies=[Depends(require_permission("recordings", "manage"))],
 )
 async def publish_recording(
     recording_id: uuid.UUID,
@@ -150,6 +158,7 @@ async def publish_recording(
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Eliminar grabación",
     description="Elimina el registro de una grabación dentro del tenant.",
+    dependencies=[Depends(require_permission("recordings", "delete"))],
 )
 async def delete_recording(
     recording_id: uuid.UUID,

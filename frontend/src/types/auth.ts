@@ -75,6 +75,15 @@ export interface PasswordResetConfirmRequest {
   new_password: string
 }
 
+export interface PasswordResetVerifyRequest {
+  token: string
+}
+
+export interface PasswordResetVerifyResponse {
+  valid: boolean
+  message: string
+}
+
 export interface CampusResponse {
   id: string
   institution_id: string
