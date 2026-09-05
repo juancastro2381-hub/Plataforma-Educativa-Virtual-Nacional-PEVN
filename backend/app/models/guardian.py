@@ -29,6 +29,7 @@ from app.db.base_class import Base
 from app.models.user import DocumentType
 
 if TYPE_CHECKING:
+    from app.models.institution import Institution
     from app.models.student import Student
     from app.models.user import User
 
@@ -52,14 +53,16 @@ class Guardian(Base):
 
     Holds civil identity and emergency contact information for student guardians.
     user_id is optional: rural or offline guardians do not require a login account.
+    institution_id enforces strict multi-tenant boundary per educational establishment.
     """
 
     __tablename__ = "guardians"
     __table_args__ = (
         UniqueConstraint(
+            "institution_id",
             "document_type",
             "document_number",
-            name="uq_guardians_document",
+            name="uq_guardians_institution_document",
         ),
     )
 
@@ -68,6 +71,13 @@ class Guardian(Base):
         primary_key=True,
         default=uuid.uuid4,
         server_default=text("gen_random_uuid()"),
+    )
+    institution_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("institutions.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+        doc="Educational institution tenant boundary.",
     )
     user_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
@@ -130,6 +140,10 @@ class Guardian(Base):
     )
 
     # Relationships
+    institution: Mapped[Institution] = relationship(
+        "Institution",
+        lazy="selectin",
+    )
     user: Mapped[User | None] = relationship(
         "User",
         lazy="selectin",
@@ -143,7 +157,8 @@ class Guardian(Base):
 
     def __repr__(self) -> str:
         return (
-            f"<Guardian id={self.id} doc={self.document_type}:{self.document_number} "
+            f"<Guardian id={self.id} inst={self.institution_id} "
+            f"doc={self.document_type}:{self.document_number} "
             f"name={self.first_name} {self.last_name}>"
         )
 

@@ -203,6 +203,28 @@ export function normalizeError(error: unknown): AppApiError {
       return new AppApiError((resData as ApiErrorResponse).error)
     }
 
+    // FastAPI standard validation errors { detail: [{ loc, msg, type }] }
+    if (
+      typeof resData === 'object' &&
+      resData !== null &&
+      'detail' in resData &&
+      Array.isArray((resData as { detail: unknown }).detail)
+    ) {
+      const detailArray = (resData as { detail: Array<{ loc?: string[]; msg?: string; type?: string }> }).detail
+      const detailsList: ApiErrorDetail[] = detailArray.map((d) => ({
+        field: Array.isArray(d.loc) ? d.loc.slice(1).join('.') || 'body' : 'body',
+        message: d.msg || 'Valor inválido',
+        type: d.type || 'validation_error',
+      }))
+      const combinedMsg = detailsList.map((d) => `${d.field}: ${d.message}`).join(', ')
+      return new AppApiError({
+        code: 'VALIDATION_ERROR',
+        message: combinedMsg || 'Error de validación en la solicitud.',
+        correlation_id: (axiosError.response?.headers?.['x-correlation-id'] as string) || '-',
+        details: detailsList,
+      })
+    }
+
     // Network error or timeout
     if (axiosError.code === 'ECONNABORTED') {
       return new AppApiError({

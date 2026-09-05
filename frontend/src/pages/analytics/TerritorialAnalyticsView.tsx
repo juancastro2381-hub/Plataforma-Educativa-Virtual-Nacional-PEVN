@@ -37,11 +37,22 @@ export const TerritorialAnalyticsView: React.FC = () => {
       const summaryData = await analyticsApi.getTerritorialSummary()
       setSummary(summaryData)
 
-      try {
-        const deptData = await analyticsApi.getDepartmentDistribution()
-        setDepartments(deptData.items || [])
-      } catch {
-        // May be restricted if strictly scoped
+      const isNationalOrDept =
+        summaryData.scope_level === 'NATIONAL' ||
+        summaryData.scope_level === 'DEPARTMENT' ||
+        user?.scope?.is_national ||
+        Boolean(user?.scope?.department_id)
+
+      if (isNationalOrDept) {
+        try {
+          const deptData = await analyticsApi.getDepartmentDistribution()
+          setDepartments(deptData.items || [])
+        } catch {
+          // Gracefully handled if restricted
+          setDepartments([])
+        }
+      } else {
+        setDepartments([])
       }
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -239,6 +250,32 @@ export const TerritorialAnalyticsView: React.FC = () => {
             </div>
             <div style={{ fontSize: '0.8125rem', color: '#64748B', marginTop: '0.25rem' }}>
               🌳 {summary.zone_breakdown.rural.toLocaleString()} Rural
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Institutional Scope Info Notice */}
+      {summary?.scope_level === 'INSTITUTION' && (
+        <div
+          style={{
+            backgroundColor: '#F8FAFC',
+            border: '1px solid #E2E8F0',
+            borderRadius: '14px',
+            padding: '1.25rem 1.5rem',
+            marginBottom: '2rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '1rem',
+          }}
+        >
+          <span style={{ fontSize: '1.5rem' }}>ℹ️</span>
+          <div>
+            <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#0F172A' }}>
+              Alcance Institucional Delimitado
+            </div>
+            <div style={{ fontSize: '0.8125rem', color: '#64748B', marginTop: '0.15rem' }}>
+              Su sesión cuenta con alcance institucional para <strong>{summary.jurisdiction_name}</strong>. El desglose macro-territorial por departamentos (SED) está reservado para directivos de nivel Departamental y Nacional (MEN).
             </div>
           </div>
         </div>

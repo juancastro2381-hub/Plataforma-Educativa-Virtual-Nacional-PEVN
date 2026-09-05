@@ -5,7 +5,7 @@
  * and immutable historical audit trail.
  */
 
-import React, { useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { academicApi } from '@/services/academic'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
@@ -16,8 +16,11 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { useAuth } from '@/hooks/useAuth'
 import type {
   ApiError,
+  EnrollmentResponse,
+  GroupResponse,
   GroupTransferHistoryResponse,
   GroupTransferRequest,
+  StudentResponse,
   TransferExecutionResponse,
 } from '@/types'
 
@@ -38,6 +41,59 @@ export const TransfersView: React.FC = () => {
   const [isQuerying, setIsQuerying] = useState<boolean>(false)
   const [hasQueried, setHasQueried] = useState<boolean>(false)
 
+  // Reference Catalogs
+  const [activeEnrollments, setActiveEnrollments] = useState<EnrollmentResponse[]>([])
+  const [allEnrollments, setAllEnrollments] = useState<EnrollmentResponse[]>([])
+  const [groups, setGroups] = useState<GroupResponse[]>([])
+  const [students, setStudents] = useState<StudentResponse[]>([])
+  const [isCatalogsLoading, setIsCatalogsLoading] = useState<boolean>(false)
+
+  const loadCatalogs = useCallback(async () => {
+    setIsCatalogsLoading(true)
+    try {
+      const [activeEnrData, allEnrData, groupsData, studentsData] = await Promise.all([
+        academicApi.listEnrollments({ status: 'ACTIVE' }).catch(() => ({ items: [], total: 0 })),
+        academicApi.listEnrollments().catch(() => ({ items: [], total: 0 })),
+        academicApi.listGroups().catch(() => ({ items: [], total: 0 })),
+        academicApi.listStudents().catch(() => ({ items: [], total: 0 })),
+      ])
+
+      if (activeEnrData?.items) setActiveEnrollments(activeEnrData.items)
+      if (allEnrData?.items) setAllEnrollments(allEnrData.items)
+      if (groupsData?.items) setGroups(groupsData.items)
+      if (studentsData?.items) setStudents(studentsData.items)
+    } catch {
+      // Non-critical reference catalogs fallback
+    } finally {
+      setIsCatalogsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    void loadCatalogs()
+  }, [loadCatalogs])
+
+  const getStudentLabel = (studentIdToFind: string) => {
+    const s = students.find((item) => item.id === studentIdToFind)
+    if (!s) return `Estudiante ${studentIdToFind.substring(0, 8)}...`
+    if (s.user) {
+      return `${s.user.first_name} ${s.user.last_name} (${s.user.document_type}: ${s.user.document_number})`
+    }
+    return `SIMAT: ${s.code_simat}`
+  }
+
+  const getGroupLabel = (groupIdToFind: string) => {
+    const g = groups.find((item) => item.id === groupIdToFind)
+    if (!g) return `Grupo ${groupIdToFind.substring(0, 8)}...`
+    return `${g.name} (${g.shift})`
+  }
+
+  const selectedEnrollment = activeEnrollments.find((e) => e.id === enrollmentId)
+  const candidateGroups = groups.filter((g) => {
+    if (!selectedEnrollment) return true
+    return g.id !== selectedEnrollment.group_id
+  })
+
   const handleExecuteTransfer = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
@@ -56,6 +112,7 @@ export const TransfersView: React.FC = () => {
       setEnrollmentId('')
       setTargetGroupId('')
       setReason('')
+      await loadCatalogs()
     } catch (err: unknown) {
       setError(err instanceof Error ? err : new Error('Error al ejecutar traslado de grupo'))
     } finally {
@@ -94,12 +151,12 @@ export const TransfersView: React.FC = () => {
             <Alert
               variant="success"
               title="¡Traslado Ejecutado Exitosamente!"
-              message={`Estudiante transferido al grupo ${executionResult.transfer_history.new_group_id.substring(0, 8)}...`}
+              message={`Estudiante transferido al grupo ${getGroupLabel(executionResult.transfer_history.new_group_id)}`}
               onClose={() => { setExecutionResult(null) }}
             >
               <div style={{ marginTop: '0.5rem', fontSize: '0.8125rem' }}>
                 <div>ID Matrícula: <code>{executionResult.enrollment.id}</code></div>
-                <div>Nuevo Salón: <code>{executionResult.enrollment.group_id}</code></div>
+                <div>Nuevo Salón: <strong>{getGroupLabel(executionResult.enrollment.group_id)}</strong></div>
                 <div>Fecha de Traslado: {executionResult.transfer_history.transfer_date}</div>
               </div>
             </Alert>
@@ -108,35 +165,66 @@ export const TransfersView: React.FC = () => {
           {hasPermission('enrollments:transfer') ? (
             <form onSubmit={(e) => void handleExecuteTransfer(e)}>
               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#334155', marginBottom: '0.25rem' }}>
-                  ID de Matrícula Activa (Enrollment UUID) *
+                <label htmlFor="transfer-enrollment-select" style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#334155', marginBottom: '0.25rem' }}>
+                  Matrícula Activa *
                 </label>
-                <input
-                  type="text"
-                  value={enrollmentId}
-                  onChange={(e) => {
-                    setEnrollmentId(e.target.value)
-                  }}
-                  required
-                  placeholder="UUID de la matrícula"
-                  style={{ width: '100%', padding: '0.625rem', borderRadius: '6px', border: '1px solid #CBD5E1', boxSizing: 'border-box' }}
-                />
+                {activeEnrollments.length > 0 ? (
+                  <select
+                    id="transfer-enrollment-select"
+                    value={enrollmentId}
+                    onChange={(e) => {
+                      setEnrollmentId(e.target.value)
+                      setTargetGroupId('')
+                    }}
+                    required
+                    disabled={isCatalogsLoading || isSubmitting}
+                    style={{ width: '100%', padding: '0.625rem', borderRadius: '6px', border: '1px solid #CBD5E1', boxSizing: 'border-box', backgroundColor: '#FFFFFF' }}
+                  >
+                    <option value="">-- Seleccione una matrícula activa --</option>
+                    {activeEnrollments.map((enr) => (
+                      <option key={enr.id} value={enr.id}>
+                        {getStudentLabel(enr.student_id)} — Grupo: {getGroupLabel(enr.group_id)} ({enr.enrollment_date})
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <p style={{ fontSize: '0.8125rem', color: '#EF4444', margin: '0.25rem 0 0 0' }}>
+                    {isCatalogsLoading ? 'Cargando matrículas activas...' : 'No hay matrículas activas en la institución para trasladar.'}
+                  </p>
+                )}
               </div>
 
               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#334155', marginBottom: '0.25rem' }}>
-                  ID de Salón / Grupo Destino (Target Group UUID) *
+                <label htmlFor="transfer-target-group-select" style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#334155', marginBottom: '0.25rem' }}>
+                  Salón / Grupo Destino *
                 </label>
-                <input
-                  type="text"
-                  value={targetGroupId}
-                  onChange={(e) => {
-                    setTargetGroupId(e.target.value)
-                  }}
-                  required
-                  placeholder="UUID del grupo destino (mismo grado y año)"
-                  style={{ width: '100%', padding: '0.625rem', borderRadius: '6px', border: '1px solid #CBD5E1', boxSizing: 'border-box' }}
-                />
+                {candidateGroups.length > 0 ? (
+                  <select
+                    id="transfer-target-group-select"
+                    value={targetGroupId}
+                    onChange={(e) => {
+                      setTargetGroupId(e.target.value)
+                    }}
+                    required
+                    disabled={isCatalogsLoading || isSubmitting || !enrollmentId}
+                    style={{ width: '100%', padding: '0.625rem', borderRadius: '6px', border: '1px solid #CBD5E1', boxSizing: 'border-box', backgroundColor: '#FFFFFF' }}
+                  >
+                    <option value="">-- Seleccione el grupo destino --</option>
+                    {candidateGroups.map((g) => (
+                      <option key={g.id} value={g.id}>
+                        {g.name} — Jornada {g.shift} (Cupo: {g.capacity_limit})
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <p style={{ fontSize: '0.8125rem', color: '#64748B', margin: '0.25rem 0 0 0' }}>
+                    {isCatalogsLoading
+                      ? 'Cargando salones destino...'
+                      : !enrollmentId
+                        ? 'Seleccione primero una matrícula activa.'
+                        : 'No hay otros salones disponibles.'}
+                  </p>
+                )}
               </div>
 
               <div style={{ marginBottom: '1.5rem' }}>
@@ -155,7 +243,12 @@ export const TransfersView: React.FC = () => {
                 />
               </div>
 
-              <Button type="submit" variant="primary" style={{ width: '100%' }} disabled={isSubmitting}>
+              <Button
+                type="submit"
+                variant="primary"
+                style={{ width: '100%' }}
+                disabled={isSubmitting || !enrollmentId || !targetGroupId}
+              >
                 {isSubmitting ? <LoadingSpinner size="sm" /> : 'Ejecutar Traslado Atómico'}
               </Button>
             </form>
@@ -175,17 +268,35 @@ export const TransfersView: React.FC = () => {
           subtitle="Consulte el registro de auditoría inmutable de traslados de salón."
         >
           <form onSubmit={(e) => void handleQueryHistory(e)} style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem' }}>
-            <input
-              type="text"
-              placeholder="UUID de la matrícula..."
-              value={queryEnrollmentId}
-              onChange={(e) => {
-                setQueryEnrollmentId(e.target.value)
-              }}
-              required
-              style={{ flex: 1, padding: '0.5rem', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '0.875rem' }}
-            />
-            <Button type="submit" variant="secondary" size="sm" disabled={isQuerying}>
+            {allEnrollments.length > 0 ? (
+              <select
+                value={queryEnrollmentId}
+                onChange={(e) => {
+                  setQueryEnrollmentId(e.target.value)
+                }}
+                required
+                style={{ flex: 1, padding: '0.5rem', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '0.875rem', backgroundColor: '#FFFFFF' }}
+              >
+                <option value="">-- Seleccione una matrícula para auditar historial --</option>
+                {allEnrollments.map((enr) => (
+                  <option key={enr.id} value={enr.id}>
+                    {getStudentLabel(enr.student_id)} — {getGroupLabel(enr.group_id)} ({enr.status})
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                type="text"
+                placeholder="UUID de la matrícula..."
+                value={queryEnrollmentId}
+                onChange={(e) => {
+                  setQueryEnrollmentId(e.target.value)
+                }}
+                required
+                style={{ flex: 1, padding: '0.5rem', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '0.875rem' }}
+              />
+            )}
+            <Button type="submit" variant="secondary" size="sm" disabled={isQuerying || !queryEnrollmentId}>
               {isQuerying ? <LoadingSpinner size="sm" /> : 'Consultar'}
             </Button>
           </form>

@@ -93,3 +93,67 @@ export interface CampusResponse {
   is_active: boolean
 }
 
+export interface UserResponse {
+  id: string
+  email: string
+  username: string
+  first_name: string
+  last_name: string
+  full_name: string
+  document_type: DocumentType
+  document_number: string
+  institution_id: string | null
+  is_active: boolean
+  is_verified: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface UserListResponse {
+  items: UserResponse[]
+  total: number
+  page: number
+  page_size: number
+}
+
+// ---------------------------------------------------------------------------
+// Guardian Public Self-Activation Types
+// ---------------------------------------------------------------------------
+
+export interface GuardianActivationRequest {
+  student_code_simat: string
+  guardian_document_type: DocumentType
+  guardian_document_number: string
+  email: string
+}
+
+export interface GuardianActivationResponse {
+  message: string
+  raw_activation_token?: string | null
+}
+
+export interface VerifyGuardianTokenRequest {
+  token: string
+}
+
+export interface VerifyGuardianTokenResponse {
+  valid: boolean
+  guardian_name: string
+  student_name: string
+  institution_name: string
+  expires_at: string
+}
+
+export interface GuardianAcceptActivationRequest {
+  token: string
+  password: string
+  password_confirmation: string
+}
+
+export interface GuardianAcceptActivationResponse {
+  message: string
+  user_id: string
+  email: string
+  is_active: boolean
+}
+

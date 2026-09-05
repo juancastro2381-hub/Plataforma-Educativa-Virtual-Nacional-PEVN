@@ -205,12 +205,15 @@ async def test_student_profile_creation_and_simat_uniqueness(
 @pytest.mark.asyncio
 async def test_guardian_creation_without_mandatory_email(
     db_session: AsyncSession,
+    sample_tenant: tuple[Institution, Campus, AcademicYear, Grade],
 ) -> None:
-    """Verify Guardian creation without email (OPEN-DECISION-3A-01) and document uniqueness."""
+    """Verify Guardian creation without email (OPEN-DECISION-3A-01) and document uniqueness within tenant."""
+    inst, _, _, _ = sample_tenant
     doc_num = f"52{uuid.uuid4().hex[:6]}"
 
     # Guardian without email and without user account
     guardian = Guardian(
+        institution_id=inst.id,
         document_type=DocumentType.CC,
         document_number=doc_num,
         first_name="Esperanza",
@@ -228,8 +231,9 @@ async def test_guardian_creation_without_mandatory_email(
     assert guardian.user_id is None
     assert guardian.document_number == doc_num
 
-    # Duplicate document number and type -> IntegrityError
+    # Duplicate document number and type within the same institution -> IntegrityError
     dup_guardian = Guardian(
+        institution_id=inst.id,
         document_type=DocumentType.CC,
         document_number=doc_num,
         first_name="Otra",
@@ -273,6 +277,7 @@ async def test_student_guardian_association(
     db_session.add(student)
 
     guardian = Guardian(
+        institution_id=inst.id,
         document_type=DocumentType.CC,
         document_number=f"41{uuid.uuid4().hex[:6]}",
         first_name="Marta",

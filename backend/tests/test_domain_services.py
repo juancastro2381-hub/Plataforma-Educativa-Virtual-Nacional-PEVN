@@ -28,6 +28,7 @@ from app.core.exceptions import (
     DuplicateActiveAssignmentError,
     GroupCapacityExceededError,
     StudentAlreadyEnrolledActiveError,
+    StudentNotFoundError,
 )
 from app.models.academic_year import (
     AcademicYearStatus,
@@ -390,6 +391,7 @@ async def test_student_and_guardian_service_operations(
 
     # 4. Create Guardian without mandatory email (per OPEN-DECISION-3A-01)
     guardian = await guardian_service.create_guardian(
+        institution_id=inst1.id,
         first_name="Patricia",
         last_name="Gómez",
         document_type=DocumentType.CC,
@@ -416,7 +418,7 @@ async def test_student_and_guardian_service_operations(
     assert assoc.is_primary_contact is True
 
     # 5. Prevent cross-tenant association
-    with pytest.raises(AcademicDomainError):
+    with pytest.raises((AcademicDomainError, StudentNotFoundError)):
         await guardian_service.associate_guardian_to_student(
             student_id=student.id,
             guardian_id=guardian.id,

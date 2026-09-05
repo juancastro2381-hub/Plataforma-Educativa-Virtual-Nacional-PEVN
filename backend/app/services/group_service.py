@@ -20,12 +20,18 @@ from app.core.exceptions import (
     GroupNotFoundError,
 )
 from app.core.logging import get_logger
+from app.core.security.interfaces import AuthorizationContext
 from app.models.academic_year import AcademicYear
 from app.models.enrollment import Enrollment, EnrollmentStatus
 from app.models.grade import Grade
 from app.models.group import Group, ShiftEnum
 from app.models.institution import Campus
 from app.models.teacher import Teacher
+from app.models.user import User
+from app.services.academic_scope_helper import (
+    get_teacher_authorized_group_ids,
+    is_directive_actor,
+)
 
 _logger = get_logger(__name__)
 
@@ -161,15 +167,65 @@ class GroupService:
 
         return group
 
+    async def list_groups(
+        self,
+        *,
+        institution_id: uuid.UUID,
+        user: User | None = None,
+        auth: AuthorizationContext | None = None,
+        campus_id: uuid.UUID | None = None,
+        academic_year_id: uuid.UUID | None = None,
+        grade_id: uuid.UUID | None = None,
+    ) -> list[Group]:
+        """
+        List groups within the institution.
+        If caller is a Teacher without directive roles, strictly restricts results
+        to groups within the teacher's authorized academic scope.
+        """
+        is_directive = is_directive_actor(auth, user=user)
+
+        query = (
+            select(Group)
+            .join(Campus, Group.campus_id == Campus.id)
+            .where(Campus.institution_id == institution_id)
+        )
+
+        if not is_directive:
+            if not user:
+                return []
+            authorized_group_ids = await get_teacher_authorized_group_ids(
+                self._session,
+                user_id=user.id,
+                institution_id=institution_id,
+            )
+            if not authorized_group_ids:
+                return []
+            query = query.where(Group.id.in_(authorized_group_ids))
+
+        if campus_id:
+            query = query.where(Group.campus_id == campus_id)
+        if academic_year_id:
+            query = query.where(Group.academic_year_id == academic_year_id)
+        if grade_id:
+            query = query.where(Group.grade_id == grade_id)
+
+        query = query.order_by(Group.name.asc())
+        result = await self._session.execute(query)
+        return list(result.scalars().all())
+
     async def get_group_by_id(
         self,
         *,
         group_id: uuid.UUID,
         institution_id: uuid.UUID,
+        user: User | None = None,
+        auth: AuthorizationContext | None = None,
     ) -> Group:
         """
-        Retrieve a group validating tenant isolation via its campus link.
+        Retrieve a group validating tenant isolation and teacher academic scope.
         """
+        is_directive = is_directive_actor(auth, user=user)
+
         stmt = (
             select(Group)
             .join(Campus, Group.campus_id == Campus.id)
@@ -183,6 +239,20 @@ class GroupService:
             raise GroupNotFoundError(
                 f"Grupo {group_id} no encontrado en la institución."
             )
+
+        if not is_directive:
+            if not user:
+                raise GroupNotFoundError(f"Grupo {group_id} no encontrado.")
+            authorized_group_ids = await get_teacher_authorized_group_ids(
+                self._session,
+                user_id=user.id,
+                institution_id=institution_id,
+            )
+            if group_id not in authorized_group_ids:
+                raise GroupNotFoundError(
+                    f"Grupo {group_id} no encontrado en su ámbito académico."
+                )
+
         return group
 
     async def assign_group_director(

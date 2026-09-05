@@ -353,3 +353,135 @@ class RecordingNotFoundError(VirtualClassroomDomainError):
             code=self.default_code,
             status_code=self.default_status,
         )
+
+
+# ===========================================================================
+# SIEE Evaluation, Report Cards & Promotion Domain Exceptions (Phase 16)
+# ===========================================================================
+
+class PeriodClosedLockedError(AcademicDomainError):
+    """Raised when attempting to modify grades in a locked/closed academic period."""
+
+    default_code = "PERIOD_CLOSED_LOCKED"
+    default_status = HTTPStatus.CONFLICT
+
+    def __init__(
+        self,
+        message: str = (
+            "El período académico se encuentra cerrado. Las calificaciones están selladas y no admiten modificaciones ordinarias."
+        ),
+    ) -> None:
+        super().__init__(
+            message=message,
+            code=self.default_code,
+            status_code=self.default_status,
+        )
+
+
+class AdjustmentReasonRequiredError(AcademicDomainError):
+    """Raised when a teacher final_score differs from calculated_score without an adjustment reason."""
+
+    default_code = "ADJUSTMENT_REASON_REQUIRED"
+    default_status = HTTPStatus.BAD_REQUEST
+
+    def __init__(
+        self,
+        message: str = (
+            "Se requiere una justificación pedagógica obligatoria cuando la nota definitiva difiere del promedio calculado."
+        ),
+    ) -> None:
+        super().__init__(
+            message=message,
+            code=self.default_code,
+            status_code=self.default_status,
+        )
+
+
+class TeacherScopeViolationError(AcademicDomainError):
+    """Raised when a teacher attempts to evaluate a subject/group outside their active assignment."""
+
+    default_code = "TEACHER_SCOPE_VIOLATION"
+    default_status = HTTPStatus.FORBIDDEN
+
+    def __init__(
+        self,
+        message: str = (
+            "Acceso denegado: el docente no cuenta con una asignación académica activa para este grupo y asignatura."
+        ),
+    ) -> None:
+        super().__init__(
+            message=message,
+            code=self.default_code,
+            status_code=self.default_status,
+        )
+
+
+class SieePolicyNotFoundError(AcademicDomainError):
+    """Raised when an active SIEE policy is missing for an institution and academic year."""
+
+    default_code = "SIEE_POLICY_NOT_FOUND"
+    default_status = HTTPStatus.NOT_FOUND
+
+    def __init__(
+        self,
+        message: str = (
+            "No se encontró una política SIEE activa configurada para esta institución y año lectivo."
+        ),
+    ) -> None:
+        super().__init__(
+            message=message,
+            code=self.default_code,
+            status_code=self.default_status,
+        )
+
+
+class SieePolicyValidationError(AcademicDomainError):
+    """Raised when SIEE policy thresholds or configuration violate mathematical/regulatory bounds."""
+
+    default_code = "SIEE_POLICY_VALIDATION_ERROR"
+    default_status = HTTPStatus.BAD_REQUEST
+
+    def __init__(
+        self,
+        message: str = "Parámetros de la política SIEE inválidos o incongruentes.",
+    ) -> None:
+        super().__init__(
+            message=message,
+            code=self.default_code,
+            status_code=self.default_status,
+        )
+
+
+class ReportCardAccessDeniedError(AcademicDomainError):
+    """Raised when an actor attempts to access report cards outside their authorized student/guardian scope."""
+
+    default_code = "REPORT_CARD_ACCESS_DENIED"
+    default_status = HTTPStatus.FORBIDDEN
+
+    def __init__(
+        self,
+        message: str = "Acceso denegado a los boletines de calificaciones solicitados.",
+    ) -> None:
+        super().__init__(
+            message=message,
+            code=self.default_code,
+            status_code=self.default_status,
+        )
+
+
+class DuplicatePromotionError(AcademicDomainError):
+    """Raised when attempting to commit a promotion record for a student already evaluated in the same year."""
+
+    default_code = "DUPLICATE_PROMOTION_ERROR"
+    default_status = HTTPStatus.CONFLICT
+
+    def __init__(
+        self,
+        message: str = "El estudiante ya cuenta con un dictamen de promoción oficial registrado en este año lectivo.",
+    ) -> None:
+        super().__init__(
+            message=message,
+            code=self.default_code,
+            status_code=self.default_status,
+        )
+

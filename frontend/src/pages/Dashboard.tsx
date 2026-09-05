@@ -331,8 +331,16 @@ export const Dashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Academic Management Module Access Card (Permission-Filtered) */}
+      {/* Academic Management Module Access Card (Directive Roles Only) */}
       {(() => {
+        const isDirective = user.roles.some((r) =>
+          ['rector', 'superadmin', 'national_admin', 'coordinator', 'academic_coordinator', 'institution_admin', 'department_admin', 'municipality_admin'].includes(r)
+        )
+
+        if (!isDirective) {
+          return null
+        }
+
         const availableAcademicCards = [
           {
             tab: 'years',
@@ -416,15 +424,15 @@ export const Dashboard: React.FC = () => {
               >
                 <div>
                   <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0F172A', margin: '0 0 0.25rem 0' }}>
-                    Módulo de Gestión Académica (Fase 3B)
+                    Módulo de Gestión Académica e Institucional
                   </h2>
                   <p style={{ fontSize: '0.875rem', color: '#64748B', margin: 0 }}>
-                    Acceso a los módulos de administración académica autorizados para su rol institucional.
+                    Consola directiva de administración escolar: Años Lectivos, Censo SIMAT, Grupos, Docentes y Carga Académica.
                   </p>
                 </div>
                 <Link to={`/academic?tab=${availableAcademicCards[0].tab}`} style={{ textDecoration: 'none' }}>
                   <Button variant="primary">
-                    Abrir Portal Académico →
+                    Abrir Gestión Académica →
                   </Button>
                 </Link>
               </div>
@@ -459,38 +467,37 @@ export const Dashboard: React.FC = () => {
           )
         }
 
-        if (user.roles.includes('guardian')) {
-          return (
-            <div
-              style={{
-                marginTop: '2rem',
-                backgroundColor: '#FFFFFF',
-                borderRadius: '16px',
-                border: '1px solid #E2E8F0',
-                padding: '2rem',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
-                <span style={{ fontSize: '1.75rem' }}>👪</span>
-                <div>
-                  <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0F172A', margin: 0 }}>
-                    Portal de Acompañamiento Familiar
-                  </h2>
-                  <p style={{ fontSize: '0.875rem', color: '#64748B', margin: '0.25rem 0 0 0' }}>
-                    Rol de Acudiente Legal vinculado a su establecimiento educativo.
-                  </p>
-                </div>
-              </div>
-              <p style={{ fontSize: '0.875rem', color: '#334155', lineHeight: 1.6, margin: 0 }}>
-                Su cuenta se encuentra debidamente autenticada como Acudiente. El seguimiento a calificaciones, reportes de asistencia y citaciones institucionales de sus tutorados se canaliza a través de los directores de grupo y los boletines emitidos por la institución educativa.
-              </p>
-            </div>
-          )
-        }
-
         return null
       })()}
+
+      {/* Guardian Family Portal Access Card */}
+      {user.roles.includes('guardian') && (
+        <div
+          style={{
+            marginTop: '2rem',
+            backgroundColor: '#FFFFFF',
+            borderRadius: '16px',
+            border: '1px solid #E2E8F0',
+            padding: '2rem',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+            <span style={{ fontSize: '1.75rem' }}>👪</span>
+            <div>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0F172A', margin: 0 }}>
+                Portal de Acompañamiento Familiar
+              </h2>
+              <p style={{ fontSize: '0.875rem', color: '#64748B', margin: '0.25rem 0 0 0' }}>
+                Rol de Acudiente Legal vinculado a su establecimiento educativo.
+              </p>
+            </div>
+          </div>
+          <p style={{ fontSize: '0.875rem', color: '#334155', lineHeight: 1.6, margin: 0 }}>
+            Su cuenta se encuentra debidamente autenticada como Acudiente. El seguimiento a calificaciones, reportes de asistencia y citaciones institucionales de sus tutorados se canaliza a través de los directores de grupo y los boletines emitidos por la institución educativa.
+          </p>
+        </div>
+      )}
 
       {/* Virtual Classrooms & Real-Time Collaboration Access Card (Phase 4) */}
       {hasPermission('virtual_classrooms:read') && (
@@ -518,6 +525,270 @@ export const Dashboard: React.FC = () => {
                 Ingresar a Aulas Virtuales →
               </Button>
             </Link>
+          </div>
+        </div>
+      )}
+
+      {/* Teacher Portal Module Access Card (Phase 13D.5 / 13E.3) */}
+      {user.roles.includes('teacher') && (
+        <div
+          style={{
+            marginTop: '2rem',
+            backgroundColor: '#0F172A',
+            color: '#FFFFFF',
+            borderRadius: '16px',
+            border: '1px solid #1E293B',
+            padding: '2rem',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
+            <div>
+              <div
+                style={{
+                  display: 'inline-block',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  backgroundColor: 'rgba(56, 189, 248, 0.2)',
+                  color: '#38BDF8',
+                  padding: '0.25rem 0.75rem',
+                  borderRadius: '9999px',
+                  marginBottom: '0.5rem',
+                }}
+              >
+                Espacio Pedagógico Docente
+              </div>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#FFFFFF', margin: '0 0 0.25rem 0' }}>
+                Portal Docente y Gestión Pedagógica
+              </h2>
+              <p style={{ fontSize: '0.875rem', color: '#94A3B8', margin: 0 }}>
+                Carga académica asignada, control de salones, actividades, calificaciones, asistencia y planeación curricular.
+              </p>
+            </div>
+            <Link to="/teacher?tab=load" style={{ textDecoration: 'none' }}>
+              <Button
+                variant="primary"
+                style={{
+                  backgroundColor: '#0284C7',
+                  fontWeight: 700,
+                }}
+              >
+                Abrir Mi Carga Académica →
+              </Button>
+            </Link>
+          </div>
+
+          {/* Quick Access Subcards */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+              gap: '0.75rem',
+            }}
+          >
+            {[
+              { tab: 'load', title: 'Mi Carga', desc: 'Materias y asignaciones', icon: '📚' },
+              { tab: 'groups', title: 'Mis Grupos', desc: 'Salones y planillas', icon: '👥' },
+              { tab: 'activities', title: 'Actividades', desc: 'Tareas y evaluaciones', icon: '📝' },
+              { tab: 'grades', title: 'Calificaciones', desc: 'Planilla de notas', icon: '📊' },
+              { tab: 'attendance', title: 'Asistencia', desc: 'Control diario de clase', icon: '📋' },
+              { tab: 'planning', title: 'Planeación', desc: 'Unidades curriculares', icon: '🎯' },
+            ].map((sc) => (
+              <Link key={sc.tab} to={`/teacher?tab=${sc.tab}`} style={{ textDecoration: 'none' }}>
+                <div
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: '10px',
+                    padding: '0.875rem 1rem',
+                    transition: 'background-color 150ms',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <div style={{ fontSize: '1.25rem', marginBottom: '0.2rem' }}>{sc.icon}</div>
+                  <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#FFFFFF' }}>{sc.title}</div>
+                  <div style={{ fontSize: '0.75rem', color: '#94A3B8', marginTop: '0.15rem' }}>{sc.desc}</div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Student Portal Module Access Card (Phase 14B) */}
+      {user.roles.includes('student') && (
+        <div
+          style={{
+            marginTop: '2rem',
+            backgroundColor: '#1E3A8A',
+            color: '#FFFFFF',
+            borderRadius: '16px',
+            border: '1px solid #1E40AF',
+            padding: '2rem',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
+            <div>
+              <div
+                style={{
+                  display: 'inline-block',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  backgroundColor: 'rgba(147, 197, 253, 0.2)',
+                  color: '#93C5FD',
+                  padding: '0.25rem 0.75rem',
+                  borderRadius: '9999px',
+                  marginBottom: '0.5rem',
+                }}
+              >
+                Espacio Académico Estudiantil
+              </div>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#FFFFFF', margin: '0 0 0.25rem 0' }}>
+                Portal del Estudiante
+              </h2>
+              <p style={{ fontSize: '0.875rem', color: '#BFDBFE', margin: 0 }}>
+                Tareas pendientes, evaluaciones, calificaciones oficiales, control de asistencia y salas de clase virtual.
+              </p>
+            </div>
+            <Link to="/student?tab=dashboard" style={{ textDecoration: 'none' }}>
+              <Button
+                variant="primary"
+                style={{
+                  backgroundColor: '#2563EB',
+                  fontWeight: 700,
+                }}
+              >
+                Ingresar al Portal Estudiante →
+              </Button>
+            </Link>
+          </div>
+
+          {/* Quick Access Subcards */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+              gap: '0.75rem',
+            }}
+          >
+            {[
+              { tab: 'subjects', title: 'Mis Asignaturas', desc: 'Docentes y materias', icon: '📚' },
+              { tab: 'tasks', title: 'Mis Tareas', desc: 'Talleres y entregas', icon: '📝' },
+              { tab: 'grades', title: 'Calificaciones', desc: 'Libreta de notas', icon: '📊' },
+              { tab: 'attendance', title: 'Mi Asistencia', desc: 'Historial y porcentaje', icon: '📋' },
+              { tab: 'virtual-classes', title: 'Clases Virtuales', desc: 'En vivo y grabaciones', icon: '💻' },
+              { tab: 'profile', title: 'Mi Perfil', desc: 'Matrícula y SIMAT', icon: '👤' },
+            ].map((sc) => (
+              <Link key={sc.tab} to={`/student?tab=${sc.tab}`} style={{ textDecoration: 'none' }}>
+                <div
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    borderRadius: '10px',
+                    padding: '0.875rem 1rem',
+                    transition: 'background-color 150ms',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <div style={{ fontSize: '1.25rem', marginBottom: '0.2rem' }}>{sc.icon}</div>
+                  <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#FFFFFF' }}>{sc.title}</div>
+                  <div style={{ fontSize: '0.75rem', color: '#BFDBFE', marginTop: '0.15rem' }}>{sc.desc}</div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Guardian Portal Module Access Card (Phase 14C) */}
+      {user.roles.includes('guardian') && (
+        <div
+          style={{
+            marginTop: '2rem',
+            backgroundColor: '#0F172A',
+            color: '#FFFFFF',
+            borderRadius: '16px',
+            border: '1px solid #1E293B',
+            padding: '2rem',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
+            <div>
+              <div
+                style={{
+                  display: 'inline-block',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  backgroundColor: 'rgba(244, 114, 182, 0.2)',
+                  color: '#F472B6',
+                  padding: '0.25rem 0.75rem',
+                  borderRadius: '9999px',
+                  marginBottom: '0.5rem',
+                }}
+              >
+                Acompañamiento y Supervisión Familiar
+              </div>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#FFFFFF', margin: '0 0 0.25rem 0' }}>
+                Portal de Acudientes y Familias
+              </h2>
+              <p style={{ fontSize: '0.875rem', color: '#94A3B8', margin: 0 }}>
+                Monitoreo de deberes, calificaciones oficiales, control de asistencia y agenda de clases virtuales de sus hijos.
+              </p>
+            </div>
+            <Link to="/guardian?tab=dashboard" style={{ textDecoration: 'none' }}>
+              <Button
+                variant="primary"
+                style={{
+                  backgroundColor: '#DB2777',
+                  fontWeight: 700,
+                }}
+              >
+                Ingresar al Portal Acudiente →
+              </Button>
+            </Link>
+          </div>
+
+          {/* Quick Access Subcards */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+              gap: '0.75rem',
+            }}
+          >
+            {[
+              { tab: 'students', title: 'Mis Hijos', desc: 'Tutorados y matrícula', icon: '👨‍👧‍👦' },
+              { tab: 'academic', title: 'Rendimiento', desc: 'Promedios y materias', icon: '📈' },
+              { tab: 'tasks', title: 'Tareas Escolares', desc: 'Seguimiento de deberes', icon: '📝' },
+              { tab: 'grades', title: 'Calificaciones', desc: 'Libreta de notas', icon: '📊' },
+              { tab: 'attendance', title: 'Asistencia', desc: 'Historial y reportes', icon: '📋' },
+              { tab: 'virtual-classes', title: 'Clases Virtuales', desc: 'Agenda y grabaciones', icon: '💻' },
+            ].map((gc) => (
+              <Link key={gc.tab} to={`/guardian?tab=${gc.tab}`} style={{ textDecoration: 'none' }}>
+                <div
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: '10px',
+                    padding: '0.875rem 1rem',
+                    transition: 'background-color 150ms',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <div style={{ fontSize: '1.25rem', marginBottom: '0.2rem' }}>{gc.icon}</div>
+                  <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#FFFFFF' }}>{gc.title}</div>
+                  <div style={{ fontSize: '0.75rem', color: '#94A3B8', marginTop: '0.15rem' }}>{gc.desc}</div>
+                </div>
+              </Link>
+            ))}
           </div>
         </div>
       )}

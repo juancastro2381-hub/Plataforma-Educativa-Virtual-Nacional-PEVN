@@ -6,6 +6,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react'
 import { academicApi } from '@/services/academic'
+import { institutionApi } from '@/services/institution'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
@@ -15,12 +16,17 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { useAuth } from '@/hooks/useAuth'
 import type {
+  AcademicAssignmentResponse,
+  AcademicYearResponse,
   ApiError,
   AssignGroupDirectorRequest,
+  CampusResponse,
+  GradeResponse,
   GroupCapacityResponse,
   GroupCreateRequest,
   GroupResponse,
   ShiftEnum,
+  SubjectResponse,
   TeacherResponse,
 } from '@/types'
 
@@ -36,16 +42,26 @@ export const GroupsView: React.FC = () => {
   // Teachers for director assignment selection
   const [teachers, setTeachers] = useState<TeacherResponse[]>([])
 
-  // Capacity Inspector Modal
+  // Catalogs for group creation
+  const [campuses, setCampuses] = useState<CampusResponse[]>([])
+  const [academicYears, setAcademicYears] = useState<AcademicYearResponse[]>([])
+  const [grades, setGrades] = useState<GradeResponse[]>([])
+  const [isCatalogsLoading, setIsCatalogsLoading] = useState<boolean>(false)
+
+  // Capacity & Teachers Inspector Modal
   const [capacityModal, setCapacityModal] = useState<{
     isOpen: boolean
     group: GroupResponse | null
     capacity: GroupCapacityResponse | null
+    assignments: AcademicAssignmentResponse[]
+    subjects: SubjectResponse[]
     isLoading: boolean
   }>({
     isOpen: false,
     group: null,
     capacity: null,
+    assignments: [],
+    subjects: [],
     isLoading: false,
   })
 
@@ -93,29 +109,75 @@ export const GroupsView: React.FC = () => {
     }
   }, [])
 
+  const loadCatalogs = useCallback(async () => {
+    setIsCatalogsLoading(true)
+    try {
+      const [instData, ayData, gradesData] = await Promise.all([
+        institutionApi.getMyInstitution().catch(() => null),
+        academicApi.listAcademicYears().catch(() => ({ items: [], total: 0 })),
+        academicApi.listGrades().catch(() => ({ items: [], total: 0 })),
+      ])
+
+      if (instData?.campuses) {
+        setCampuses(instData.campuses)
+        if (instData.campuses.length === 1) {
+          setCampusId((prev) => prev || instData.campuses[0].id)
+        }
+      }
+
+      if (ayData?.items) {
+        setAcademicYears(ayData.items)
+        const activeYear = ayData.items.find((y) => y.status === 'ACTIVE')
+        if (activeYear) {
+          setAcademicYearId((prev) => prev || activeYear.id)
+        } else if (ayData.items.length === 1) {
+          setAcademicYearId((prev) => prev || ayData.items[0].id)
+        }
+      }
+
+      if (gradesData?.items) {
+        setGrades(gradesData.items)
+      }
+    } catch {
+      // Reference catalogs non-fatal fallback
+    } finally {
+      setIsCatalogsLoading(false)
+    }
+  }, [])
+
   useEffect(() => {
     void loadGroups()
     void loadTeachers()
-  }, [loadGroups, loadTeachers])
+    void loadCatalogs()
+  }, [loadGroups, loadTeachers, loadCatalogs])
 
   const handleInspectCapacity = async (group: GroupResponse) => {
     setCapacityModal({
       isOpen: true,
       group,
       capacity: null,
+      assignments: [],
+      subjects: [],
       isLoading: true,
     })
     try {
-      const cap = await academicApi.getGroupCapacity(group.id)
+      const [cap, asgRes, subRes] = await Promise.all([
+        academicApi.getGroupCapacity(group.id),
+        academicApi.listAssignments({ isActive: true }).catch(() => ({ items: [], total: 0 })),
+        academicApi.listSubjects().catch(() => ({ items: [], total: 0 })),
+      ])
+      const groupAssignments = asgRes.items.filter((a) => a.group_id === group.id)
       setCapacityModal({
         isOpen: true,
         group,
         capacity: cap,
+        assignments: groupAssignments,
+        subjects: subRes.items,
         isLoading: false,
       })
     } catch (err: unknown) {
       setError(err instanceof Error ? err : new Error('Error al consultar cupos'))
-      setCapacityModal({ isOpen: false, group: null, capacity: null, isLoading: false })
+      setCapacityModal({ isOpen: false, group: null, capacity: null, assignments: [], subjects: [], isLoading: false })
     }
   }
 
@@ -124,6 +186,22 @@ export const GroupsView: React.FC = () => {
     setIsSubmitting(true)
     setError(null)
     setSuccessMsg(null)
+
+    if (!campusId.trim()) {
+      setError(new Error('Debe seleccionar una sede educativa válida.'))
+      setIsSubmitting(false)
+      return
+    }
+    if (!academicYearId.trim()) {
+      setError(new Error('Debe seleccionar un año lectivo válido.'))
+      setIsSubmitting(false)
+      return
+    }
+    if (!gradeId.trim()) {
+      setError(new Error('Debe seleccionar un grado del catálogo nacional MEN.'))
+      setIsSubmitting(false)
+      return
+    }
 
     const payload: GroupCreateRequest = {
       campus_id: campusId.trim(),
@@ -310,7 +388,7 @@ export const GroupsView: React.FC = () => {
       <Modal
         isOpen={capacityModal.isOpen}
         onClose={() => {
-          setCapacityModal({ isOpen: false, group: null, capacity: null, isLoading: false })
+          setCapacityModal({ isOpen: false, group: null, capacity: null, assignments: [], subjects: [], isLoading: false })
         }}
         title={`Disponibilidad y Cupos — Grupo ${capacityModal.group?.name ?? ''}`}
         subtitle="Cálculo en tiempo real contra la base de datos institucional."
@@ -361,11 +439,55 @@ export const GroupsView: React.FC = () => {
               />
             )}
 
+            {/* Assigned Teachers & Subjects for this Group */}
+            <div style={{ marginTop: '1.5rem', marginBottom: '1.5rem', borderTop: '1px solid #E2E8F0', paddingTop: '1rem' }}>
+              <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#0F172A', marginBottom: '0.5rem' }}>
+                👨‍🏫 Docentes y Asignaturas Asignadas ({capacityModal.assignments.length})
+              </div>
+              {capacityModal.assignments.length === 0 ? (
+                <p style={{ fontSize: '0.8125rem', color: '#64748B', margin: 0, fontStyle: 'italic' }}>
+                  No hay docentes ni materias asignadas a este grupo todavía.
+                </p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {capacityModal.assignments.map((a) => {
+                    const teacher = teachers.find((t) => t.id === a.teacher_id)
+                    const teacherName = teacher?.user?.full_name || (teacher?.user ? `${teacher.user.first_name} ${teacher.user.last_name}` : null) || teacher?.specialty_area || 'Docente'
+                    const subject = capacityModal.subjects.find((s) => s.id === a.subject_id)
+                    const subjectName = subject?.name || 'Materia'
+
+                    return (
+                      <div
+                        key={a.id}
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          backgroundColor: '#F8FAFC',
+                          padding: '0.5rem 0.75rem',
+                          borderRadius: '6px',
+                          border: '1px solid #E2E8F0',
+                          fontSize: '0.8125rem',
+                        }}
+                      >
+                        <div>
+                          <strong style={{ color: '#1E40AF' }}>{teacherName}</strong> — <span style={{ color: '#0F172A' }}>{subjectName}</span>
+                        </div>
+                        <span style={{ color: '#64748B', fontWeight: 600 }}>
+                          {a.weekly_hours} h/sem
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
               <Button
                 variant="secondary"
                 onClick={() => {
-                  setCapacityModal({ isOpen: false, group: null, capacity: null, isLoading: false })
+                  setCapacityModal({ isOpen: false, group: null, capacity: null, assignments: [], subjects: [], isLoading: false })
                 }}
               >
                 Cerrar
@@ -440,50 +562,86 @@ export const GroupsView: React.FC = () => {
 
           <div style={{ marginBottom: '1rem' }}>
             <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#334155', marginBottom: '0.25rem' }}>
-              ID Sede Educativa (Campus UUID) *
+              Sede Educativa *
             </label>
-            <input
-              type="text"
-              value={campusId}
-              onChange={(e) => {
-                setCampusId(e.target.value)
-              }}
-              required
-              placeholder="UUID de la sede"
-              style={{ width: '100%', padding: '0.625rem', borderRadius: '6px', border: '1px solid #CBD5E1', boxSizing: 'border-box' }}
-            />
+            {campuses.length > 0 ? (
+              <select
+                value={campusId}
+                onChange={(e) => {
+                  setCampusId(e.target.value)
+                }}
+                required
+                disabled={isCatalogsLoading || isSubmitting}
+                style={{ width: '100%', padding: '0.625rem', borderRadius: '6px', border: '1px solid #CBD5E1', boxSizing: 'border-box', backgroundColor: '#FFFFFF' }}
+              >
+                <option value="">-- Seleccione una sede --</option>
+                {campuses.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name} — DANE {c.dane_sede_code}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <p style={{ fontSize: '0.8125rem', color: '#EF4444', margin: '0.25rem 0 0 0' }}>
+                {isCatalogsLoading ? 'Cargando sedes educativas...' : 'No hay sedes educativas disponibles para esta institución.'}
+              </p>
+            )}
           </div>
 
           <div style={{ marginBottom: '1rem' }}>
             <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#334155', marginBottom: '0.25rem' }}>
-              ID Año Lectivo (Academic Year UUID) *
+              Año Lectivo *
             </label>
-            <input
-              type="text"
-              value={academicYearId}
-              onChange={(e) => {
-                setAcademicYearId(e.target.value)
-              }}
-              required
-              placeholder="UUID del año escolar"
-              style={{ width: '100%', padding: '0.625rem', borderRadius: '6px', border: '1px solid #CBD5E1', boxSizing: 'border-box' }}
-            />
+            {academicYears.length > 0 ? (
+              <select
+                value={academicYearId}
+                onChange={(e) => {
+                  setAcademicYearId(e.target.value)
+                }}
+                required
+                disabled={isCatalogsLoading || isSubmitting}
+                style={{ width: '100%', padding: '0.625rem', borderRadius: '6px', border: '1px solid #CBD5E1', boxSizing: 'border-box', backgroundColor: '#FFFFFF' }}
+              >
+                <option value="">-- Seleccione un año lectivo --</option>
+                {academicYears.map((ay) => (
+                  <option key={ay.id} value={ay.id}>
+                    {ay.name} ({ay.status})
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <p style={{ fontSize: '0.8125rem', color: '#EF4444', margin: '0.25rem 0 0 0' }}>
+                {isCatalogsLoading ? 'Cargando años escolares...' : 'No hay años lectivos disponibles para esta institución.'}
+              </p>
+            )}
           </div>
 
           <div style={{ marginBottom: '1.5rem' }}>
             <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#334155', marginBottom: '0.25rem' }}>
-              ID Grado Catálogo MEN (Grade UUID) *
+              Grado *
             </label>
-            <input
-              type="text"
-              value={gradeId}
-              onChange={(e) => {
-                setGradeId(e.target.value)
-              }}
-              required
-              placeholder="UUID del grado"
-              style={{ width: '100%', padding: '0.625rem', borderRadius: '6px', border: '1px solid #CBD5E1', boxSizing: 'border-box' }}
-            />
+            {grades.length > 0 ? (
+              <select
+                value={gradeId}
+                onChange={(e) => {
+                  setGradeId(e.target.value)
+                }}
+                required
+                disabled={isCatalogsLoading || isSubmitting}
+                style={{ width: '100%', padding: '0.625rem', borderRadius: '6px', border: '1px solid #CBD5E1', boxSizing: 'border-box', backgroundColor: '#FFFFFF' }}
+              >
+                <option value="">-- Seleccione un grado --</option>
+                {grades.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.name} ({g.code})
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <p style={{ fontSize: '0.8125rem', color: '#EF4444', margin: '0.25rem 0 0 0' }}>
+                {isCatalogsLoading ? 'Cargando catálogo de grados...' : 'No se pudo cargar el catálogo de grados.'}
+              </p>
+            )}
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>

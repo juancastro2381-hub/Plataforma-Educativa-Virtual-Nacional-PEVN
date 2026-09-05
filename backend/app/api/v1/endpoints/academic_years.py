@@ -23,8 +23,10 @@ from app.api.deps import (
 from app.core.logging import correlation_id_ctx
 from app.core.security.interfaces import SystemRole
 from app.exceptions.errors import AuthorizationError
-from app.models.academic_year import AcademicYear, AcademicYearStatus
+from app.models.academic_year import AcademicPeriod, AcademicYear, AcademicYearStatus
 from app.schemas.academic import (
+    AcademicPeriodListResponse,
+    AcademicPeriodResponse,
     AcademicYearCreateRequest,
     AcademicYearListResponse,
     AcademicYearResponse,
@@ -116,6 +118,42 @@ async def get_academic_year(
         institution_id=target_institution_id,
     )
     return AcademicYearResponse.model_validate(academic_year)
+
+
+@router.get(
+    "/{year_id}/periods",
+    response_model=AcademicPeriodListResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Listar períodos académicos de un año lectivo",
+    description="Obtiene los períodos de evaluación académica para un año escolar.",
+    dependencies=[Depends(require_permission("academic_years", "read"))],
+)
+async def list_academic_year_periods(
+    year_id: uuid.UUID,
+    db: SessionDep,
+    auth: AuthContextDep,
+    current_user: CurrentUserDep,
+    institution_id: Annotated[
+        uuid.UUID | None,
+        Query(description="Override for SuperAdmin only"),
+    ] = None,
+) -> AcademicPeriodListResponse:
+    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    service = AcademicYearService(session=db)
+    academic_year = await service.get_academic_year_by_id(
+        year_id=year_id,
+        institution_id=target_institution_id,
+    )
+    periods_stmt = (
+        select(AcademicPeriod)
+        .where(AcademicPeriod.academic_year_id == academic_year.id)
+        .order_by(AcademicPeriod.period_number.asc())
+    )
+    periods = list((await db.execute(periods_stmt)).scalars().all())
+    return AcademicPeriodListResponse(
+        items=[AcademicPeriodResponse.model_validate(p) for p in periods],
+        total=len(periods),
+    )
 
 
 @router.get(

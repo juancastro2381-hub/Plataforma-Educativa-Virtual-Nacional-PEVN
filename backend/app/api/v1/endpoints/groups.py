@@ -118,6 +118,8 @@ async def get_group(
     group = await service.get_group_by_id(
         group_id=group_id,
         institution_id=target_institution_id,
+        user=current_user,
+        auth=auth,
     )
     return GroupResponse.model_validate(group)
 
@@ -152,22 +154,15 @@ async def list_groups(
     ] = None,
 ) -> GroupListResponse:
     target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
-
-    query = (
-        select(Group)
-        .join(Campus, Group.campus_id == Campus.id)
-        .where(Campus.institution_id == target_institution_id)
+    service = GroupService(session=db)
+    groups = await service.list_groups(
+        institution_id=target_institution_id,
+        user=current_user,
+        auth=auth,
+        campus_id=campus_id,
+        academic_year_id=academic_year_id,
+        grade_id=grade_id,
     )
-    if campus_id:
-        query = query.where(Group.campus_id == campus_id)
-    if academic_year_id:
-        query = query.where(Group.academic_year_id == academic_year_id)
-    if grade_id:
-        query = query.where(Group.grade_id == grade_id)
-
-    query = query.order_by(Group.name.asc())
-    result = await db.execute(query)
-    groups = list(result.scalars().all())
 
     return GroupListResponse(
         items=[GroupResponse.model_validate(g) for g in groups],

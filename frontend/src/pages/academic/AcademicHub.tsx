@@ -18,11 +18,29 @@ import { GuardiansView } from './GuardiansView'
 import { EnrollmentsView } from './EnrollmentsView'
 import { TransfersView } from './TransfersView'
 import { AcademicAssignmentsView } from './AcademicAssignmentsView'
+import { DirectiveEvaluationManagementView } from './DirectiveEvaluationManagementView'
 
 export const AcademicHub: React.FC = () => {
   const { user, hasPermission } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
   const [unauthorizedMessage, setUnauthorizedMessage] = useState<string | null>(null)
+
+  const isDirective = useMemo(() => {
+    return (
+      user?.roles.some((r) =>
+        [
+          'rector',
+          'superadmin',
+          'national_admin',
+          'coordinator',
+          'academic_coordinator',
+          'institution_admin',
+          'department_admin',
+          'municipality_admin',
+        ].includes(r)
+      ) ?? false
+    )
+  }, [user])
 
   const allTabs: (TabItem & { permission?: string })[] = [
     { id: 'years', label: 'Años Lectivos', icon: '📅', permission: 'academic_years:read' },
@@ -33,6 +51,7 @@ export const AcademicHub: React.FC = () => {
     { id: 'enrollments', label: 'Libro de Matrículas', icon: '📑', permission: 'enrollments:read' },
     { id: 'transfers', label: 'Traslados de Salón', icon: '🔄', permission: 'enrollments:read' },
     { id: 'assignments', label: 'Carga Académica', icon: '📚', permission: 'academic_assignments:read' },
+    { id: 'evaluations', label: 'Evaluación y Períodos', icon: '📊', permission: 'evaluations:read' },
   ]
 
   const academicTabs = useMemo<TabItem[]>(() => {
@@ -90,6 +109,8 @@ export const AcademicHub: React.FC = () => {
         return <TransfersView />
       case 'assignments':
         return <AcademicAssignmentsView />
+      case 'evaluations':
+        return <DirectiveEvaluationManagementView />
       default:
         return <AcademicYearsView />
     }
@@ -237,8 +258,65 @@ export const AcademicHub: React.FC = () => {
         </div>
       )}
 
-      {/* Zero State for users without Academic Management Permissions */}
-      {academicTabs.length === 0 ? (
+      {/* If pure teacher role without directive privileges, guide to Teacher Portal */}
+      {!isDirective && user?.roles.includes('teacher') ? (
+        <div
+          style={{
+            backgroundColor: '#FFFFFF',
+            borderRadius: '16px',
+            border: '1px solid #E2E8F0',
+            padding: '3rem 2rem',
+            textAlign: 'center',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
+          }}
+        >
+          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🎓</div>
+          <h2 style={{ fontSize: '1.375rem', fontWeight: 800, color: '#0F172A', marginBottom: '0.75rem' }}>
+            Consola Directiva de Administración Institucional
+          </h2>
+          <p style={{ color: '#64748B', maxWidth: '600px', margin: '0 auto 1.5rem auto', lineHeight: 1.6, fontSize: '0.9375rem' }}>
+            Esta sección corresponde a la consola de administración escolar (Rectoría y Secretaría) para el censo institucional SIMAT, configuración de salones y nombramientos.
+            <br /><br />
+            Para consultar su <strong>carga académica asignada, registrar calificaciones, tomar asistencia y ver las planillas de sus estudiantes</strong>, acceda a su espacio pedagógico en el <strong>Portal Docente</strong>.
+          </p>
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Link to="/teacher" style={{ textDecoration: 'none' }}>
+              <button
+                type="button"
+                style={{
+                  backgroundColor: '#0284C7',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  padding: '0.75rem 1.5rem',
+                  borderRadius: '8px',
+                  fontSize: '0.875rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                Abrir Mi Portal Docente →
+              </button>
+            </Link>
+            <Link to="/dashboard" style={{ textDecoration: 'none' }}>
+              <button
+                type="button"
+                style={{
+                  backgroundColor: '#F1F5F9',
+                  color: '#475569',
+                  border: '1px solid #CBD5E1',
+                  padding: '0.75rem 1.5rem',
+                  borderRadius: '8px',
+                  fontSize: '0.875rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                ← Volver al Panel
+              </button>
+            </Link>
+          </div>
+        </div>
+      ) : academicTabs.length === 0 ? (
         <div
           style={{
             backgroundColor: '#FFFFFF',

@@ -9,11 +9,15 @@ from __future__ import annotations
 
 from app.db.base_class import Base
 from app.models import (
+    AcademicActivity,
     AcademicAssignment,
     AcademicPeriod,
+    AcademicPlan,
     AcademicYear,
+    ActivityGrade,
     AuditLog,
     Campus,
+    DailyAttendance,
     Department,
     DocumentType,
     EducationalLevel,
@@ -44,12 +48,16 @@ from app.models import (
 )
 
 __all__ = [
+    "AcademicActivity",
     "AcademicAssignment",
     "AcademicPeriod",
+    "AcademicPlan",
     "AcademicYear",
+    "ActivityGrade",
     "AuditLog",
     "Base",
     "Campus",
+    "DailyAttendance",
     "Department",
     "DocumentType",
     "EducationalLevel",

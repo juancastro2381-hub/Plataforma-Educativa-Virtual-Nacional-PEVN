@@ -117,6 +117,8 @@ async def get_enrollment(
     enrollment = await service.get_enrollment_by_id(
         enrollment_id=enrollment_id,
         institution_id=target_institution_id,
+        user=current_user,
+        auth=auth,
     )
     return EnrollmentResponse.model_validate(enrollment)
 
@@ -155,24 +157,16 @@ async def list_enrollments(
     ] = None,
 ) -> EnrollmentListResponse:
     target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
-
-    query = (
-        select(Enrollment)
-        .join(Student, Enrollment.student_id == Student.id)
-        .where(Student.institution_id == target_institution_id)
+    service = EnrollmentService(session=db)
+    enrollments = await service.list_enrollments(
+        institution_id=target_institution_id,
+        user=current_user,
+        auth=auth,
+        student_id=student_id,
+        group_id=group_id,
+        academic_year_id=academic_year_id,
+        status_filter=status_filter,
     )
-    if student_id:
-        query = query.where(Enrollment.student_id == student_id)
-    if group_id:
-        query = query.where(Enrollment.group_id == group_id)
-    if academic_year_id:
-        query = query.where(Enrollment.academic_year_id == academic_year_id)
-    if status_filter:
-        query = query.where(Enrollment.status == status_filter)
-
-    query = query.order_by(Enrollment.created_at.desc())
-    result = await db.execute(query)
-    enrollments = list(result.scalars().all())
 
     return EnrollmentListResponse(
         items=[EnrollmentResponse.model_validate(e) for e in enrollments],

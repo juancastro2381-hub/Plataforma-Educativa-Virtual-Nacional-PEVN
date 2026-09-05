@@ -15,10 +15,13 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { useAuth } from '@/hooks/useAuth'
 import type {
+  AcademicYearResponse,
   ApiError,
   EnrollmentCreateRequest,
   EnrollmentResponse,
   EnrollmentStatus,
+  GroupResponse,
+  StudentResponse,
 } from '@/types'
 
 export const EnrollmentsView: React.FC = () => {
@@ -30,6 +33,12 @@ export const EnrollmentsView: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<EnrollmentStatus | undefined>(undefined)
   const [error, setError] = useState<ApiError | Error | null>(null)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
+
+  // Reference Catalogs
+  const [students, setStudents] = useState<StudentResponse[]>([])
+  const [academicYears, setAcademicYears] = useState<AcademicYearResponse[]>([])
+  const [groups, setGroups] = useState<GroupResponse[]>([])
+  const [isCatalogsLoading, setIsCatalogsLoading] = useState<boolean>(false)
 
   // Create Modal
   const [isCreateOpen, setIsCreateOpen] = useState<boolean>(false)
@@ -66,9 +75,43 @@ export const EnrollmentsView: React.FC = () => {
     }
   }, [statusFilter])
 
+  const loadCatalogs = useCallback(async () => {
+    setIsCatalogsLoading(true)
+    try {
+      const [studentsData, yearsData, groupsData] = await Promise.all([
+        academicApi.listStudents().catch(() => ({ items: [], total: 0 })),
+        academicApi.listAcademicYears().catch(() => ({ items: [], total: 0 })),
+        academicApi.listGroups().catch(() => ({ items: [], total: 0 })),
+      ])
+
+      if (studentsData?.items) {
+        setStudents(studentsData.items)
+      }
+
+      if (yearsData?.items) {
+        setAcademicYears(yearsData.items)
+        const activeYear = yearsData.items.find((y) => y.status === 'ACTIVE')
+        if (activeYear) {
+          setAcademicYearId((prev) => prev || activeYear.id)
+        } else if (yearsData.items.length === 1) {
+          setAcademicYearId((prev) => prev || yearsData.items[0].id)
+        }
+      }
+
+      if (groupsData?.items) {
+        setGroups(groupsData.items)
+      }
+    } catch {
+      // Non-critical reference catalogs fallback
+    } finally {
+      setIsCatalogsLoading(false)
+    }
+  }, [])
+
   useEffect(() => {
     void loadEnrollments()
-  }, [loadEnrollments])
+    void loadCatalogs()
+  }, [loadEnrollments, loadCatalogs])
 
   const handleCreateEnrollment = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -333,51 +376,103 @@ export const EnrollmentsView: React.FC = () => {
       >
         <form onSubmit={(e) => void handleCreateEnrollment(e)}>
           <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#334155', marginBottom: '0.25rem' }}>
-              ID de Estudiante (Student UUID) *
+            <label htmlFor="enrollment-student-select" style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#334155', marginBottom: '0.25rem' }}>
+              Estudiante *
             </label>
-            <input
-              type="text"
-              value={studentId}
-              onChange={(e) => {
-                setStudentId(e.target.value)
-              }}
-              required
-              placeholder="UUID del estudiante"
-              style={{ width: '100%', padding: '0.625rem', borderRadius: '6px', border: '1px solid #CBD5E1', boxSizing: 'border-box' }}
-            />
+            {students.length > 0 ? (
+              <select
+                id="enrollment-student-select"
+                value={studentId}
+                onChange={(e) => {
+                  setStudentId(e.target.value)
+                }}
+                required
+                disabled={isCatalogsLoading || isSubmitting}
+                style={{ width: '100%', padding: '0.625rem', borderRadius: '6px', border: '1px solid #CBD5E1', boxSizing: 'border-box', backgroundColor: '#FFFFFF' }}
+              >
+                <option value="">-- Seleccione un estudiante --</option>
+                {students.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.user ? `${s.user.first_name} ${s.user.last_name} (${s.user.document_type}: ${s.user.document_number}) — SIMAT: ${s.code_simat}` : s.code_simat}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <p style={{ fontSize: '0.8125rem', color: '#EF4444', margin: '0.25rem 0 0 0' }}>
+                {isCatalogsLoading ? 'Cargando estudiantes...' : 'No hay estudiantes registrados en la institución.'}
+              </p>
+            )}
           </div>
 
           <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#334155', marginBottom: '0.25rem' }}>
-              ID de Salón / Grupo (Group UUID) *
+            <label htmlFor="enrollment-year-select" style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#334155', marginBottom: '0.25rem' }}>
+              Año Lectivo *
             </label>
-            <input
-              type="text"
-              value={groupId}
-              onChange={(e) => {
-                setGroupId(e.target.value)
-              }}
-              required
-              placeholder="UUID del grupo destino"
-              style={{ width: '100%', padding: '0.625rem', borderRadius: '6px', border: '1px solid #CBD5E1', boxSizing: 'border-box' }}
-            />
+            {academicYears.length > 0 ? (
+              <select
+                id="enrollment-year-select"
+                value={academicYearId}
+                onChange={(e) => {
+                  const newYearId = e.target.value
+                  setAcademicYearId(newYearId)
+                  if (groupId) {
+                    const grp = groups.find((g) => g.id === groupId)
+                    if (grp && grp.academic_year_id !== newYearId) {
+                      setGroupId('')
+                    }
+                  }
+                }}
+                required
+                disabled={isCatalogsLoading || isSubmitting}
+                style={{ width: '100%', padding: '0.625rem', borderRadius: '6px', border: '1px solid #CBD5E1', boxSizing: 'border-box', backgroundColor: '#FFFFFF' }}
+              >
+                <option value="">-- Seleccione un año lectivo --</option>
+                {academicYears.map((ay) => (
+                  <option key={ay.id} value={ay.id}>
+                    {ay.name} ({ay.status})
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <p style={{ fontSize: '0.8125rem', color: '#EF4444', margin: '0.25rem 0 0 0' }}>
+                {isCatalogsLoading ? 'Cargando años lectivos...' : 'No hay años lectivos registrados.'}
+              </p>
+            )}
           </div>
 
           <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#334155', marginBottom: '0.25rem' }}>
-              ID de Año Lectivo (Academic Year UUID) *
+            <label htmlFor="enrollment-group-select" style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#334155', marginBottom: '0.25rem' }}>
+              Salón / Grupo Destino *
             </label>
-            <input
-              type="text"
-              value={academicYearId}
-              onChange={(e) => {
-                setAcademicYearId(e.target.value)
-              }}
-              required
-              placeholder="UUID del año escolar vigente"
-              style={{ width: '100%', padding: '0.625rem', borderRadius: '6px', border: '1px solid #CBD5E1', boxSizing: 'border-box' }}
-            />
+            {groups.filter((g) => !academicYearId || g.academic_year_id === academicYearId).length > 0 ? (
+              <select
+                id="enrollment-group-select"
+                value={groupId}
+                onChange={(e) => {
+                  setGroupId(e.target.value)
+                }}
+                required
+                disabled={isCatalogsLoading || isSubmitting || !academicYearId}
+                style={{ width: '100%', padding: '0.625rem', borderRadius: '6px', border: '1px solid #CBD5E1', boxSizing: 'border-box', backgroundColor: '#FFFFFF' }}
+              >
+                <option value="">-- Seleccione un salón / grupo --</option>
+                {groups
+                  .filter((g) => !academicYearId || g.academic_year_id === academicYearId)
+                  .map((g) => (
+                    <option key={g.id} value={g.id}>
+                      {g.name} — Jornada {g.shift} (Cupo: {g.capacity_limit})
+                    </option>
+                  ))}
+              </select>
+            ) : (
+              <p style={{ fontSize: '0.8125rem', color: '#64748B', margin: '0.25rem 0 0 0' }}>
+                {isCatalogsLoading
+                  ? 'Cargando salones...'
+                  : !academicYearId
+                    ? 'Seleccione primero un año lectivo para ver los salones disponibles.'
+                    : 'No hay salones configurados para el año lectivo seleccionado.'}
+              </p>
+            )}
           </div>
 
           <div style={{ marginBottom: '1.5rem' }}>

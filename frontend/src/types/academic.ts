@@ -32,16 +32,56 @@ export type TeacherContractType =
 export type GuardianRelationshipType =
   | 'PADRE'
   | 'MADRE'
-  | 'ABUELO'
-  | 'ABUELA'
-  | 'TIO'
-  | 'TIA'
-  | 'HERMANO'
-  | 'HERMANA'
+  | 'ABUELO_A'
+  | 'TIO_A'
   | 'TUTOR_LEGAL'
   | 'OTRO'
 
 export type EnrollmentStatus = 'PRE_ENROLLED' | 'ACTIVE' | 'WITHDRAWN' | 'GRADUATED'
+
+// ===========================================================================
+// 1.5. Grade Types (National Curriculum Catalog)
+// ===========================================================================
+
+export interface GradeResponse {
+  id: string
+  code: string
+  name: string
+  level: EducationalLevel
+  ordinal_order: number
+}
+
+export interface GradeListResponse {
+  items: GradeResponse[]
+  total: number
+}
+
+// ===========================================================================
+// 1.6. Subject Types (Curricular Subjects)
+// ===========================================================================
+
+export interface SubjectResponse {
+  id: string
+  institution_id: string
+  knowledge_area_id: string
+  grade_id: string
+  name: string
+  weekly_hours: number
+  created_at: string
+  updated_at: string
+}
+
+export interface SubjectListResponse {
+  items: SubjectResponse[]
+  total: number
+}
+
+export interface SubjectCreateRequest {
+  knowledge_area_id: string
+  grade_id: string
+  name: string
+  weekly_hours?: number
+}
 
 // ===========================================================================
 // 2. Academic Year Types
@@ -121,8 +161,18 @@ export interface GroupListResponse {
 // 4. Student Types
 // ===========================================================================
 
+export interface StudentNewUserPayload {
+  first_name: string
+  last_name: string
+  document_type: string
+  document_number: string
+  email: string
+  phone?: string | null
+}
+
 export interface StudentCreateRequest {
-  user_id: string
+  user_id?: string | null
+  new_user?: StudentNewUserPayload | null
   code_simat: string
   birth_date: string
   gender?: StudentGender
@@ -131,6 +181,24 @@ export interface StudentCreateRequest {
   eps_health_provider?: string | null
   has_disability?: boolean
   disability_type?: string | null
+}
+
+export type StudentAccountStatus = 'SIN_CUENTA' | 'ACTIVA' | 'INACTIVA'
+
+export interface StudentAccountProvisionRequest {
+  email?: string | null
+}
+
+export interface StudentAccountStatusUpdateRequest {
+  is_active: boolean
+}
+
+export interface StudentAccountActionResponse {
+  student_id: string
+  user_id: string
+  account_status: StudentAccountStatus
+  message: string
+  reset_token?: string | null
 }
 
 export interface StudentResponse {
@@ -146,6 +214,9 @@ export interface StudentResponse {
   has_disability: boolean
   disability_type: string | null
   user?: User | null
+  account_status?: StudentAccountStatus
+  account_email?: string | null
+  has_account?: boolean
   created_at: string
   updated_at: string
 }
@@ -159,11 +230,40 @@ export interface StudentListResponse {
 // 5. Teacher Types
 // ===========================================================================
 
+export interface TeacherNewUserPayload {
+  first_name: string
+  last_name: string
+  document_type: string
+  document_number: string
+  email: string
+  phone?: string | null
+}
+
 export interface TeacherCreateRequest {
-  user_id: string
+  user_id?: string | null
+  new_user?: TeacherNewUserPayload | null
   specialty_area?: string | null
   contract_type?: TeacherContractType
   escalafon_grade?: string | null
+  provision_account?: boolean
+}
+
+export type TeacherAccountStatus = 'SIN_CUENTA' | 'ACTIVA' | 'INACTIVA'
+
+export interface TeacherAccountProvisionRequest {
+  email?: string | null
+}
+
+export interface TeacherAccountStatusUpdateRequest {
+  is_active: boolean
+}
+
+export interface TeacherAccountActionResponse {
+  teacher_id: string
+  user_id: string
+  account_status: TeacherAccountStatus
+  message: string
+  reset_token?: string | null
 }
 
 export interface TeacherResponse {
@@ -174,6 +274,10 @@ export interface TeacherResponse {
   contract_type: TeacherContractType
   escalafon_grade: string | null
   user?: User | null
+  account_status?: TeacherAccountStatus
+  account_email?: string | null
+  has_account?: boolean
+  reset_token?: string | null
   created_at: string
   updated_at: string
 }
@@ -193,6 +297,15 @@ export interface TeacherListResponse {
 // 6. Guardian Types
 // ===========================================================================
 
+export interface GuardianNewUserPayload {
+  first_name: string
+  last_name: string
+  document_type?: DocumentType
+  document_number: string
+  email: string
+  phone?: string | null
+}
+
 export interface GuardianCreateRequest {
   first_name: string
   last_name: string
@@ -203,6 +316,26 @@ export interface GuardianCreateRequest {
   address?: string | null
   relationship_type?: GuardianRelationshipType
   user_id?: string | null
+  new_user?: GuardianNewUserPayload | null
+  provision_account?: boolean
+}
+
+export type GuardianAccountStatus = 'SIN_CUENTA' | 'ACTIVA' | 'INACTIVA'
+
+export interface GuardianAccountProvisionRequest {
+  email?: string | null
+}
+
+export interface GuardianAccountStatusUpdateRequest {
+  is_active: boolean
+}
+
+export interface GuardianAccountActionResponse {
+  guardian_id: string
+  user_id: string
+  account_status: GuardianAccountStatus
+  message: string
+  reset_token?: string | null
 }
 
 export interface AssociateGuardianRequest {
@@ -213,6 +346,7 @@ export interface AssociateGuardianRequest {
 
 export interface GuardianResponse {
   id: string
+  institution_id: string
   first_name: string
   last_name: string
   document_type: DocumentType
@@ -222,6 +356,10 @@ export interface GuardianResponse {
   address: string | null
   relationship_type: GuardianRelationshipType
   user_id: string | null
+  user?: User | null
+  account_status?: GuardianAccountStatus
+  account_email?: string | null
+  has_account?: boolean
   created_at: string
   updated_at: string
 }
@@ -234,6 +372,7 @@ export interface StudentGuardianResponse {
   is_primary_contact: boolean
   is_authorized_pickup: boolean
   guardian?: GuardianResponse | null
+  student?: StudentResponse | null
   created_at: string
   updated_at: string
 }

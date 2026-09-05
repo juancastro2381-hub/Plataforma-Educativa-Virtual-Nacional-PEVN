@@ -23,19 +23,31 @@ import type {
   EnrollmentResponse,
   EnrollmentStatus,
   EnrollmentWithdrawRequest,
+  GradeListResponse,
   GroupCapacityResponse,
   GroupCreateRequest,
   GroupListResponse,
   GroupResponse,
   GroupTransferHistoryListResponse,
   GroupTransferRequest,
+  GuardianAccountActionResponse,
+  GuardianAccountProvisionRequest,
+  GuardianAccountStatusUpdateRequest,
   GuardianCreateRequest,
   GuardianListResponse,
   GuardianResponse,
+  StudentAccountActionResponse,
+  StudentAccountProvisionRequest,
+  StudentAccountStatusUpdateRequest,
   StudentCreateRequest,
   StudentGuardianResponse,
   StudentListResponse,
   StudentResponse,
+  SubjectCreateRequest,
+  SubjectListResponse,
+  SubjectResponse,
+  TeacherAccountActionResponse,
+  TeacherAccountProvisionRequest,
   TeacherContractType,
   TeacherCreateRequest,
   TeacherEligibilityResponse,
@@ -47,6 +59,42 @@ import type {
 } from '@/types'
 
 export const academicApi = {
+  // =========================================================================
+  // 0. Grade Catalog (National Curriculum)
+  // =========================================================================
+
+  async listGrades(): Promise<GradeListResponse> {
+    const response = await apiClient.get<GradeListResponse>('/api/v1/grades')
+    return response.data
+  },
+
+  // =========================================================================
+  // 0.1. Curricular Subjects Catalog
+  // =========================================================================
+
+  async listSubjects(filter?: {
+    gradeId?: string
+    knowledgeAreaId?: string
+    institutionIdOverride?: string
+  }): Promise<SubjectListResponse> {
+    const params: Record<string, string> = {}
+    if (filter?.gradeId) params.grade_id = filter.gradeId
+    if (filter?.knowledgeAreaId) params.knowledge_area_id = filter.knowledgeAreaId
+    if (filter?.institutionIdOverride) params.institution_id = filter.institutionIdOverride
+
+    const response = await apiClient.get<SubjectListResponse>('/api/v1/subjects', { params })
+    return response.data
+  },
+
+  async createSubject(
+    payload: SubjectCreateRequest,
+    institutionIdOverride?: string
+  ): Promise<SubjectResponse> {
+    const params = institutionIdOverride ? { institution_id: institutionIdOverride } : undefined
+    const response = await apiClient.post<SubjectResponse>('/api/v1/subjects', payload, { params })
+    return response.data
+  },
+
   // =========================================================================
   // 1. Academic Years
   // =========================================================================
@@ -247,6 +295,76 @@ export const academicApi = {
     return response.data
   },
 
+  async provisionStudentAccount(
+    studentId: string,
+    payload?: StudentAccountProvisionRequest,
+    institutionIdOverride?: string
+  ): Promise<StudentAccountActionResponse> {
+    const params = institutionIdOverride ? { institution_id: institutionIdOverride } : undefined
+    const response = await apiClient.post<StudentAccountActionResponse>(
+      `/api/v1/students/${studentId}/account/provision`,
+      payload ?? {},
+      { params }
+    )
+    return response.data
+  },
+
+  async updateStudentAccountStatus(
+    studentId: string,
+    isActive: boolean,
+    institutionIdOverride?: string
+  ): Promise<StudentAccountActionResponse> {
+    const params = institutionIdOverride ? { institution_id: institutionIdOverride } : undefined
+    const payload: StudentAccountStatusUpdateRequest = { is_active: isActive }
+    const response = await apiClient.post<StudentAccountActionResponse>(
+      `/api/v1/students/${studentId}/account/status`,
+      payload,
+      { params }
+    )
+    return response.data
+  },
+
+  async resetStudentPassword(
+    studentId: string,
+    institutionIdOverride?: string
+  ): Promise<StudentAccountActionResponse> {
+    const params = institutionIdOverride ? { institution_id: institutionIdOverride } : undefined
+    const response = await apiClient.post<StudentAccountActionResponse>(
+      `/api/v1/students/${studentId}/account/reset-password`,
+      {},
+      { params }
+    )
+    return response.data
+  },
+
+  async associateGuardianFromStudent(
+    studentId: string,
+    guardianId: string,
+    payload: AssociateGuardianRequest,
+    institutionIdOverride?: string
+  ): Promise<StudentGuardianResponse> {
+    const params = institutionIdOverride ? { institution_id: institutionIdOverride } : undefined
+    const response = await apiClient.post<StudentGuardianResponse>(
+      `/api/v1/students/${studentId}/guardians/${guardianId}`,
+      payload,
+      { params }
+    )
+    return response.data
+  },
+
+  async dissociateGuardianFromStudent(
+    studentId: string,
+    guardianId: string,
+    institutionIdOverride?: string
+  ): Promise<{ message: string }> {
+    const params = institutionIdOverride ? { institution_id: institutionIdOverride } : undefined
+    const response = await apiClient.delete<{ message: string }>(
+      `/api/v1/students/${studentId}/guardians/${guardianId}`,
+      { params }
+    )
+    return response.data
+  },
+
   // =========================================================================
   // 4. Teachers
   // =========================================================================
@@ -303,6 +421,47 @@ export const academicApi = {
     return response.data
   },
 
+  async provisionTeacherAccount(
+    teacherId: string,
+    payload?: TeacherAccountProvisionRequest,
+    institutionIdOverride?: string
+  ): Promise<TeacherAccountActionResponse> {
+    const params = institutionIdOverride ? { institution_id: institutionIdOverride } : undefined
+    const response = await apiClient.post<TeacherAccountActionResponse>(
+      `/api/v1/teachers/${teacherId}/account/provision`,
+      payload ?? {},
+      { params }
+    )
+    return response.data
+  },
+
+  async updateTeacherAccountStatus(
+    teacherId: string,
+    isActive: boolean,
+    institutionIdOverride?: string
+  ): Promise<TeacherAccountActionResponse> {
+    const params = institutionIdOverride ? { institution_id: institutionIdOverride } : undefined
+    const response = await apiClient.post<TeacherAccountActionResponse>(
+      `/api/v1/teachers/${teacherId}/account/status`,
+      { is_active: isActive },
+      { params }
+    )
+    return response.data
+  },
+
+  async resetTeacherPassword(
+    teacherId: string,
+    institutionIdOverride?: string
+  ): Promise<TeacherAccountActionResponse> {
+    const params = institutionIdOverride ? { institution_id: institutionIdOverride } : undefined
+    const response = await apiClient.post<TeacherAccountActionResponse>(
+      `/api/v1/teachers/${teacherId}/account/reset-password`,
+      {},
+      { params }
+    )
+    return response.data
+  },
+
   // =========================================================================
   // 5. Guardians
   // =========================================================================
@@ -333,6 +492,48 @@ export const academicApi = {
     return response.data
   },
 
+  async provisionGuardianAccount(
+    guardianId: string,
+    payload?: GuardianAccountProvisionRequest,
+    institutionIdOverride?: string
+  ): Promise<GuardianAccountActionResponse> {
+    const params = institutionIdOverride ? { institution_id: institutionIdOverride } : undefined
+    const response = await apiClient.post<GuardianAccountActionResponse>(
+      `/api/v1/guardians/${guardianId}/account/provision`,
+      payload ?? {},
+      { params }
+    )
+    return response.data
+  },
+
+  async updateGuardianAccountStatus(
+    guardianId: string,
+    isActive: boolean,
+    institutionIdOverride?: string
+  ): Promise<GuardianAccountActionResponse> {
+    const params = institutionIdOverride ? { institution_id: institutionIdOverride } : undefined
+    const payload: GuardianAccountStatusUpdateRequest = { is_active: isActive }
+    const response = await apiClient.post<GuardianAccountActionResponse>(
+      `/api/v1/guardians/${guardianId}/account/status`,
+      payload,
+      { params }
+    )
+    return response.data
+  },
+
+  async resetGuardianPassword(
+    guardianId: string,
+    institutionIdOverride?: string
+  ): Promise<GuardianAccountActionResponse> {
+    const params = institutionIdOverride ? { institution_id: institutionIdOverride } : undefined
+    const response = await apiClient.post<GuardianAccountActionResponse>(
+      `/api/v1/guardians/${guardianId}/account/reset-password`,
+      {},
+      { params }
+    )
+    return response.data
+  },
+
   async associateGuardianToStudent(
     guardianId: string,
     studentId: string,
@@ -343,6 +544,31 @@ export const academicApi = {
     const response = await apiClient.post<StudentGuardianResponse>(
       `/api/v1/guardians/${guardianId}/students/${studentId}`,
       payload,
+      { params }
+    )
+    return response.data
+  },
+
+  async dissociateGuardian(
+    guardianId: string,
+    studentId: string,
+    institutionIdOverride?: string
+  ): Promise<{ message: string }> {
+    const params = institutionIdOverride ? { institution_id: institutionIdOverride } : undefined
+    const response = await apiClient.delete<{ message: string }>(
+      `/api/v1/guardians/${guardianId}/students/${studentId}`,
+      { params }
+    )
+    return response.data
+  },
+
+  async getGuardianStudents(
+    guardianId: string,
+    institutionIdOverride?: string
+  ): Promise<StudentGuardianResponse[]> {
+    const params = institutionIdOverride ? { institution_id: institutionIdOverride } : undefined
+    const response = await apiClient.get<StudentGuardianResponse[]>(
+      `/api/v1/guardians/${guardianId}/students`,
       { params }
     )
     return response.data

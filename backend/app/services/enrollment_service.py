@@ -28,11 +28,17 @@ from app.core.exceptions import (
     StudentNotFoundError,
 )
 from app.core.logging import get_logger
+from app.core.security.interfaces import AuthorizationContext
 from app.models.academic_year import AcademicYear, AcademicYearStatus
 from app.models.enrollment import Enrollment, EnrollmentStatus
 from app.models.group import Group
 from app.models.institution import Campus
 from app.models.student import Student
+from app.models.user import User
+from app.services.academic_scope_helper import (
+    get_teacher_authorized_group_ids,
+    is_directive_actor,
+)
 
 _logger = get_logger(__name__)
 
@@ -186,15 +192,73 @@ class EnrollmentService:
 
         return enrollment
 
+    async def list_enrollments(
+        self,
+        *,
+        institution_id: uuid.UUID,
+        user: User | None = None,
+        auth: AuthorizationContext | None = None,
+        student_id: uuid.UUID | None = None,
+        group_id: uuid.UUID | None = None,
+        academic_year_id: uuid.UUID | None = None,
+        status_filter: EnrollmentStatus | None = None,
+    ) -> list[Enrollment]:
+        """
+        List enrollments within the institution.
+        If caller is a Teacher without directive roles, strictly restricts results
+        to enrollments in groups within the teacher's authorized academic scope.
+        """
+        is_directive = is_directive_actor(auth, user=user)
+
+        query = (
+            select(Enrollment)
+            .join(Student, Enrollment.student_id == Student.id)
+            .options(
+                selectinload(Enrollment.student).selectinload(Student.user),
+                selectinload(Enrollment.group),
+                selectinload(Enrollment.academic_year),
+            )
+            .where(Student.institution_id == institution_id)
+        )
+
+        if not is_directive:
+            if not user:
+                return []
+            authorized_group_ids = await get_teacher_authorized_group_ids(
+                self._session,
+                user_id=user.id,
+                institution_id=institution_id,
+            )
+            if not authorized_group_ids:
+                return []
+            query = query.where(Enrollment.group_id.in_(authorized_group_ids))
+
+        if student_id:
+            query = query.where(Enrollment.student_id == student_id)
+        if group_id:
+            query = query.where(Enrollment.group_id == group_id)
+        if academic_year_id:
+            query = query.where(Enrollment.academic_year_id == academic_year_id)
+        if status_filter:
+            query = query.where(Enrollment.status == status_filter)
+
+        query = query.order_by(Enrollment.created_at.desc())
+        result = await self._session.execute(query)
+        return list(result.scalars().all())
+
     async def get_enrollment_by_id(
         self,
         *,
         enrollment_id: uuid.UUID,
         institution_id: uuid.UUID,
+        user: User | None = None,
+        auth: AuthorizationContext | None = None,
     ) -> Enrollment:
         """
-        Retrieve an enrollment record validating institutional tenant boundary.
+        Retrieve an enrollment record validating tenant isolation and teacher academic scope.
         """
+        is_directive = is_directive_actor(auth, user=user)
+
         stmt = (
             select(Enrollment)
             .join(Student, Enrollment.student_id == Student.id)
@@ -214,6 +278,20 @@ class EnrollmentService:
             raise EnrollmentNotFoundError(
                 f"Matrícula {enrollment_id} no encontrada en la institución."
             )
+
+        if not is_directive:
+            if not user:
+                raise EnrollmentNotFoundError(f"Matrícula {enrollment_id} no encontrada.")
+            authorized_group_ids = await get_teacher_authorized_group_ids(
+                self._session,
+                user_id=user.id,
+                institution_id=institution_id,
+            )
+            if enrollment.group_id not in authorized_group_ids:
+                raise EnrollmentNotFoundError(
+                    f"Matrícula {enrollment_id} no encontrada en su ámbito académico."
+                )
+
         return enrollment
 
     async def activate_enrollment(

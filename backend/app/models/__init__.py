@@ -6,6 +6,17 @@ Exports all domain ORM models for the Plataforma Educativa Virtual Nacional.
 
 from __future__ import annotations
 
+from app.models.academic_activity import (
+    AcademicActivity,
+    AcademicPlan,
+    AcademicPlanStatus,
+    ActivityGrade,
+    ActivityStatus,
+    ActivitySubmissionStatus,
+    ActivityType,
+    AttendanceStatusEnum,
+    DailyAttendance,
+)
 from app.models.academic_assignment import AcademicAssignment
 from app.models.academic_year import (
     AcademicPeriod,
@@ -14,10 +25,34 @@ from app.models.academic_year import (
     AcademicYearStatus,
 )
 from app.models.audit_log import AuditLog
+from app.models.coexistence_incident import (
+    CoexistenceSituationType,
+    IncidentFollowUp,
+    IncidentStatus,
+    StudentIncident,
+)
+from app.models.communication import (
+    CommunicationAudience,
+    CommunicationCategory,
+    CommunicationPriority,
+    CommunicationReceipt,
+    InstitutionalCommunication,
+    PublishingStatus,
+    TargetScopeType,
+)
 from app.models.enrollment import (
     Enrollment,
     EnrollmentStatus,
     GroupTransferHistory,
+)
+from app.models.evaluation import (
+    AcademicAchievement,
+    PerformanceLevelEnum,
+    PeriodSubjectGrade,
+    PromotionStatusEnum,
+    RecoveryGrade,
+    SieePolicy,
+    StudentPromotion,
 )
 from app.models.grade import EducationalLevel, Grade
 from app.models.group import Group, ShiftEnum
@@ -28,6 +63,10 @@ from app.models.guardian import (
 )
 from app.models.institution import Campus, Institution
 from app.models.invitation import GuardianInvitation, RectorInvitation
+from app.models.news import (
+    InstitutionalNews,
+    NewsCategory,
+)
 from app.models.official_catalog import (
     OfficialCampusCatalog,
     OfficialCatalogSyncBatch,
@@ -50,13 +89,28 @@ from app.models.virtual_classroom import (
 )
 
 __all__ = [
+    "AcademicAchievement",
+    "AcademicActivity",
     "AcademicAssignment",
     "AcademicPeriod",
+    "AcademicPlan",
+    "AcademicPlanStatus",
     "AcademicYear",
     "AcademicYearCalendarType",
     "AcademicYearStatus",
+    "ActivityGrade",
+    "ActivityStatus",
+    "ActivitySubmissionStatus",
+    "ActivityType",
+    "AttendanceStatusEnum",
     "AuditLog",
     "Campus",
+    "CoexistenceSituationType",
+    "CommunicationAudience",
+    "CommunicationCategory",
+    "CommunicationPriority",
+    "CommunicationReceipt",
+    "DailyAttendance",
     "Department",
     "DocumentType",
     "EducationalLevel",
@@ -68,27 +122,41 @@ __all__ = [
     "Guardian",
     "GuardianInvitation",
     "GuardianRelationshipType",
+    "IncidentFollowUp",
+    "IncidentStatus",
     "Institution",
+    "InstitutionalCommunication",
+    "InstitutionalNews",
     "KnowledgeArea",
     "MeetingAttendance",
     "MeetingParticipantRole",
     "MeetingRecording",
     "Municipality",
+    "NewsCategory",
     "OfficialCampusCatalog",
     "OfficialCatalogSyncBatch",
     "OfficialCatalogSyncChunk",
     "OfficialInstitutionCatalog",
     "PasswordResetToken",
+    "PerformanceLevelEnum",
+    "PeriodSubjectGrade",
     "Permission",
+    "PromotionStatusEnum",
+    "PublishingStatus",
+    "RecoveryGrade",
     "RectorInvitation",
     "RefreshToken",
     "Role",
     "RolePermission",
     "ShiftEnum",
+    "SieePolicy",
     "Student",
     "StudentGender",
     "StudentGuardian",
+    "StudentIncident",
+    "StudentPromotion",
     "Subject",
+    "TargetScopeType",
     "Teacher",
     "TeacherContractType",
     "User",

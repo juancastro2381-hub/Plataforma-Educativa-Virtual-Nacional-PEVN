@@ -133,12 +133,11 @@ describe('Virtual Classrooms View & Actions', () => {
       expect(
         screen.getByText('Aulas Virtuales y Clases en Vivo')
       ).toBeInTheDocument()
+      expect(
+        screen.getByText('Cálculo Diferencial: Límites y Continuidad')
+      ).toBeInTheDocument()
+      expect(screen.getByText('Programada')).toBeInTheDocument()
     })
-
-    expect(
-      screen.getByText('Cálculo Diferencial: Límites y Continuidad')
-    ).toBeInTheDocument()
-    expect(screen.getByText('Programada')).toBeInTheDocument()
   })
 
   it('renders empty state when no classrooms exist', async () => {

@@ -46,7 +46,7 @@ class EnrollmentStatus(enum.StrEnum):
     ACTIVE = "ACTIVE"  # Matrícula activa regular
     WITHDRAWN = "WITHDRAWN"  # Retirado (Deserción / Cancelación)
     TRANSFERRED = "TRANSFERRED"  # Trasladado a otro grupo o I.E.
-    GRADUATED = "GRADUATED"  # Graduado / Promovido al finalizar
+    GRADUATED = "GRADUATED"  # Graduado (completed school cycle - ONLY for Grade 11 / Grado 11 completers)
 
 
 class Enrollment(Base):

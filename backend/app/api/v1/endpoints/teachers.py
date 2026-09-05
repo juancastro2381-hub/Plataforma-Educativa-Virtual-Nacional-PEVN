@@ -24,14 +24,20 @@ from app.api.deps import (
 from app.core.logging import correlation_id_ctx
 from app.core.security.interfaces import SystemRole
 from app.exceptions.errors import AuthorizationError
+from app.models.role import UserRole
 from app.models.teacher import Teacher, TeacherContractType
+from app.models.user import User
 from app.schemas.academic import (
+    TeacherAccountActionResponse,
+    TeacherAccountProvisionRequest,
+    TeacherAccountStatusUpdateRequest,
     TeacherCreateRequest,
     TeacherEligibilityResponse,
     TeacherListResponse,
     TeacherResponse,
 )
 from app.services.teacher_service import TeacherService
+from app.services.user_service import UserService
 
 router = APIRouter(prefix="/teachers", tags=["Teachers"])
 
@@ -58,7 +64,7 @@ def _resolve_institution_id(
     response_model=TeacherResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Crear perfil docente",
-    description="Crea un perfil docente vinculado 1:1 a un usuario.",
+    description="Crea un perfil docente vinculado a un usuario existente o aprovisionando un nuevo usuario institucional.",
     dependencies=[Depends(require_permission("teachers", "create"))],
 )
 async def create_teacher(
@@ -75,10 +81,32 @@ async def create_teacher(
     target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
     correlation_id = correlation_id_ctx.get()
 
+    resolved_user_id: uuid.UUID
+
+    if payload.new_user:
+        user_service = UserService(session=db)
+        created_user = await user_service.provision_institutional_user(
+            institution_id=target_institution_id,
+            first_name=payload.new_user.first_name,
+            last_name=payload.new_user.last_name,
+            document_type=payload.new_user.document_type,
+            document_number=payload.new_user.document_number,
+            email=payload.new_user.email,
+            role_name="teacher",
+            is_active=payload.provision_account,
+            actor_id=current_user.id,
+            actor_ip=client_ip,
+            correlation_id=correlation_id,
+        )
+        resolved_user_id = created_user.id
+    else:
+        assert payload.user_id is not None
+        resolved_user_id = payload.user_id
+
     service = TeacherService(session=db)
     teacher = await service.create_teacher(
         institution_id=target_institution_id,
-        user_id=payload.user_id,
+        user_id=resolved_user_id,
         specialty_area=payload.specialty_area,
         contract_type=payload.contract_type,
         escalafon_grade=payload.escalafon_grade,
@@ -86,9 +114,24 @@ async def create_teacher(
         actor_ip=client_ip,
         correlation_id=correlation_id,
     )
+
+    reset_token: str | None = None
+    if payload.provision_account:
+        refreshed_teacher, _, _, reset_token = await service.provision_teacher_account(
+            teacher_id=teacher.id,
+            institution_id=target_institution_id,
+            actor_id=current_user.id,
+            actor_ip=client_ip,
+            correlation_id=correlation_id,
+        )
+    else:
+        refreshed_teacher = await service.get_teacher_by_id(
+            teacher_id=teacher.id,
+            institution_id=target_institution_id,
+        )
+
     await db.commit()
-    await db.refresh(teacher)
-    return TeacherResponse.model_validate(teacher)
+    return service.build_teacher_response(refreshed_teacher, reset_token=reset_token)
 
 
 @router.get(
@@ -115,7 +158,7 @@ async def get_teacher(
         teacher_id=teacher_id,
         institution_id=target_institution_id,
     )
-    return TeacherResponse.model_validate(teacher)
+    return service.build_teacher_response(teacher)
 
 
 @router.get(
@@ -140,10 +183,15 @@ async def list_teachers(
     ] = None,
 ) -> TeacherListResponse:
     target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    service = TeacherService(session=db)
 
     query = (
         select(Teacher)
-        .options(selectinload(Teacher.user))
+        .options(
+            selectinload(Teacher.user)
+            .selectinload(User.user_roles)
+            .selectinload(UserRole.role)
+        )
         .where(Teacher.institution_id == target_institution_id)
     )
     if contract_type:
@@ -154,7 +202,7 @@ async def list_teachers(
     teachers = list(result.scalars().all())
 
     return TeacherListResponse(
-        items=[TeacherResponse.model_validate(t) for t in teachers],
+        items=[service.build_teacher_response(t) for t in teachers],
         total=len(teachers),
     )
 
@@ -187,4 +235,137 @@ async def validate_teacher_eligibility(
         teacher_id=teacher_id,
         is_eligible=is_eligible,
         message="Docente activo y habilitado para asignación académica.",
+    )
+
+
+# ===========================================================================
+# Teacher Account Lifecycle Management (Phase 13D.5 Rector -> Teacher Onboarding)
+# ===========================================================================
+
+
+@router.post(
+    "/{teacher_id}/account/provision",
+    response_model=TeacherAccountActionResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Aprovisionar cuenta de acceso para docente existente",
+    description="Asigna rol DOCENTE, activa la cuenta institucional y emite mecanismo seguro de configuración de clave.",
+    dependencies=[Depends(require_permission("teachers", "create"))],
+)
+async def provision_teacher_account(
+    teacher_id: uuid.UUID,
+    payload: TeacherAccountProvisionRequest,
+    db: SessionDep,
+    auth: AuthContextDep,
+    current_user: CurrentUserDep,
+    client_ip: ClientIpDep,
+    institution_id: Annotated[
+        uuid.UUID | None,
+        Query(description="Override for SuperAdmin only"),
+    ] = None,
+) -> TeacherAccountActionResponse:
+    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    correlation_id = correlation_id_ctx.get()
+    service = TeacherService(session=db)
+
+    teacher, account_status, msg, reset_token = await service.provision_teacher_account(
+        teacher_id=teacher_id,
+        institution_id=target_institution_id,
+        email=payload.email,
+        actor_id=current_user.id,
+        actor_ip=client_ip,
+        correlation_id=correlation_id,
+    )
+    await db.commit()
+
+    return TeacherAccountActionResponse(
+        teacher_id=teacher.id,
+        user_id=teacher.user_id,
+        account_status=account_status,
+        message=msg,
+        reset_token=reset_token,
+    )
+
+
+@router.post(
+    "/{teacher_id}/account/status",
+    response_model=TeacherAccountActionResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Activar o desactivar cuenta de acceso docente",
+    description="Modifica el estado de acceso del usuario preservando el 100% del historial pedagógico y académico.",
+    dependencies=[Depends(require_permission("teachers", "update"))],
+)
+async def update_teacher_account_status(
+    teacher_id: uuid.UUID,
+    payload: TeacherAccountStatusUpdateRequest,
+    db: SessionDep,
+    auth: AuthContextDep,
+    current_user: CurrentUserDep,
+    client_ip: ClientIpDep,
+    institution_id: Annotated[
+        uuid.UUID | None,
+        Query(description="Override for SuperAdmin only"),
+    ] = None,
+) -> TeacherAccountActionResponse:
+    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    correlation_id = correlation_id_ctx.get()
+    service = TeacherService(session=db)
+
+    teacher, account_status, msg = await service.update_teacher_account_status(
+        teacher_id=teacher_id,
+        institution_id=target_institution_id,
+        is_active=payload.is_active,
+        actor_id=current_user.id,
+        actor_ip=client_ip,
+        correlation_id=correlation_id,
+    )
+    await db.commit()
+
+    return TeacherAccountActionResponse(
+        teacher_id=teacher.id,
+        user_id=teacher.user_id,
+        account_status=account_status,
+        message=msg,
+    )
+
+
+@router.post(
+    "/{teacher_id}/account/reset-password",
+    response_model=TeacherAccountActionResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Restablecer contraseña de cuenta docente",
+    description="Genera una solicitud segura de restablecimiento de contraseña para el correo institucional del docente.",
+    dependencies=[Depends(require_permission("teachers", "update"))],
+)
+async def reset_teacher_password(
+    teacher_id: uuid.UUID,
+    db: SessionDep,
+    auth: AuthContextDep,
+    current_user: CurrentUserDep,
+    client_ip: ClientIpDep,
+    institution_id: Annotated[
+        uuid.UUID | None,
+        Query(description="Override for SuperAdmin only"),
+    ] = None,
+) -> TeacherAccountActionResponse:
+    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    correlation_id = correlation_id_ctx.get()
+    service = TeacherService(session=db)
+
+    teacher, msg, reset_token = await service.reset_teacher_password(
+        teacher_id=teacher_id,
+        institution_id=target_institution_id,
+        actor_id=current_user.id,
+        actor_ip=client_ip,
+        correlation_id=correlation_id,
+    )
+    await db.commit()
+
+    account_status, _, _ = service.compute_account_status(teacher)
+
+    return TeacherAccountActionResponse(
+        teacher_id=teacher.id,
+        user_id=teacher.user_id,
+        account_status=account_status,
+        message=msg,
+        reset_token=reset_token,
     )

@@ -86,17 +86,58 @@ export function RootLayout() {
           <nav aria-label="Navegación principal">
             {isAuthenticated && user ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <Link
-                  to="/academic"
-                  style={{
-                    color: '#FCD116',
-                    textDecoration: 'none',
-                    fontSize: '0.875rem',
-                    fontWeight: 600,
-                  }}
-                >
-                  Gestión Académica
-                </Link>
+                {(user.roles.includes('rector') || user.roles.includes('institution_admin') || user.roles.includes('superadmin') || user.roles.includes('coordinator') || user.roles.includes('academic_coordinator')) && (
+                  <Link
+                    to="/academic"
+                    style={{
+                      color: '#FCD116',
+                      textDecoration: 'none',
+                      fontSize: '0.875rem',
+                      fontWeight: 600,
+                    }}
+                  >
+                    Gestión Académica
+                  </Link>
+                )}
+                {user.roles.includes('teacher') && (
+                  <Link
+                    to="/teacher"
+                    style={{
+                      color: '#67E8F9',
+                      textDecoration: 'none',
+                      fontSize: '0.875rem',
+                      fontWeight: 600,
+                    }}
+                  >
+                    Portal Docente
+                  </Link>
+                )}
+                {user.roles.includes('student') && (
+                  <Link
+                    to="/student"
+                    style={{
+                      color: '#93C5FD',
+                      textDecoration: 'none',
+                      fontSize: '0.875rem',
+                      fontWeight: 600,
+                    }}
+                  >
+                    Portal Estudiante
+                  </Link>
+                )}
+                {user.roles.includes('guardian') && (
+                  <Link
+                    to="/guardian"
+                    style={{
+                      color: '#F472B6',
+                      textDecoration: 'none',
+                      fontSize: '0.875rem',
+                      fontWeight: 600,
+                    }}
+                  >
+                    Portal Acudiente
+                  </Link>
+                )}
                 {(user.scope.is_national || user.roles.includes('national_admin') || user.roles.includes('superadmin')) && (
                   <Link
                     to="/admin/institutions"

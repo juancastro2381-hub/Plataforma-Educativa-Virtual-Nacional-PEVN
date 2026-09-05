@@ -10,20 +10,84 @@ from __future__ import annotations
 
 import uuid
 from datetime import date, datetime
+from enum import StrEnum
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
 
 from app.models.academic_year import (
     AcademicYearCalendarType,
     AcademicYearStatus,
 )
 from app.models.enrollment import EnrollmentStatus
+from app.models.grade import EducationalLevel
 from app.models.group import ShiftEnum
 from app.models.guardian import GuardianRelationshipType
 from app.models.student import StudentGender
 from app.models.teacher import TeacherContractType
 from app.models.user import DocumentType
 from app.schemas.user import UserResponse
+
+# ===========================================================================
+# 0. Grade Schemas (National Curriculum Catalog)
+# ===========================================================================
+
+
+class GradeResponse(BaseModel):
+    """Response representation of a standardized curriculum grade."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    code: str
+    name: str
+    level: EducationalLevel
+    ordinal_order: int
+
+
+class GradeListResponse(BaseModel):
+    """List response for curriculum grades."""
+
+    items: list[GradeResponse]
+    total: int
+
+
+# ===========================================================================
+# 0.1. Subject Schemas (Curricular Subjects)
+# ===========================================================================
+
+
+class SubjectResponse(BaseModel):
+    """Response representation of a curricular subject."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    institution_id: uuid.UUID
+    knowledge_area_id: uuid.UUID
+    grade_id: uuid.UUID
+    name: str
+    weekly_hours: int
+    created_at: datetime
+    updated_at: datetime
+
+
+class SubjectListResponse(BaseModel):
+    """List response for curricular subjects."""
+
+    items: list[SubjectResponse]
+    total: int
+
+
+class SubjectCreateRequest(BaseModel):
+    """Payload for creating a custom curricular subject."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    knowledge_area_id: uuid.UUID = Field(..., description="Knowledge Area ID")
+    grade_id: uuid.UUID = Field(..., description="Grade ID")
+    name: str = Field(..., min_length=2, max_length=150, description="Subject Name")
+    weekly_hours: int = Field(default=4, ge=1, le=40, description="Weekly hours")
+
 
 # ===========================================================================
 # 1. Academic Year Schemas
@@ -49,6 +113,30 @@ class AcademicYearCreateRequest(BaseModel):
     )
 
 
+class AcademicPeriodResponse(BaseModel):
+    """Response representation of an academic term period within a school year."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    academic_year_id: uuid.UUID
+    period_number: int
+    name: str
+    weight_percentage: float
+    start_date: date
+    end_date: date
+    is_closed: bool
+    created_at: datetime
+    updated_at: datetime
+
+
+class AcademicPeriodListResponse(BaseModel):
+    """List response for academic periods."""
+
+    items: list[AcademicPeriodResponse]
+    total: int
+
+
 class AcademicYearResponse(BaseModel):
     """Response representation of an academic school year."""
 
@@ -62,6 +150,7 @@ class AcademicYearResponse(BaseModel):
     end_date: date
     calendar_type: AcademicYearCalendarType
     status: AcademicYearStatus
+    periods: list[AcademicPeriodResponse] = []
     created_at: datetime
     updated_at: datetime
 
@@ -140,12 +229,30 @@ class GroupListResponse(BaseModel):
 # ===========================================================================
 
 
-class StudentCreateRequest(BaseModel):
-    """Payload for creating a student profile linked to a User account."""
+class StudentNewUserPayload(BaseModel):
+    """Civil identity payload for on-the-fly student user provisioning."""
 
     model_config = ConfigDict(extra="forbid")
 
-    user_id: uuid.UUID = Field(..., description="User account ID")
+    first_name: str = Field(..., min_length=1, max_length=100, description="Nombres del estudiante")
+    last_name: str = Field(..., min_length=1, max_length=100, description="Apellidos del estudiante")
+    document_type: DocumentType = Field(default=DocumentType.TI, description="Tipo de documento")
+    document_number: str = Field(..., min_length=3, max_length=50, description="Número de documento")
+    email: EmailStr = Field(..., description="Correo electrónico institucional")
+    phone: str | None = Field(default=None, max_length=50, description="Teléfono de contacto")
+
+
+class StudentCreateRequest(BaseModel):
+    """Payload for creating a student profile either via existing user_id or new_user."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    user_id: uuid.UUID | None = Field(
+        default=None, description="User account ID (if linking existing user)"
+    )
+    new_user: StudentNewUserPayload | None = Field(
+        default=None, description="Civil identity to provision a new student on the fly"
+    )
     code_simat: str = Field(..., min_length=3, max_length=50, description="SIMAT")
     birth_date: date = Field(..., description="Date of birth")
     gender: StudentGender = Field(default=StudentGender.M, description="Gender")
@@ -158,6 +265,48 @@ class StudentCreateRequest(BaseModel):
     disability_type: str | None = Field(
         default=None, max_length=100, description="Disability type"
     )
+
+    @model_validator(mode="after")
+    def validate_user_provisioning_mode(self) -> StudentCreateRequest:
+        if bool(self.user_id) == bool(self.new_user):
+            raise ValueError(
+                "Debe proporcionar exactamente uno: 'user_id' (usuario existente) o 'new_user' (nuevo estudiante)."
+            )
+        return self
+
+
+class StudentAccountStatusEnum(StrEnum):
+    """Lifecycle state of a student's login account."""
+
+    SIN_CUENTA = "SIN_CUENTA"
+    ACTIVA = "ACTIVA"
+    INACTIVA = "INACTIVA"
+
+
+class StudentAccountProvisionRequest(BaseModel):
+    """Payload for provisioning a login account for an existing student."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    email: EmailStr | None = Field(default=None, description="Optional updated student email")
+
+
+class StudentAccountStatusUpdateRequest(BaseModel):
+    """Payload for activating or deactivating a student's login account."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    is_active: bool = Field(..., description="Target active state for login account")
+
+
+class StudentAccountActionResponse(BaseModel):
+    """Response representation of a student account lifecycle mutation."""
+
+    student_id: uuid.UUID
+    user_id: uuid.UUID
+    account_status: StudentAccountStatusEnum
+    message: str
+    reset_token: str | None = Field(default=None, description="Temporary setup/reset token returned only upon action execution")
 
 
 class StudentResponse(BaseModel):
@@ -177,6 +326,9 @@ class StudentResponse(BaseModel):
     has_disability: bool
     disability_type: str | None
     user: UserResponse | None = None
+    account_status: StudentAccountStatusEnum = StudentAccountStatusEnum.SIN_CUENTA
+    account_email: str | None = None
+    has_account: bool = False
     created_at: datetime
     updated_at: datetime
 
@@ -193,12 +345,30 @@ class StudentListResponse(BaseModel):
 # ===========================================================================
 
 
-class TeacherCreateRequest(BaseModel):
-    """Payload for creating a teacher profile linked to a User account."""
+class TeacherNewUserPayload(BaseModel):
+    """Civil identity payload for on-the-fly teacher user provisioning."""
 
     model_config = ConfigDict(extra="forbid")
 
-    user_id: uuid.UUID = Field(..., description="User account ID")
+    first_name: str = Field(..., min_length=1, max_length=100, description="Nombres del docente")
+    last_name: str = Field(..., min_length=1, max_length=100, description="Apellidos del docente")
+    document_type: DocumentType = Field(default=DocumentType.CC, description="Tipo de documento")
+    document_number: str = Field(..., min_length=3, max_length=50, description="Número de documento")
+    email: EmailStr = Field(..., description="Correo electrónico institucional")
+    phone: str | None = Field(default=None, max_length=50, description="Teléfono de contacto")
+
+
+class TeacherCreateRequest(BaseModel):
+    """Payload for creating a teacher profile either via existing user_id or new_user."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    user_id: uuid.UUID | None = Field(
+        default=None, description="User account ID (if linking existing user)"
+    )
+    new_user: TeacherNewUserPayload | None = Field(
+        default=None, description="Civil identity to provision a new user on the fly"
+    )
     specialty_area: str | None = Field(
         default=None, max_length=150, description="Specialty"
     )
@@ -209,6 +379,52 @@ class TeacherCreateRequest(BaseModel):
     escalafon_grade: str | None = Field(
         default=None, max_length=50, description="Escalafon"
     )
+    provision_account: bool = Field(
+        default=True,
+        description="Whether to immediately provision login credentials and activate teacher user role",
+    )
+
+    @model_validator(mode="after")
+    def validate_user_provisioning_mode(self) -> TeacherCreateRequest:
+        if bool(self.user_id) == bool(self.new_user):
+            raise ValueError(
+                "Debe proporcionar exactamente uno: 'user_id' (usuario existente) o 'new_user' (nuevo docente)."
+            )
+        return self
+
+
+class TeacherAccountStatusEnum(StrEnum):
+    """Lifecycle state of an educator's login account."""
+
+    SIN_CUENTA = "SIN_CUENTA"
+    ACTIVA = "ACTIVA"
+    INACTIVA = "INACTIVA"
+
+
+class TeacherAccountProvisionRequest(BaseModel):
+    """Payload for provisioning a login account for an existing teacher."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    email: EmailStr | None = Field(default=None, description="Optional updated institutional email")
+
+
+class TeacherAccountStatusUpdateRequest(BaseModel):
+    """Payload for activating or deactivating a teacher's login account."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    is_active: bool = Field(..., description="Target active state for login account")
+
+
+class TeacherAccountActionResponse(BaseModel):
+    """Response representation of an account lifecycle mutation."""
+
+    teacher_id: uuid.UUID
+    user_id: uuid.UUID
+    account_status: TeacherAccountStatusEnum
+    message: str
+    reset_token: str | None = Field(default=None, description="Temporary setup token (dev environment only)")
 
 
 class TeacherResponse(BaseModel):
@@ -219,10 +435,14 @@ class TeacherResponse(BaseModel):
     id: uuid.UUID
     user_id: uuid.UUID
     institution_id: uuid.UUID
-    specialty_area: str | None
+    specialty_area: str | None = None
     contract_type: TeacherContractType
-    escalafon_grade: str | None
+    escalafon_grade: str | None = None
     user: UserResponse | None = None
+    account_status: TeacherAccountStatusEnum = TeacherAccountStatusEnum.SIN_CUENTA
+    account_email: str | None = None
+    has_account: bool = False
+    reset_token: str | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -247,6 +467,19 @@ class TeacherListResponse(BaseModel):
 # ===========================================================================
 
 
+class GuardianNewUserPayload(BaseModel):
+    """Civil identity payload for on-the-fly guardian user provisioning."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    first_name: str = Field(..., min_length=2, max_length=100, description="Nombres del acudiente")
+    last_name: str = Field(..., min_length=2, max_length=100, description="Apellidos del acudiente")
+    document_type: DocumentType = Field(default=DocumentType.CC, description="Tipo de documento")
+    document_number: str = Field(..., min_length=4, max_length=50, description="Número de documento")
+    email: EmailStr = Field(..., description="Correo electrónico del acudiente")
+    phone: str | None = Field(default=None, max_length=50, description="Teléfono de contacto")
+
+
 class GuardianCreateRequest(BaseModel):
     """Payload for creating a guardian profile (OPEN-DECISION-3A-01)."""
 
@@ -262,7 +495,48 @@ class GuardianCreateRequest(BaseModel):
     relationship_type: GuardianRelationshipType = Field(
         default=GuardianRelationshipType.MADRE
     )
-    user_id: uuid.UUID | None = Field(default=None, description="Optional User")
+    user_id: uuid.UUID | None = Field(default=None, description="Optional User ID if linking existing user")
+    new_user: GuardianNewUserPayload | None = Field(
+        default=None, description="Civil identity to provision a new guardian user on the fly"
+    )
+    provision_account: bool = Field(
+        default=False,
+        description="Whether to immediately provision login credentials and activate guardian user role",
+    )
+
+
+class GuardianAccountStatusEnum(StrEnum):
+    """Lifecycle state of a legal guardian's login account."""
+
+    SIN_CUENTA = "SIN_CUENTA"
+    ACTIVA = "ACTIVA"
+    INACTIVA = "INACTIVA"
+
+
+class GuardianAccountProvisionRequest(BaseModel):
+    """Payload for provisioning a login account for an existing guardian."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    email: EmailStr | None = Field(default=None, description="Optional updated guardian email")
+
+
+class GuardianAccountStatusUpdateRequest(BaseModel):
+    """Payload for activating or deactivating a guardian's login account."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    is_active: bool = Field(..., description="Target active state for login account")
+
+
+class GuardianAccountActionResponse(BaseModel):
+    """Response representation of a guardian account lifecycle mutation."""
+
+    guardian_id: uuid.UUID
+    user_id: uuid.UUID
+    account_status: GuardianAccountStatusEnum
+    message: str
+    reset_token: str | None = Field(default=None, description="Temporary setup/reset token returned only upon action execution")
 
 
 class AssociateGuardianRequest(BaseModel):
@@ -283,6 +557,7 @@ class GuardianResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: uuid.UUID
+    institution_id: uuid.UUID
     first_name: str
     last_name: str
     document_type: DocumentType
@@ -292,6 +567,10 @@ class GuardianResponse(BaseModel):
     address: str | None
     relationship_type: GuardianRelationshipType
     user_id: uuid.UUID | None
+    user: UserResponse | None = None
+    account_status: GuardianAccountStatusEnum = GuardianAccountStatusEnum.SIN_CUENTA
+    account_email: str | None = None
+    has_account: bool = False
     created_at: datetime
     updated_at: datetime
 
@@ -308,6 +587,7 @@ class StudentGuardianResponse(BaseModel):
     is_primary_contact: bool
     is_authorized_pickup: bool
     guardian: GuardianResponse | None = None
+    student: StudentResponse | None = None
     created_at: datetime
     updated_at: datetime
 

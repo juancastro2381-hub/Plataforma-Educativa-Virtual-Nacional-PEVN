@@ -2,8 +2,8 @@
 PEVN Backend — Guardians API Endpoints
 
 REST Controller for legal guardians (Acudientes) and student-guardian associations,
-supporting decoupled national identity per [OPEN-DECISION-3A-01] and delegating
-business rules to GuardianService.
+supporting decoupled national identity per [OPEN-DECISION-3A-01], account provisioning,
+lifecycle management, and delegating business rules to GuardianService.
 """
 
 from __future__ import annotations
@@ -12,7 +12,6 @@ import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, status
-from sqlalchemy import select
 
 from app.api.deps import (
     AuthContextDep,
@@ -24,9 +23,11 @@ from app.api.deps import (
 from app.core.logging import correlation_id_ctx
 from app.core.security.interfaces import SystemRole
 from app.exceptions.errors import AuthorizationError
-from app.models.guardian import Guardian
 from app.schemas.academic import (
     AssociateGuardianRequest,
+    GuardianAccountActionResponse,
+    GuardianAccountProvisionRequest,
+    GuardianAccountStatusUpdateRequest,
     GuardianCreateRequest,
     GuardianListResponse,
     GuardianResponse,
@@ -59,19 +60,26 @@ def _resolve_institution_id(
     response_model=GuardianResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Registrar acudiente",
-    description="Crea un registro de acudiente (OPEN-DECISION-3A-01).",
+    description="Crea un registro de acudiente (OPEN-DECISION-3A-01) y opcionalmente aprovisiona cuenta.",
     dependencies=[Depends(require_permission("guardians", "create"))],
 )
 async def create_guardian(
     payload: GuardianCreateRequest,
     db: SessionDep,
+    auth: AuthContextDep,
     current_user: CurrentUserDep,
     client_ip: ClientIpDep,
+    institution_id: Annotated[
+        uuid.UUID | None,
+        Query(description="Override for SuperAdmin only"),
+    ] = None,
 ) -> GuardianResponse:
+    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
     correlation_id = correlation_id_ctx.get()
 
     service = GuardianService(session=db)
-    guardian = await service.create_guardian(
+    guardian, _ = await service.create_guardian(
+        institution_id=target_institution_id,
         first_name=payload.first_name,
         last_name=payload.last_name,
         document_type=payload.document_type,
@@ -81,13 +89,14 @@ async def create_guardian(
         address=payload.address,
         relationship_type=payload.relationship_type,
         user_id=payload.user_id,
+        new_user=payload.new_user,
+        provision_account=payload.provision_account,
         actor_id=current_user.id,
         actor_ip=client_ip,
         correlation_id=correlation_id,
     )
     await db.commit()
-    await db.refresh(guardian)
-    return GuardianResponse.model_validate(guardian)
+    return service.build_guardian_response(guardian)
 
 
 @router.get(
@@ -101,10 +110,20 @@ async def create_guardian(
 async def get_guardian(
     guardian_id: uuid.UUID,
     db: SessionDep,
+    auth: AuthContextDep,
+    current_user: CurrentUserDep,
+    institution_id: Annotated[
+        uuid.UUID | None,
+        Query(description="Override for SuperAdmin only"),
+    ] = None,
 ) -> GuardianResponse:
+    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
     service = GuardianService(session=db)
-    guardian = await service.get_guardian_by_id(guardian_id=guardian_id)
-    return GuardianResponse.model_validate(guardian)
+    guardian = await service.get_guardian_by_id(
+        guardian_id=guardian_id,
+        institution_id=target_institution_id,
+    )
+    return service.build_guardian_response(guardian)
 
 
 @router.get(
@@ -117,22 +136,150 @@ async def get_guardian(
 )
 async def list_guardians(
     db: SessionDep,
+    auth: AuthContextDep,
+    current_user: CurrentUserDep,
     document_number: Annotated[
         str | None,
         Query(description="Filtrar por documento"),
     ] = None,
+    institution_id: Annotated[
+        uuid.UUID | None,
+        Query(description="Override for SuperAdmin only"),
+    ] = None,
 ) -> GuardianListResponse:
-    query = select(Guardian)
-    if document_number:
-        query = query.where(Guardian.document_number.ilike(f"%{document_number}%"))
-
-    query = query.order_by(Guardian.last_name.asc())
-    result = await db.execute(query)
-    guardians = list(result.scalars().all())
+    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    service = GuardianService(session=db)
+    guardians = await service.list_guardians(
+        institution_id=target_institution_id,
+        document_number=document_number,
+    )
 
     return GuardianListResponse(
-        items=[GuardianResponse.model_validate(g) for g in guardians],
+        items=[service.build_guardian_response(g) for g in guardians],
         total=len(guardians),
+    )
+
+
+@router.post(
+    "/{guardian_id}/account/provision",
+    response_model=GuardianAccountActionResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Aprovisionar cuenta de acceso para acudiente",
+    description="Crea o habilita el usuario de login para el acudiente y genera token de configuración.",
+    dependencies=[Depends(require_permission("guardians", "create"))],
+)
+async def provision_guardian_account(
+    guardian_id: uuid.UUID,
+    payload: GuardianAccountProvisionRequest,
+    db: SessionDep,
+    auth: AuthContextDep,
+    current_user: CurrentUserDep,
+    client_ip: ClientIpDep,
+    institution_id: Annotated[
+        uuid.UUID | None,
+        Query(description="Override for SuperAdmin only"),
+    ] = None,
+) -> GuardianAccountActionResponse:
+    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    correlation_id = correlation_id_ctx.get()
+
+    service = GuardianService(session=db)
+    guardian, status_enum, message, reset_token = await service.provision_guardian_account(
+        guardian_id=guardian_id,
+        institution_id=target_institution_id,
+        email=payload.email,
+        actor_id=current_user.id,
+        actor_ip=client_ip,
+        correlation_id=correlation_id,
+    )
+    await db.commit()
+    return GuardianAccountActionResponse(
+        guardian_id=guardian.id,
+        user_id=guardian.user_id,
+        account_status=status_enum,
+        message=message,
+        reset_token=reset_token,
+    )
+
+
+@router.post(
+    "/{guardian_id}/account/status",
+    response_model=GuardianAccountActionResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Activar o desactivar cuenta de acudiente",
+    description="Modifica el estado de acceso de la cuenta del acudiente.",
+    dependencies=[Depends(require_permission("guardians", "update"))],
+)
+async def update_guardian_account_status(
+    guardian_id: uuid.UUID,
+    payload: GuardianAccountStatusUpdateRequest,
+    db: SessionDep,
+    auth: AuthContextDep,
+    current_user: CurrentUserDep,
+    client_ip: ClientIpDep,
+    institution_id: Annotated[
+        uuid.UUID | None,
+        Query(description="Override for SuperAdmin only"),
+    ] = None,
+) -> GuardianAccountActionResponse:
+    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    correlation_id = correlation_id_ctx.get()
+
+    service = GuardianService(session=db)
+    guardian, status_enum, message = await service.update_guardian_account_status(
+        guardian_id=guardian_id,
+        institution_id=target_institution_id,
+        is_active=payload.is_active,
+        actor_id=current_user.id,
+        actor_ip=client_ip,
+        correlation_id=correlation_id,
+    )
+    await db.commit()
+    return GuardianAccountActionResponse(
+        guardian_id=guardian.id,
+        user_id=guardian.user_id,
+        account_status=status_enum,
+        message=message,
+    )
+
+
+@router.post(
+    "/{guardian_id}/account/reset-password",
+    response_model=GuardianAccountActionResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Restablecer contraseña de acudiente",
+    description="Genera un token seguro para restablecer credenciales del acudiente.",
+    dependencies=[Depends(require_permission("guardians", "update"))],
+)
+async def reset_guardian_password(
+    guardian_id: uuid.UUID,
+    db: SessionDep,
+    auth: AuthContextDep,
+    current_user: CurrentUserDep,
+    client_ip: ClientIpDep,
+    institution_id: Annotated[
+        uuid.UUID | None,
+        Query(description="Override for SuperAdmin only"),
+    ] = None,
+) -> GuardianAccountActionResponse:
+    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    correlation_id = correlation_id_ctx.get()
+
+    service = GuardianService(session=db)
+    guardian, status_enum, message, reset_token = await service.reset_guardian_password(
+        guardian_id=guardian_id,
+        institution_id=target_institution_id,
+        actor_id=current_user.id,
+        actor_ip=client_ip,
+        correlation_id=correlation_id,
+    )
+    await db.commit()
+    return GuardianAccountActionResponse(
+        guardian_id=guardian.id,
+        user_id=guardian.user_id,
+        account_status=status_enum,
+        message=message,
+        reset_token=reset_token,
     )
 
 
@@ -175,3 +322,66 @@ async def associate_guardian_to_student(
     await db.commit()
     await db.refresh(assoc)
     return StudentGuardianResponse.model_validate(assoc)
+
+
+@router.delete(
+    "/{guardian_id}/students/{student_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Desvincular acudiente de estudiante",
+    description="Elimina la asociación entre acudiente y estudiante preservando los perfiles civiles.",
+    dependencies=[Depends(require_permission("guardians", "link_student"))],
+)
+async def dissociate_guardian_from_student(
+    guardian_id: uuid.UUID,
+    student_id: uuid.UUID,
+    db: SessionDep,
+    auth: AuthContextDep,
+    current_user: CurrentUserDep,
+    client_ip: ClientIpDep,
+    institution_id: Annotated[
+        uuid.UUID | None,
+        Query(description="Override for SuperAdmin only"),
+    ] = None,
+) -> None:
+    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    correlation_id = correlation_id_ctx.get()
+
+    service = GuardianService(session=db)
+    await service.dissociate_guardian_from_student(
+        student_id=student_id,
+        guardian_id=guardian_id,
+        institution_id=target_institution_id,
+        actor_id=current_user.id,
+        actor_ip=client_ip,
+        correlation_id=correlation_id,
+    )
+    await db.commit()
+
+
+@router.get(
+    "/{guardian_id}/students",
+    response_model=list[StudentGuardianResponse],
+    status_code=status.HTTP_200_OK,
+    summary="Consultar estudiantes de un acudiente",
+    description="Lista los estudiantes vinculados y autorizaciones del acudiente.",
+    dependencies=[Depends(require_permission("guardians", "read"))],
+)
+async def get_guardian_students(
+    guardian_id: uuid.UUID,
+    db: SessionDep,
+    auth: AuthContextDep,
+    current_user: CurrentUserDep,
+    institution_id: Annotated[
+        uuid.UUID | None,
+        Query(description="Override for SuperAdmin only"),
+    ] = None,
+) -> list[StudentGuardianResponse]:
+    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    service = GuardianService(session=db)
+    associations = await service.get_guardian_students(
+        guardian_id=guardian_id,
+        institution_id=target_institution_id,
+    )
+    return [StudentGuardianResponse.model_validate(a) for a in associations]
+
+

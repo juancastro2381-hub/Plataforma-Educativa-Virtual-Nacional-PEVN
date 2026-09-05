@@ -143,6 +143,7 @@ async def guardian_fixture(db_session: AsyncSession) -> dict[str, Any]:
 
     # Offline / Rural Guardian 1 (Pre-registered by institution during enrollment, user_id=None per OPEN-DECISION-3A-01)
     guardian_offline_1 = Guardian(
+        institution_id=inst_a.id,
         user_id=None,
         document_type=DocumentType.CC,
         document_number="52987654",
@@ -154,6 +155,7 @@ async def guardian_fixture(db_session: AsyncSession) -> dict[str, Any]:
     )
     # Offline Guardian 2 (Unrelated guardian)
     guardian_offline_2 = Guardian(
+        institution_id=inst_a.id,
         user_id=None,
         document_type=DocumentType.CC,
         document_number="52987999",

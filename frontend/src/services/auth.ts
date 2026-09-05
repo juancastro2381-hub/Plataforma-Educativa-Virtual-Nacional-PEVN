@@ -10,6 +10,10 @@ import type {
   AcceptInvitationRequest,
   AcceptInvitationResponse,
   ChangePasswordRequest,
+  GuardianAcceptActivationRequest,
+  GuardianAcceptActivationResponse,
+  GuardianActivationRequest,
+  GuardianActivationResponse,
   InstitutionResponse,
   LoginRequest,
   LoginResponse,
@@ -18,6 +22,7 @@ import type {
   PasswordResetVerifyRequest,
   PasswordResetVerifyResponse,
   User,
+  VerifyGuardianTokenResponse,
   VerifyInvitationResponse,
 } from '@/types'
 
@@ -36,67 +41,78 @@ export const authApi = {
   },
 
   /**
-   * Request silent token refresh using the single-flight coordinator.
+   * Request a new access token via the HTTP-only refresh cookie.
    */
+  async refreshToken(): Promise<string> {
+    return requestTokenRefresh()
+  },
+
   async refresh(): Promise<string> {
-    return await requestTokenRefresh()
+    return requestTokenRefresh()
   },
 
   /**
-   * Invalidate active session and clear in-memory token.
+   * Terminate user session on the server and clear memory token.
    */
   async logout(): Promise<void> {
     try {
-      await apiClient.post('/api/v1/auth/logout', {})
+      await apiClient.post('/api/v1/auth/logout')
     } finally {
       setAccessToken(null)
     }
   },
 
   /**
-   * Fetch current authenticated user profile.
+   * Fetch profile of currently authenticated user.
    */
+  async getMe(): Promise<User> {
+    const response = await apiClient.get<User>('/api/v1/auth/me')
+    return response.data
+  },
+
   async getMyProfile(): Promise<User> {
     const response = await apiClient.get<User>('/api/v1/auth/me')
     return response.data
   },
 
   /**
-   * Change password for the current user.
+   * Change user password (authenticated).
    */
-  async changePassword(data: ChangePasswordRequest): Promise<void> {
-    await apiClient.post('/api/v1/auth/password/change', data)
+  async changePassword(payload: ChangePasswordRequest): Promise<void> {
+    await apiClient.post('/api/v1/auth/change-password', payload)
   },
 
   /**
-   * Request password reset link.
+   * Request a password reset email/link.
    */
-  async requestPasswordReset(data: PasswordResetRequest): Promise<void> {
-    await apiClient.post('/api/v1/auth/password/reset/request', data)
+  async requestPasswordReset(payload: PasswordResetRequest): Promise<void> {
+    await apiClient.post('/api/v1/auth/forgot-password', payload)
   },
 
   /**
-   * Verify password reset token validity before showing reset form.
+   * Verify a password reset token.
    */
   async verifyPasswordResetToken(
-    data: PasswordResetVerifyRequest
+    payload: PasswordResetVerifyRequest
   ): Promise<PasswordResetVerifyResponse> {
     const response = await apiClient.post<PasswordResetVerifyResponse>(
-      '/api/v1/auth/password/reset/verify-token',
-      data
+      '/api/v1/auth/verify-reset-token',
+      payload
     )
     return response.data
   },
 
   /**
-   * Confirm password reset with token.
+   * Confirm password reset with new password.
    */
-  async confirmPasswordReset(data: PasswordResetConfirmRequest): Promise<void> {
-    await apiClient.post('/api/v1/auth/password/reset/confirm', data)
+  async confirmPasswordReset(
+    payload: PasswordResetConfirmRequest
+  ): Promise<void> {
+    await apiClient.post('/api/v1/auth/reset-password', payload)
   },
 
   /**
-   * Fetch user's assigned institution details.
+   * Fetch authenticated user's institution details.
    */
   async getMyInstitution(): Promise<InstitutionResponse> {
     const response = await apiClient.get<InstitutionResponse>(
@@ -134,6 +150,45 @@ export const authApi = {
   ): Promise<AcceptInvitationResponse> {
     const response = await apiClient.post<AcceptInvitationResponse>(
       '/api/v1/auth/accept-invitation',
+      payload
+    )
+    return response.data
+  },
+
+  /**
+   * Public endpoint to request a guardian activation token.
+   */
+  async requestGuardianActivation(
+    payload: GuardianActivationRequest
+  ): Promise<GuardianActivationResponse> {
+    const response = await apiClient.post<GuardianActivationResponse>(
+      '/api/v1/auth/guardians/request-activation',
+      payload
+    )
+    return response.data
+  },
+
+  /**
+   * Public endpoint to verify a guardian activation token.
+   */
+  async verifyGuardianToken(
+    token: string
+  ): Promise<VerifyGuardianTokenResponse> {
+    const response = await apiClient.post<VerifyGuardianTokenResponse>(
+      '/api/v1/auth/guardians/verify-token',
+      { token }
+    )
+    return response.data
+  },
+
+  /**
+   * Public endpoint to redeem a guardian activation token and set password.
+   */
+  async acceptGuardianActivation(
+    payload: GuardianAcceptActivationRequest
+  ): Promise<GuardianAcceptActivationResponse> {
+    const response = await apiClient.post<GuardianAcceptActivationResponse>(
+      '/api/v1/auth/guardians/accept-activation',
       payload
     )
     return response.data

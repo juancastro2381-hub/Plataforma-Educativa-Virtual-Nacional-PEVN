@@ -47,6 +47,11 @@ FINAL CERTIFICATION TARGET:           [A] PRODUCTION CERTIFIED — LIVE E2E VERI
 | **Phase 8** | Operational Runbooks & Topology | **PASSED & FROZEN** | 2026-08-23 | `docs/PHASE_8_FINAL_CERTIFICATION.md` | Complete administrator runbooks, Coturn STUN/TURN configuration, and WebRTC streaming thresholds. |
 | **Phase 9** | Controlled Commissioning Audit | **PASSED & FROZEN** | 2026-08-23 | `docs/PHASE_9_EXTERNAL_COMMISSIONING_REPORT.md` | 17-dependency commissioning checklist, diagnostic evidence commands, and rollback runbooks. |
 | **Phase 10**| Infrastructure Handoff Package | **PASSED & FROZEN** | 2026-08-23 | `docs/reports/PHASE_10_FINAL_REPORT.md` | Complete implementation-ready handoff package and document-based reporting protocol established. |
+| **Phase 11**| Territorial Analytics & Password Recovery | **PASSED & FROZEN** | 2026-08-28 | `docs/phase-reports/PHASE_11_PRODUCTION_READINESS_REPORT.md` | Territorial analytics dashboard, department aggregations, self-service password reset flows. |
+| **Phase 12**| Teacher & Student User Provisioning | **PASSED & FROZEN** | 2026-08-29 | `docs/phase-reports/PHASE_12B_TEACHER_PROVISIONING_IMPLEMENTATION.md` | Tenant-contained user discovery, on-the-fly institutional user provisioning. |
+| **Phase 13**| Dynamic Academic Hub & Workload Management | **PASSED & FROZEN** | 2026-08-30 | `docs/phase-reports/PHASE_13_FINAL_REPORT.md` | Dynamic academic workload allocations, cross-tenant isolation, real-time group rosters. |
+| **Phase 13D.5**| Teacher Portal, Academic Activities & Teacher Account Provisioning | **PASSED & FROZEN** | 2026-08-31 | `docs/phase-reports/PHASE_13D_5_TEACHER_ACCOUNT_PROVISIONING_AND_ONBOARDING_REPORT.md` | Sovereign `/teacher` workspace (7 sub-views), academic activities, batch grading, attendance, curricular planning, and complete Rector $\rightarrow$ Teacher onboarding lifecycle. |
+| **Phase 13D.6**| Teacher Credential Delivery & Complete Onboarding Lifecycle | **PASSED & FROZEN** | 2026-08-31 | `docs/phase-reports/PHASE_13D_6_TEACHER_CREDENTIAL_DELIVERY_AND_ONBOARDING_REPORT.md` | Secure credential delivery modal, dynamic setup URLs, single-use token lifecycle, clipboard actions, and end-to-end Rector $\rightarrow$ Teacher onboarding. |
 
 ---
 

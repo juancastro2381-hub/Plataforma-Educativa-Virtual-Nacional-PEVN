@@ -16,6 +16,7 @@ from app.services.group_service import GroupService
 from app.services.guardian_service import GuardianService
 from app.services.recording_service import RecordingService
 from app.services.student_service import StudentService
+from app.services.teacher_portal_service import TeacherPortalService
 from app.services.teacher_service import TeacherService
 from app.services.transfer_service import TransferService
 from app.services.virtual_classroom_service import VirtualClassroomService
@@ -30,6 +31,7 @@ __all__ = [
     "GuardianService",
     "RecordingService",
     "StudentService",
+    "TeacherPortalService",
     "TeacherService",
     "TransferService",
     "VirtualClassroomService",

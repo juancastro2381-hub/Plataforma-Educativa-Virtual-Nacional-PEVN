@@ -2,10 +2,10 @@
  * PEVN Frontend — Academic Assignments View (Carga Académica Docente)
  *
  * Subject teacher allocations, single-active instructor invariant,
- * and atomic teacher replacements.
+ * and atomic teacher replacements with canonical reference resolution.
  */
 
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { academicApi } from '@/services/academic'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
@@ -18,7 +18,10 @@ import { useAuth } from '@/hooks/useAuth'
 import type {
   AcademicAssignmentCreateRequest,
   AcademicAssignmentResponse,
+  AcademicYearResponse,
   ApiError,
+  GroupResponse,
+  SubjectResponse,
   TeacherReplacementRequest,
   TeacherResponse,
 } from '@/types'
@@ -33,8 +36,11 @@ export const AcademicAssignmentsView: React.FC = () => {
   const [error, setError] = useState<ApiError | Error | null>(null)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
 
-  // Teachers list for replacement dropdown
+  // Catalogs for reference resolution
   const [teachers, setTeachers] = useState<TeacherResponse[]>([])
+  const [subjects, setSubjects] = useState<SubjectResponse[]>([])
+  const [groups, setGroups] = useState<GroupResponse[]>([])
+  const [academicYears, setAcademicYears] = useState<AcademicYearResponse[]>([])
 
   // Create Modal
   const [isCreateOpen, setIsCreateOpen] = useState<boolean>(false)
@@ -56,6 +62,40 @@ export const AcademicAssignmentsView: React.FC = () => {
     newTeacherId: '',
   })
 
+  // Lookup maps for table rendering
+  const teacherMap = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const t of teachers) {
+      const name = t.user?.full_name || (t.user ? `${t.user.first_name} ${t.user.last_name}` : '') || t.specialty_area || t.id
+      map.set(t.id, name)
+    }
+    return map
+  }, [teachers])
+
+  const subjectMap = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const s of subjects) {
+      map.set(s.id, s.name)
+    }
+    return map
+  }, [subjects])
+
+  const groupMap = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const g of groups) {
+      map.set(g.id, `${g.name} (${g.shift})`)
+    }
+    return map
+  }, [groups])
+
+  const yearMap = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const y of academicYears) {
+      map.set(y.id, `${y.name} (${y.year})`)
+    }
+    return map
+  }, [academicYears])
+
   const loadAssignments = useCallback(async () => {
     setIsLoading(true)
     setError(null)
@@ -70,19 +110,59 @@ export const AcademicAssignmentsView: React.FC = () => {
     }
   }, [activeFilter])
 
-  const loadTeachers = useCallback(async () => {
+  const loadCatalogs = useCallback(async () => {
     try {
-      const data = await academicApi.listTeachers()
-      setTeachers(data.items)
+      const [tRes, sRes, gRes, yRes] = await Promise.all([
+        academicApi.listTeachers(),
+        academicApi.listSubjects(),
+        academicApi.listGroups(),
+        academicApi.listAcademicYears(),
+      ])
+      setTeachers(tRes.items)
+      setSubjects(sRes.items)
+      setGroups(gRes.items)
+      setAcademicYears(yRes.items)
+
+      // Set default active academic year if not yet selected
+      const activeYear = yRes.items.find((y) => y.status === 'ACTIVE') || yRes.items[0]
+      if (activeYear && !academicYearId) {
+        setAcademicYearId(activeYear.id)
+      }
     } catch {
       // Non-critical fallback
     }
-  }, [])
+  }, [academicYearId])
 
   useEffect(() => {
     void loadAssignments()
-    void loadTeachers()
-  }, [loadAssignments, loadTeachers])
+  }, [loadAssignments])
+
+  useEffect(() => {
+    void loadCatalogs()
+  }, [loadCatalogs])
+
+  // Filter groups according to selected academic year
+  const availableGroups = useMemo(() => {
+    if (!academicYearId) return groups
+    return groups.filter((g) => g.academic_year_id === academicYearId)
+  }, [groups, academicYearId])
+
+  // Filter subjects according to selected group's grade (if group selected)
+  const availableSubjects = useMemo(() => {
+    if (!groupId) return subjects
+    const selectedGroup = groups.find((g) => g.id === groupId)
+    if (!selectedGroup || !selectedGroup.grade_id) return subjects
+    const filtered = subjects.filter((s) => s.grade_id === selectedGroup.grade_id)
+    return filtered.length > 0 ? filtered : subjects
+  }, [subjects, groupId, groups])
+
+  const handleSubjectChange = (newSubjectId: string) => {
+    setSubjectId(newSubjectId)
+    const selected = subjects.find((s) => s.id === newSubjectId)
+    if (selected && selected.weekly_hours) {
+      setWeeklyHours(selected.weekly_hours)
+    }
+  }
 
   const handleCreateAssignment = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -211,8 +291,8 @@ export const AcademicAssignmentsView: React.FC = () => {
 
       {/* Table Card */}
       <Card
-        title="Asignaciones Académicas (Carga Docente)"
-        subtitle={`Total de asignaciones registradas: ${String(total)}`}
+        title="Distribución Institucional de Carga Académica (Docente → Asignatura → Grupo)"
+        subtitle={`Mapeo oficial de asignaciones académicas institucional: ${String(total)} registros.`}
         action={
           <Button variant="secondary" size="sm" onClick={() => void loadAssignments()}>
             Refrescar
@@ -247,66 +327,82 @@ export const AcademicAssignmentsView: React.FC = () => {
               }}
             >
               <thead>
-                <tr style={{ borderBottom: '2px solid #E2E8F0', color: '#475569' }}>
-                  <th style={{ padding: '0.75rem 1rem' }}>Docente UUID</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>Asignatura UUID</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>Grupo UUID</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>Horas / Sem</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>Estado</th>
+                <tr style={{ borderBottom: '2px solid #E2E8F0', color: '#475569', backgroundColor: '#F8FAFC' }}>
+                  <th style={{ padding: '0.75rem 1rem' }}>Docente Titular</th>
+                  <th style={{ padding: '0.75rem 1rem' }}>Asignatura</th>
+                  <th style={{ padding: '0.75rem 1rem' }}>Grupo / Salón</th>
+                  <th style={{ padding: '0.75rem 1rem' }}>Año Lectivo</th>
+                  <th style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>Cupo Salón</th>
+                  <th style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>Horas / Sem</th>
+                  <th style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>Estado</th>
                   <th style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                {assignments.map((a) => (
-                  <tr key={a.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                    <td style={{ padding: '0.875rem 1rem', fontWeight: 600, color: '#1E40AF' }}>
-                      <code>{a.teacher_id.substring(0, 8)}...</code>
-                    </td>
-                    <td style={{ padding: '0.875rem 1rem', color: '#0F172A' }}>
-                      <code>{a.subject_id.substring(0, 8)}...</code>
-                    </td>
-                    <td style={{ padding: '0.875rem 1rem', color: '#475569' }}>
-                      <code>{a.group_id.substring(0, 8)}...</code>
-                    </td>
-                    <td style={{ padding: '0.875rem 1rem', color: '#1E293B', fontWeight: 600 }}>
-                      {a.weekly_hours} h/sem
-                    </td>
-                    <td style={{ padding: '0.875rem 1rem' }}>
-                      {a.is_active ? (
-                        <Badge variant="success" size="sm">ACTIVA</Badge>
-                      ) : (
-                        <Badge variant="neutral" size="sm">INACTIVA</Badge>
-                      )}
-                    </td>
-                    <td style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>
-                      {a.is_active && hasPermission('academic_assignments:update') && (
-                        <div style={{ display: 'flex', gap: '0.35rem', justifyContent: 'flex-end' }}>
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => {
-                              setReplaceModal({
-                                isOpen: true,
-                                assignment: a,
-                                newTeacherId: '',
-                              })
-                            }}
-                          >
-                            Sustituir
-                          </Button>
-                          <Button
-                            variant="danger"
-                            size="sm"
-                            onClick={() => void handleDeactivate(a.id)}
-                            disabled={isSubmitting}
-                          >
-                            Desactivar
-                          </Button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                {assignments.map((a) => {
+                  const resolvedTeacher = teacherMap.get(a.teacher_id) || `${a.teacher_id.substring(0, 8)}...`
+                  const resolvedSubject = subjectMap.get(a.subject_id) || `${a.subject_id.substring(0, 8)}...`
+                  const resolvedGroup = groupMap.get(a.group_id) || `${a.group_id.substring(0, 8)}...`
+                  const resolvedYear = yearMap.get(a.academic_year_id) || `${a.academic_year_id.substring(0, 8)}...`
+                  const groupObj = groups.find((g) => g.id === a.group_id)
+
+                  return (
+                    <tr key={a.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                      <td style={{ padding: '0.875rem 1rem', fontWeight: 700, color: '#1E40AF' }}>
+                        {resolvedTeacher}
+                      </td>
+                      <td style={{ padding: '0.875rem 1rem', fontWeight: 600, color: '#0F172A' }}>
+                        {resolvedSubject}
+                      </td>
+                      <td style={{ padding: '0.875rem 1rem', color: '#475569' }}>
+                        {resolvedGroup}
+                      </td>
+                      <td style={{ padding: '0.875rem 1rem', color: '#64748B' }}>
+                        {resolvedYear}
+                      </td>
+                      <td style={{ padding: '0.875rem 1rem', textAlign: 'center', color: '#475569' }}>
+                        {groupObj ? `${groupObj.capacity_limit} cupos` : '—'}
+                      </td>
+                      <td style={{ padding: '0.875rem 1rem', textAlign: 'center', color: '#1E293B', fontWeight: 600 }}>
+                        {a.weekly_hours} h/sem
+                      </td>
+                      <td style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>
+                        {a.is_active ? (
+                          <Badge variant="success" size="sm">ACTIVA</Badge>
+                        ) : (
+                          <Badge variant="neutral" size="sm">INACTIVA</Badge>
+                        )}
+                      </td>
+                      <td style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>
+                        {a.is_active && hasPermission('academic_assignments:update') && (
+                          <div style={{ display: 'flex', gap: '0.35rem', justifyContent: 'flex-end' }}>
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => {
+                                setReplaceModal({
+                                  isOpen: true,
+                                  assignment: a,
+                                  newTeacherId: '',
+                                })
+                              }}
+                            >
+                              Sustituir
+                            </Button>
+                            <Button
+                              variant="danger"
+                              size="sm"
+                              onClick={() => void handleDeactivate(a.id)}
+                              disabled={isSubmitting}
+                            >
+                              Desactivar
+                            </Button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>
@@ -337,11 +433,13 @@ export const AcademicAssignmentsView: React.FC = () => {
                 style={{ width: '100%', padding: '0.625rem', borderRadius: '6px', border: '1px solid #CBD5E1', boxSizing: 'border-box' }}
               >
                 <option value="">-- Seleccione el docente reemplazante --</option>
-                {teachers.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.user?.full_name || t.specialty_area || t.id} ({t.contract_type})
-                  </option>
-                ))}
+                {teachers
+                  .filter((t) => t.id !== replaceModal.assignment?.teacher_id)
+                  .map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.user?.full_name || (t.user ? `${t.user.first_name} ${t.user.last_name}` : '') || t.specialty_area || t.id} ({t.contract_type})
+                    </option>
+                  ))}
               </select>
             ) : (
               <input
@@ -385,9 +483,10 @@ export const AcademicAssignmentsView: React.FC = () => {
         subtitle="Vincule a un docente con una asignatura y grupo específico."
       >
         <form onSubmit={(e) => void handleCreateAssignment(e)}>
+          {/* Docente Selector */}
           <div style={{ marginBottom: '1rem' }}>
             <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#334155', marginBottom: '0.25rem' }}>
-              ID de Docente (Teacher UUID) *
+              Docente Titular *
             </label>
             {teachers.length > 0 ? (
               <select
@@ -398,12 +497,15 @@ export const AcademicAssignmentsView: React.FC = () => {
                 required
                 style={{ width: '100%', padding: '0.625rem', borderRadius: '6px', border: '1px solid #CBD5E1', boxSizing: 'border-box' }}
               >
-                <option value="">-- Seleccione un docente --</option>
-                {teachers.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.user?.full_name || t.specialty_area || t.id}
-                  </option>
-                ))}
+                <option value="">-- Seleccione un docente titular --</option>
+                {teachers.map((t) => {
+                  const label = t.user?.full_name || (t.user ? `${t.user.first_name} ${t.user.last_name}` : '') || t.id
+                  return (
+                    <option key={t.id} value={t.id}>
+                      {label} — {t.specialty_area || 'Docente'} ({t.contract_type})
+                    </option>
+                  )
+                })}
               </select>
             ) : (
               <input
@@ -419,43 +521,28 @@ export const AcademicAssignmentsView: React.FC = () => {
             )}
           </div>
 
+          {/* Año Lectivo Selector */}
           <div style={{ marginBottom: '1rem' }}>
             <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#334155', marginBottom: '0.25rem' }}>
-              ID de Asignatura (Subject UUID) *
+              Año Lectivo *
             </label>
-            <input
-              type="text"
-              value={subjectId}
-              onChange={(e) => {
-                setSubjectId(e.target.value)
-              }}
-              required
-              placeholder="UUID de la asignatura"
-              style={{ width: '100%', padding: '0.625rem', borderRadius: '6px', border: '1px solid #CBD5E1', boxSizing: 'border-box' }}
-            />
-          </div>
-
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#334155', marginBottom: '0.25rem' }}>
-              ID de Grupo / Salón (Group UUID) *
-            </label>
-            <input
-              type="text"
-              value={groupId}
-              onChange={(e) => {
-                setGroupId(e.target.value)
-              }}
-              required
-              placeholder="UUID del grupo"
-              style={{ width: '100%', padding: '0.625rem', borderRadius: '6px', border: '1px solid #CBD5E1', boxSizing: 'border-box' }}
-            />
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#334155', marginBottom: '0.25rem' }}>
-                ID Año Lectivo *
-              </label>
+            {academicYears.length > 0 ? (
+              <select
+                value={academicYearId}
+                onChange={(e) => {
+                  setAcademicYearId(e.target.value)
+                }}
+                required
+                style={{ width: '100%', padding: '0.625rem', borderRadius: '6px', border: '1px solid #CBD5E1', boxSizing: 'border-box' }}
+              >
+                <option value="">-- Seleccione el año lectivo --</option>
+                {academicYears.map((ay) => (
+                  <option key={ay.id} value={ay.id}>
+                    {ay.name} ({ay.year}) {ay.status === 'ACTIVE' ? '— ACTIVO' : `— ${ay.status}`}
+                  </option>
+                ))}
+              </select>
+            ) : (
               <input
                 type="text"
                 value={academicYearId}
@@ -466,6 +553,78 @@ export const AcademicAssignmentsView: React.FC = () => {
                 placeholder="UUID del año escolar"
                 style={{ width: '100%', padding: '0.625rem', borderRadius: '6px', border: '1px solid #CBD5E1', boxSizing: 'border-box' }}
               />
+            )}
+          </div>
+
+          {/* Grupo / Salón Selector */}
+          <div style={{ marginBottom: '1rem' }}>
+            <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#334155', marginBottom: '0.25rem' }}>
+              Grupo / Salón *
+            </label>
+            {availableGroups.length > 0 ? (
+              <select
+                value={groupId}
+                onChange={(e) => {
+                  setGroupId(e.target.value)
+                }}
+                required
+                style={{ width: '100%', padding: '0.625rem', borderRadius: '6px', border: '1px solid #CBD5E1', boxSizing: 'border-box' }}
+              >
+                <option value="">-- Seleccione el grupo / salón --</option>
+                {availableGroups.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.name} — Jornada {g.shift} (Cupo: {g.capacity_limit})
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                type="text"
+                value={groupId}
+                onChange={(e) => {
+                  setGroupId(e.target.value)
+                }}
+                required
+                placeholder="UUID del grupo"
+                style={{ width: '100%', padding: '0.625rem', borderRadius: '6px', border: '1px solid #CBD5E1', boxSizing: 'border-box' }}
+              />
+            )}
+          </div>
+
+          {/* Asignatura Selector & Horas Semanales */}
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#334155', marginBottom: '0.25rem' }}>
+                Asignatura Curricular *
+              </label>
+              {availableSubjects.length > 0 ? (
+                <select
+                  value={subjectId}
+                  onChange={(e) => {
+                    handleSubjectChange(e.target.value)
+                  }}
+                  required
+                  style={{ width: '100%', padding: '0.625rem', borderRadius: '6px', border: '1px solid #CBD5E1', boxSizing: 'border-box' }}
+                >
+                  <option value="">-- Seleccione la asignatura --</option>
+                  {availableSubjects.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name} ({s.weekly_hours}h/sem)
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  value={subjectId}
+                  onChange={(e) => {
+                    setSubjectId(e.target.value)
+                  }}
+                  required
+                  placeholder="UUID de la asignatura"
+                  style={{ width: '100%', padding: '0.625rem', borderRadius: '6px', border: '1px solid #CBD5E1', boxSizing: 'border-box' }}
+                />
+              )}
             </div>
             <div>
               <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#334155', marginBottom: '0.25rem' }}>

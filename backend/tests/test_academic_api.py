@@ -131,6 +131,8 @@ async def academic_api_fixture(
         ("academic_assignments", "read"),
         ("academic_assignments", "create"),
         ("academic_assignments", "update"),
+        ("subjects", "read"),
+        ("subjects", "create"),
     ]
 
     rector_role_stmt = select(Role).where(Role.name == SystemRole.RECTOR.value)
@@ -721,3 +723,584 @@ async def test_cross_tenant_isolation_barrier(
     )
     assert res.status_code == 404
     assert res.json()["error"]["code"] == "ACADEMIC_YEAR_NOT_FOUND"
+
+
+# ===========================================================================
+# 7. Phase 12B — Unified Teacher Provisioning API Tests
+# ===========================================================================
+
+
+async def test_provision_new_teacher_api(
+    client: AsyncClient,
+    academic_api_fixture: dict[str, Any],
+    db_session: AsyncSession,
+) -> None:
+    """Test creating a completely new teacher with on-the-fly User + Role provisioning."""
+    headers = academic_api_fixture["rector1_headers"]
+    inst1: Institution = academic_api_fixture["inst1"]
+
+    new_teacher_payload = {
+        "new_user": {
+            "first_name": "Carlos Alberto",
+            "last_name": "Gómez Restrepo",
+            "document_type": "CC",
+            "document_number": "20202020",
+            "email": "carlos.gomez@librada.edu.co",
+            "phone": "3001234567",
+        },
+        "specialty_area": "Licenciatura en Física y Química",
+        "contract_type": "PROPIEDAD",
+        "escalafon_grade": "2A",
+    }
+
+    res = await client.post("/api/v1/teachers", json=new_teacher_payload, headers=headers)
+    assert res.status_code == 201
+    data = res.json()
+    assert data["specialty_area"] == "Licenciatura en Física y Química"
+    assert data["contract_type"] == "PROPIEDAD"
+    assert data["escalafon_grade"] == "2A"
+    assert data["user"] is not None
+    assert data["user"]["document_number"] == "20202020"
+    assert data["user"]["email"] == "carlos.gomez@librada.edu.co"
+    assert data["user"]["first_name"] == "Carlos Alberto"
+
+    # Verify User in Database
+    user_id = uuid.UUID(data["user"]["id"])
+    user_stmt = select(User).where(User.id == user_id)
+    user = (await db_session.execute(user_stmt)).scalar_one_or_none()
+    assert user is not None
+    assert user.institution_id == inst1.id
+    assert user.is_active is True
+    assert user.is_verified is False
+    assert user.must_change_password is True
+
+    # Verify UserRole in Database
+    ur_stmt = select(UserRole).join(Role).where(
+        UserRole.user_id == user_id,
+        Role.name == "teacher",
+    )
+    ur = (await db_session.execute(ur_stmt)).scalar_one_or_none()
+    assert ur is not None
+    assert ur.institution_id == inst1.id
+    assert ur.is_active is True
+
+
+async def test_provision_new_teacher_duplicate_prevention_api(
+    client: AsyncClient,
+    academic_api_fixture: dict[str, Any],
+) -> None:
+    """Test duplicate document and email rejection returning HTTP 409."""
+    headers = academic_api_fixture["rector1_headers"]
+
+    payload1 = {
+        "new_user": {
+            "first_name": "Ana",
+            "last_name": "Ruiz",
+            "document_type": "CC",
+            "document_number": "30303030",
+            "email": "ana.ruiz@librada.edu.co",
+        },
+        "specialty_area": "Humanidades",
+        "contract_type": "PROVISIONAL",
+    }
+    res1 = await client.post("/api/v1/teachers", json=payload1, headers=headers)
+    assert res1.status_code == 201
+
+    # Duplicate Document Number -> 409 Conflict
+    payload_dup_doc = {
+        "new_user": {
+            "first_name": "Otro",
+            "last_name": "Docente",
+            "document_type": "CC",
+            "document_number": "30303030",
+            "email": "otro.docente@librada.edu.co",
+        },
+        "specialty_area": "Filosofía",
+        "contract_type": "PROVISIONAL",
+    }
+    res_dup_doc = await client.post("/api/v1/teachers", json=payload_dup_doc, headers=headers)
+    assert res_dup_doc.status_code == 409
+    assert res_dup_doc.json()["error"]["code"] == "IDENTITY_CONFLICT"
+
+    # Duplicate Email -> 409 Conflict
+    payload_dup_email = {
+        "new_user": {
+            "first_name": "Tercero",
+            "last_name": "Docente",
+            "document_type": "CC",
+            "document_number": "40404040",
+            "email": "ana.ruiz@librada.edu.co",
+        },
+        "specialty_area": "Música",
+        "contract_type": "PROVISIONAL",
+    }
+    res_dup_email = await client.post("/api/v1/teachers", json=payload_dup_email, headers=headers)
+    assert res_dup_email.status_code == 409
+    assert res_dup_email.json()["error"]["code"] == "IDENTITY_CONFLICT"
+
+
+async def test_list_grades_api(
+    client: AsyncClient,
+    academic_api_fixture: dict[str, Any],
+) -> None:
+    """Test querying the standardized national grade catalog via GET /api/v1/grades."""
+    headers = academic_api_fixture["rector1_headers"]
+
+    response = await client.get("/api/v1/grades", headers=headers)
+    assert response.status_code == 200
+    data = response.json()
+
+    assert "items" in data
+    assert "total" in data
+    assert data["total"] >= 12
+    assert len(data["items"]) == data["total"]
+
+    # Verify sorting by ordinal_order ascending
+    orders = [g["ordinal_order"] for g in data["items"]]
+    assert orders == sorted(orders)
+
+    # Verify first grade is Transición (order 0) and contains canonical fields
+    transicion = data["items"][0]
+    assert transicion["code"] == "TRANSICION"
+    assert transicion["name"] == "Transición"
+    assert transicion["level"] == "PREESCOLAR"
+    assert transicion["ordinal_order"] == 0
+    assert "id" in transicion
+
+    # Verify unauthenticated call is rejected
+    unauth_res = await client.get("/api/v1/grades")
+    assert unauth_res.status_code == 401
+
+
+# ===========================================================================
+# 7. Unified Student Provisioning Tests (Phase 13D.2)
+# ===========================================================================
+
+
+async def test_unified_student_provisioning_api(
+    client: AsyncClient,
+    academic_api_fixture: dict[str, Any],
+    db_session: AsyncSession,
+) -> None:
+    """Test full unified student provisioning lifecycle (Phase 13D.2)."""
+    headers = academic_api_fixture["rector1_headers"]
+    rector2_headers = academic_api_fixture["rector2_headers"]
+    student_u1: User = academic_api_fixture["student_u1"]
+
+    # 1. Existing-user mode: create Student profile linked to existing user
+    res_existing = await client.post(
+        "/api/v1/students",
+        json={
+            "user_id": str(student_u1.id),
+            "code_simat": "SIMAT-2026-EXISTING-01",
+            "birth_date": "2010-03-15",
+            "gender": "M",
+            "blood_type": "O+",
+            "stratum": 2,
+        },
+        headers=headers,
+    )
+    assert res_existing.status_code == 201
+    assert res_existing.json()["user_id"] == str(student_u1.id)
+    assert res_existing.json()["code_simat"] == "SIMAT-2026-EXISTING-01"
+
+    # 2. New-user mode (Natalia Castro): on-the-fly User + Student provisioning
+    res_new = await client.post(
+        "/api/v1/students",
+        json={
+            "new_user": {
+                "first_name": "Natalia",
+                "last_name": "Castro",
+                "document_type": "TI",
+                "document_number": "1098765432",
+                "email": "natalia.castro@librada.edu.co",
+                "phone": "3159998877",
+            },
+            "code_simat": "SIMAT-2026-NATALIA-01",
+            "birth_date": "2011-05-20",
+            "gender": "F",
+            "blood_type": "A+",
+            "stratum": 3,
+            "eps_health_provider": "Sanitas EPS",
+        },
+        headers=headers,
+    )
+    assert res_new.status_code == 201
+    new_student_data = res_new.json()
+    new_user_id = new_student_data["user_id"]
+    assert new_student_data["code_simat"] == "SIMAT-2026-NATALIA-01"
+
+    # Verify created User in DB has role 'student' and correct tenant
+    user_stmt = select(User).where(User.id == uuid.UUID(new_user_id))
+    user_obj = (await db_session.execute(user_stmt)).scalar_one()
+    assert user_obj.first_name == "Natalia"
+    assert user_obj.last_name == "Castro"
+    assert user_obj.email == "natalia.castro@librada.edu.co"
+    assert str(user_obj.institution_id) == str(academic_api_fixture["inst1"].id)
+
+    # 3. Full-Name Search: Verify GET /api/v1/users?search=Natalia+Castro returns the user
+    search_res = await client.get("/api/v1/users?search=Natalia+Castro", headers=headers)
+    assert search_res.status_code == 200
+    search_data = search_res.json()
+    assert search_data["total"] >= 1
+    matched_ids = [u["id"] for u in search_data["items"]]
+    assert new_user_id in matched_ids
+
+    # 4. Mutually Exclusive Validation: both provided -> 422 Unprocessable Entity
+    res_both = await client.post(
+        "/api/v1/students",
+        json={
+            "user_id": str(student_u1.id),
+            "new_user": {
+                "first_name": "Invalido",
+                "last_name": "Ambos",
+                "document_type": "TI",
+                "document_number": "11111111",
+                "email": "ambos@librada.edu.co",
+            },
+            "code_simat": "SIMAT-2026-BOTH",
+            "birth_date": "2010-01-01",
+        },
+        headers=headers,
+    )
+    assert res_both.status_code == 422
+
+    # 5. Mutually Exclusive Validation: neither provided -> 422 Unprocessable Entity
+    res_neither = await client.post(
+        "/api/v1/students",
+        json={
+            "code_simat": "SIMAT-2026-NEITHER",
+            "birth_date": "2010-01-01",
+        },
+        headers=headers,
+    )
+    assert res_neither.status_code == 422
+
+    # 6. Tenant Isolation: Rector from Inst2 cannot link user from Inst1
+    res_cross_tenant = await client.post(
+        "/api/v1/students",
+        json={
+            "user_id": str(student_u1.id),
+            "code_simat": "SIMAT-CROSS-INST",
+            "birth_date": "2010-01-01",
+        },
+        headers=rector2_headers,
+    )
+    assert res_cross_tenant.status_code in [400, 403, 404]
+
+    # 7. Duplicate User Identity Conflict: creating new_user with duplicate document -> 409
+    res_dup_doc = await client.post(
+        "/api/v1/students",
+        json={
+            "new_user": {
+                "first_name": "Duplicado",
+                "last_name": "Documento",
+                "document_type": "TI",
+                "document_number": "1098765432",  # Same as Natalia Castro
+                "email": "otro.correo@librada.edu.co",
+            },
+            "code_simat": "SIMAT-2026-DUP-DOC",
+            "birth_date": "2010-01-01",
+        },
+        headers=headers,
+    )
+    assert res_dup_doc.status_code == 409
+    assert res_dup_doc.json()["error"]["code"] == "IDENTITY_CONFLICT"
+
+    # 8. Transaction Rollback: Force domain failure during Student creation (duplicate SIMAT)
+    res_rollback = await client.post(
+        "/api/v1/students",
+        json={
+            "new_user": {
+                "first_name": "Rollback",
+                "last_name": "Test",
+                "document_type": "TI",
+                "document_number": "9988776655",
+                "email": "rollback.test@librada.edu.co",
+            },
+            "code_simat": "SIMAT-2026-NATALIA-01",  # Duplicate SIMAT -> AcademicDomainError (400)
+            "birth_date": "2010-01-01",
+            "stratum": 2,
+        },
+        headers=headers,
+    )
+    assert res_rollback.status_code == 400
+
+    # Verify that the user "9988776655" was NOT persisted (rolled back atomically)
+    orphan_stmt = select(User).where(User.document_number == "9988776655")
+    orphan_user = (await db_session.execute(orphan_stmt)).scalar_one_or_none()
+    assert orphan_user is None
+
+
+@pytest.mark.asyncio
+async def test_subjects_api_and_academic_assignments(
+    client: AsyncClient,
+    academic_api_fixture: dict[str, Any],
+    db_session: AsyncSession,
+) -> None:
+    """Verify Subjects catalog listing, creation, and Academic Assignment workflow."""
+    headers = academic_api_fixture["rector1_headers"]
+    campus1: Campus = academic_api_fixture["campus1"]
+    grade: Grade = academic_api_fixture["grade"]
+    existing_subject: Subject = academic_api_fixture["subject"]
+
+    # 1. GET /api/v1/subjects (List subjects with grade filter)
+    res_subjects = await client.get(
+        f"/api/v1/subjects?grade_id={grade.id}",
+        headers=headers,
+    )
+    assert res_subjects.status_code == 200
+    data_subjects = res_subjects.json()
+    assert data_subjects["total"] >= 1
+    assert any(s["name"] == "Cálculo y Trigonometría" for s in data_subjects["items"])
+
+    # 2. POST /api/v1/subjects (Create custom subject)
+    res_new_sub = await client.post(
+        "/api/v1/subjects",
+        json={
+            "knowledge_area_id": str(existing_subject.knowledge_area_id),
+            "grade_id": str(grade.id),
+            "name": "Estadística Aplicada",
+            "weekly_hours": 3,
+        },
+        headers=headers,
+    )
+    assert res_new_sub.status_code == 201
+    assert res_new_sub.json()["name"] == "Estadística Aplicada"
+    custom_subject_id = res_new_sub.json()["id"]
+
+    # 3. Setup AY 2029, Teacher, and Group for Academic Assignment
+    ay_res = await client.post(
+        "/api/v1/academic-years",
+        json={
+            "year": 2029,
+            "name": "Año Escolar 2029",
+            "start_date": "2029-02-01",
+            "end_date": "2029-11-30",
+        },
+        headers=headers,
+    )
+    assert ay_res.status_code == 201
+    ay_id = ay_res.json()["id"]
+
+    t_res = await client.post(
+        "/api/v1/teachers",
+        json={
+            "new_user": {
+                "first_name": "Profesor",
+                "last_name": "Asignaciones",
+                "document_type": "CC",
+                "document_number": "7788990011",
+                "email": "prof.asg@librada.edu.co",
+            },
+            "specialty_area": "Estadística y Probabilidad",
+        },
+        headers=headers,
+    )
+    assert t_res.status_code == 201
+    teacher_id = t_res.json()["id"]
+
+    grp_res = await client.post(
+        "/api/v1/groups",
+        json={
+            "campus_id": str(campus1.id),
+            "academic_year_id": ay_id,
+            "grade_id": str(grade.id),
+            "name": "10-C",
+            "capacity_limit": 30,
+        },
+        headers=headers,
+    )
+    assert grp_res.status_code == 201
+    group_id = grp_res.json()["id"]
+
+    # 4. POST /api/v1/academic-assignments (Create assignment with canonical UUIDs)
+    res_assignment = await client.post(
+        "/api/v1/academic-assignments",
+        json={
+            "teacher_id": teacher_id,
+            "subject_id": custom_subject_id,
+            "group_id": group_id,
+            "academic_year_id": ay_id,
+            "weekly_hours": 3,
+            "is_active": True,
+        },
+        headers=headers,
+    )
+    assert res_assignment.status_code == 201
+    assignment_data = res_assignment.json()
+    assert assignment_data["teacher_id"] == teacher_id
+    assert assignment_data["subject_id"] == custom_subject_id
+    assert assignment_data["weekly_hours"] == 3
+    assert assignment_data["is_active"] is True
+    assignment_id = assignment_data["id"]
+
+    # 5. Duplicate active assignment rejection -> 409
+    res_dup = await client.post(
+        "/api/v1/academic-assignments",
+        json={
+            "teacher_id": teacher_id,
+            "subject_id": custom_subject_id,
+            "group_id": group_id,
+            "academic_year_id": ay_id,
+            "weekly_hours": 3,
+            "is_active": True,
+        },
+        headers=headers,
+    )
+    assert res_dup.status_code == 409
+
+    # 6. Invalid UUID format rejection -> 422
+    res_invalid_uuid = await client.post(
+        "/api/v1/academic-assignments",
+        json={
+            "teacher_id": "invalid-teacher-uuid",
+            "subject_id": "3000022",
+            "group_id": "003332",
+            "academic_year_id": "2026",
+            "weekly_hours": 5,
+        },
+        headers=headers,
+    )
+    assert res_invalid_uuid.status_code == 422
+
+
+# ===========================================================================
+# 12. Phase 13E.5 Regressions: Guardian "ABUELO_A" / "TIO_A" & Auto-Seeded Curriculum
+# ===========================================================================
+
+
+async def test_phase13e5_guardian_abuelo_and_tio_registration(
+    client: AsyncClient,
+    academic_api_fixture: dict[str, Any],
+) -> None:
+    """Verify registration of guardians with ABUELO_A and TIO_A relationships."""
+    headers = academic_api_fixture["rector1_headers"]
+
+    # 1. Register guardian as ABUELO_A
+    doc_num_abuelo = f"88{uuid.uuid4().hex[:6]}"
+    res_abuelo = await client.post(
+        "/api/v1/guardians",
+        json={
+            "first_name": "Guillermo",
+            "last_name": "Castro",
+            "document_type": "CC",
+            "document_number": doc_num_abuelo,
+            "phone": "3119876543",
+            "email": "guillermo@correo.com",
+            "relationship_type": "ABUELO_A",
+        },
+        headers=headers,
+    )
+    assert res_abuelo.status_code == 201
+    abuelo_data = res_abuelo.json()
+    assert abuelo_data["relationship_type"] == "ABUELO_A"
+    assert abuelo_data["document_number"] == doc_num_abuelo
+
+    # 2. Register guardian as TIO_A
+    doc_num_tio = f"89{uuid.uuid4().hex[:6]}"
+    res_tio = await client.post(
+        "/api/v1/guardians",
+        json={
+            "first_name": "Carlos",
+            "last_name": "Castro",
+            "document_type": "CC",
+            "document_number": doc_num_tio,
+            "phone": "3119876544",
+            "email": "carlos@correo.com",
+            "relationship_type": "TIO_A",
+        },
+        headers=headers,
+    )
+    assert res_tio.status_code == 201
+    tio_data = res_tio.json()
+    assert tio_data["relationship_type"] == "TIO_A"
+
+
+async def test_phase13e5_assignment_creation_with_auto_seeded_curriculum(
+    client: AsyncClient,
+    academic_api_fixture: dict[str, Any],
+) -> None:
+    """Verify that auto-seeded statutory subjects are committed and valid for AcademicAssignment creation."""
+    headers = academic_api_fixture["rector1_headers"]
+    campus1: Campus = academic_api_fixture["campus1"]
+    grade: Grade = academic_api_fixture["grade"]
+    teacher_u1: User = academic_api_fixture["teacher_u1"]
+
+    # 1. Call GET /api/v1/subjects (triggers auto-seeding of statutory curriculum)
+    res_subjects = await client.get("/api/v1/subjects", headers=headers)
+    assert res_subjects.status_code == 200
+    subjects_list = res_subjects.json()["items"]
+    assert len(subjects_list) >= 1
+    selected_subject = subjects_list[0]
+
+    # 2. Create an academic year and group
+    ay_res = await client.post(
+        "/api/v1/academic-years",
+        json={
+            "year": 2029,
+            "name": "Año Escolar 2029",
+            "start_date": "2029-02-01",
+            "end_date": "2029-11-30",
+        },
+        headers=headers,
+    )
+    assert ay_res.status_code == 201
+    ay_id = ay_res.json()["id"]
+
+    group_res = await client.post(
+        "/api/v1/groups",
+        json={
+            "campus_id": str(campus1.id),
+            "academic_year_id": ay_id,
+            "grade_id": str(grade.id),
+            "name": "Grupo 10-A-2029",
+            "shift": "MANANA",
+            "capacity_limit": 35,
+        },
+        headers=headers,
+    )
+    assert group_res.status_code == 201
+    group_id = group_res.json()["id"]
+
+    # 3. Create Teacher profile
+    teacher_res = await client.post(
+        "/api/v1/teachers",
+        json={
+            "user_id": str(teacher_u1.id),
+            "specialty_area": "Ciencias Básicas",
+            "contract_type": "PROPIEDAD",
+        },
+        headers=headers,
+    )
+    assert teacher_res.status_code in (201, 409)
+    if teacher_res.status_code == 201:
+        teacher_id = teacher_res.json()["id"]
+    else:
+        # Fetch existing teacher
+        teachers_list = await client.get("/api/v1/teachers", headers=headers)
+        teacher_id = teachers_list.json()["items"][0]["id"]
+
+    # 4. Create Academic Assignment using the auto-seeded subject
+    res_assignment = await client.post(
+        "/api/v1/academic-assignments",
+        json={
+            "teacher_id": teacher_id,
+            "subject_id": selected_subject["id"],
+            "group_id": group_id,
+            "academic_year_id": ay_id,
+            "weekly_hours": 4,
+            "is_active": True,
+        },
+        headers=headers,
+    )
+    assert res_assignment.status_code == 201
+    assignment_data = res_assignment.json()
+    assert assignment_data["subject_id"] == selected_subject["id"]
+    assert assignment_data["group_id"] == group_id
+    assert assignment_data["weekly_hours"] == 4
+
+
+
+
+

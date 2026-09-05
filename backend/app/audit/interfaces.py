@@ -88,9 +88,11 @@ class AuditEventType(StrEnum):
     # User management
     USER_CREATED = "user.created"
     USER_UPDATED = "user.updated"
+    USER_ACTIVATED = "user.activated"
     USER_DEACTIVATED = "user.deactivated"
     USER_ROLE_ASSIGNED = "user.role.assigned"
     USER_ROLE_REVOKED = "user.role.revoked"
+    TEACHER_ACCOUNT_PROVISIONED = "teacher.account.provisioned"
 
     # Institution & Rector management
     INSTITUTION_CREATED = "institution.created"
@@ -112,11 +114,14 @@ class AuditEventType(StrEnum):
     GROUP_DIRECTOR_ASSIGNED = "group.director.assigned"
     STUDENT_CREATED = "student.created"
     STUDENT_UPDATED = "student.updated"
+    STUDENT_ACCOUNT_PROVISIONED = "student.account.provisioned"
     TEACHER_CREATED = "teacher.created"
     TEACHER_UPDATED = "teacher.updated"
     GUARDIAN_CREATED = "guardian.created"
     GUARDIAN_UPDATED = "guardian.updated"
+    GUARDIAN_ACCOUNT_PROVISIONED = "guardian.account.provisioned"
     GUARDIAN_ASSOCIATED = "guardian.associated"
+    GUARDIAN_DISSOCIATED = "guardian.dissociated"
     GUARDIAN_ACTIVATION_REQUESTED = "guardian.activation.requested"
     GUARDIAN_ONBOARDING_COMPLETED = "guardian.onboarding.completed"
     ENROLLMENT_CREATED = "enrollment.created"
@@ -134,6 +139,14 @@ class AuditEventType(StrEnum):
     GRADE_DELETED = "grade.deleted"
     ATTENDANCE_RECORDED = "attendance.recorded"
     ATTENDANCE_UPDATED = "attendance.updated"
+    ACTIVITY_CREATED = "activity.created"
+    ACTIVITY_UPDATED = "activity.updated"
+    ACTIVITY_PUBLISHED = "activity.published"
+    ACTIVITY_CLOSED = "activity.closed"
+    ACTIVITY_DELETED = "activity.deleted"
+    PLAN_CREATED = "plan.created"
+    PLAN_UPDATED = "plan.updated"
+    PLAN_DELETED = "plan.deleted"
 
     # Virtual classroom & Real-Time Collaboration (Phase 4)
     MEETING_CREATED = "meeting.created"
@@ -145,6 +158,32 @@ class AuditEventType(StrEnum):
     RECORDING_DELETED = "recording.deleted"
     RECORDING_ACCESSED = "recording.accessed"
     RECORDING_DOWNLOADED = "recording.downloaded"
+
+    # Institutional Communications, News, and Coexistence (Phase 15)
+    COMMUNICATION_CREATED = "communication.created"
+    COMMUNICATION_UPDATED = "communication.updated"
+    COMMUNICATION_PUBLISHED = "communication.published"
+    COMMUNICATION_ARCHIVED = "communication.archived"
+    COMMUNICATION_ACKNOWLEDGED = "communication.acknowledged"
+    NEWS_CREATED = "news.created"
+    NEWS_UPDATED = "news.updated"
+    NEWS_PUBLISHED = "news.published"
+    NEWS_ARCHIVED = "news.archived"
+    INCIDENT_RECORDED = "incident.recorded"
+    INCIDENT_UPDATED = "incident.updated"
+    INCIDENT_CLOSED = "incident.closed"
+    INCIDENT_VIEWED_BY_GUARDIAN = "incident.viewed_by_guardian"
+
+    # SIEE Academic Evaluation, Period Closures & Promotions (Phase 16)
+    SIEE_POLICY_CREATED = "siee_policy.created"
+    SIEE_POLICY_UPDATED = "siee_policy.updated"
+    PERIOD_GRADES_CONSOLIDATED = "period_grades.consolidated"
+    PERIOD_GRADE_ADJUSTED = "period_grade.adjusted"
+    RECOVERY_GRADE_RECORDED = "recovery_grade.recorded"
+    PERIOD_CLOSED = "period.closed"
+    PERIOD_UNLOCKED = "period.unlocked"
+    REPORT_CARD_GENERATED = "report_card.generated"
+    PROMOTION_COMMITTED = "promotion.committed"
 
     # Security events
     RATE_LIMIT_EXCEEDED = "security.rate_limit_exceeded"

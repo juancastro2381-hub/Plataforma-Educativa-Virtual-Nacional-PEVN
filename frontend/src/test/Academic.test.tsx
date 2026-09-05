@@ -71,6 +71,17 @@ vi.mock('@/services/auth', () => ({
   },
 }))
 
+// Mock institution service
+const mockGetMyInstitution = vi.fn()
+vi.mock('@/services/institution', () => ({
+  institutionApi: {
+    getMyInstitution: () => mockGetMyInstitution(),
+  },
+  default: {
+    getMyInstitution: () => mockGetMyInstitution(),
+  },
+}))
+
 // Mock academic service
 const mockListYears = vi.fn<() => Promise<AcademicYearListResponse>>()
 const mockListGroups = vi.fn<() => Promise<GroupListResponse>>()
@@ -80,6 +91,13 @@ const mockListTeachers = vi.fn<() => Promise<TeacherListResponse>>()
 const mockListGuardians = vi.fn<() => Promise<GuardianListResponse>>()
 const mockListEnrollments = vi.fn<() => Promise<EnrollmentListResponse>>()
 const mockListAssignments = vi.fn<() => Promise<AcademicAssignmentListResponse>>()
+const mockListGrades = vi.fn()
+const mockListSubjects = vi.fn()
+const mockCreateGroup = vi.fn()
+const mockCreateEnrollment = vi.fn()
+const mockCreateAssignment = vi.fn()
+const mockTransferStudentGroup = vi.fn()
+const mockAssociateGuardianToStudent = vi.fn()
 
 vi.mock('@/services/academic', () => ({
   academicApi: {
@@ -91,6 +109,14 @@ vi.mock('@/services/academic', () => ({
     listGuardians: () => mockListGuardians(),
     listEnrollments: () => mockListEnrollments(),
     listAssignments: () => mockListAssignments(),
+    listGrades: () => mockListGrades(),
+    listSubjects: () => mockListSubjects(),
+    createGroup: (payload: any) => mockCreateGroup(payload),
+    createEnrollment: (payload: any) => mockCreateEnrollment(payload),
+    createAssignment: (payload: any) => mockCreateAssignment(payload),
+    transferStudentGroup: (payload: any) => mockTransferStudentGroup(payload),
+    associateGuardianToStudent: (gId: string, sId: string, payload: any) =>
+      mockAssociateGuardianToStudent(gId, sId, payload),
     getTransferHistory: () => Promise.resolve({ items: [], total: 0 }),
   },
   default: {
@@ -102,6 +128,14 @@ vi.mock('@/services/academic', () => ({
     listGuardians: () => mockListGuardians(),
     listEnrollments: () => mockListEnrollments(),
     listAssignments: () => mockListAssignments(),
+    listGrades: () => mockListGrades(),
+    listSubjects: () => mockListSubjects(),
+    createGroup: (payload: any) => mockCreateGroup(payload),
+    createEnrollment: (payload: any) => mockCreateEnrollment(payload),
+    createAssignment: (payload: any) => mockCreateAssignment(payload),
+    transferStudentGroup: (payload: any) => mockTransferStudentGroup(payload),
+    associateGuardianToStudent: (gId: string, sId: string, payload: any) =>
+      mockAssociateGuardianToStudent(gId, sId, payload),
     getTransferHistory: () => Promise.resolve({ items: [], total: 0 }),
   },
 }))
@@ -110,6 +144,34 @@ describe('Academic Management Views', () => {
   beforeEach(() => {
     activeUser = mockAdminUser
     vi.clearAllMocks()
+
+    mockGetMyInstitution.mockResolvedValue({
+      id: 'inst-001',
+      name: 'Institución Educativa Santa Librada',
+      dane_code: '111001044806',
+      campuses: [
+        {
+          id: 'camp-01',
+          institution_id: 'inst-001',
+          name: 'Sede Principal',
+          dane_sede_code: '111001044806',
+          is_active: true,
+        },
+      ],
+    })
+
+    mockListGrades.mockResolvedValue({
+      items: [
+        {
+          id: 'grd-10',
+          code: 'G10',
+          name: 'Décimo',
+          level: 'MEDIA',
+          ordinal_order: 10,
+        },
+      ],
+      total: 1,
+    })
 
     mockListYears.mockResolvedValue({
       items: [
@@ -220,6 +282,7 @@ describe('Academic Management Views', () => {
       items: [
         {
           id: 'grd-001',
+          institution_id: 'inst-001',
           first_name: 'Marta',
           last_name: 'Gómez',
           document_type: 'CC',
@@ -268,6 +331,34 @@ describe('Academic Management Views', () => {
         },
       ],
       total: 1,
+    })
+
+    mockListSubjects.mockResolvedValue({
+      items: [
+        {
+          id: 'sub-mat-10',
+          institution_id: 'inst-001',
+          knowledge_area_id: 'ka-001',
+          grade_id: 'grade-10',
+          name: 'Matemáticas - Grado 10',
+          weekly_hours: 4,
+          created_at: '2026-01-01T00:00:00Z',
+          updated_at: '2026-01-01T00:00:00Z',
+        },
+      ],
+      total: 1,
+    })
+
+    mockCreateAssignment.mockResolvedValue({
+      id: 'asg-002',
+      teacher_id: 'tea-001',
+      subject_id: 'sub-mat-10',
+      group_id: 'grp-1001',
+      academic_year_id: 'year-2026',
+      weekly_hours: 4,
+      is_active: true,
+      created_at: '2026-01-01T00:00:00Z',
+      updated_at: '2026-01-01T00:00:00Z',
     })
   })
 
@@ -331,6 +422,78 @@ describe('Academic Management Views', () => {
     })
   })
 
+  it('renders GroupsView create modal with Sede, Año Lectivo, and Grado dropdowns and submits canonical UUIDs', async () => {
+    const user = userEvent.setup()
+    mockCreateGroup.mockResolvedValue({
+      id: 'grp-new-1002',
+      campus_id: 'camp-01',
+      academic_year_id: 'year-2026',
+      grade_id: 'grd-10',
+      name: '10-B',
+      shift: 'MANANA',
+      capacity_limit: 35,
+      group_director_teacher_id: null,
+      created_at: '2026-01-01T00:00:00Z',
+      updated_at: '2026-01-01T00:00:00Z',
+    })
+
+    render(
+      <MemoryRouter>
+        <AuthProvider>
+          <GroupsView />
+        </AuthProvider>
+      </MemoryRouter>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText('10-01')).toBeInTheDocument()
+    })
+
+    const newGroupBtn = screen.getByRole('button', { name: /\+ Nuevo Grupo/i })
+    await user.click(newGroupBtn)
+
+    await waitFor(() => {
+      expect(screen.getByText(/Crear Nuevo Grupo \/ Salón/i)).toBeInTheDocument()
+      expect(screen.getByText(/Sede Educativa \*/i)).toBeInTheDocument()
+      expect(screen.getByText(/Año Lectivo \*/i)).toBeInTheDocument()
+      expect(screen.getByText(/Grado \*/i)).toBeInTheDocument()
+    })
+
+    // Sede should show the preselected/available campus
+    expect(screen.getByDisplayValue(/Sede Principal — DANE 111001044806/i)).toBeInTheDocument()
+
+    // Academic year should show active year
+    expect(screen.getByDisplayValue(/Año Lectivo 2026 \(ACTIVE\)/i)).toBeInTheDocument()
+
+    // Select grade
+    const selects = screen.getAllByRole('combobox')
+    const gradeSelect = selects.find((s) => (s as HTMLSelectElement).innerHTML.includes('Décimo'))
+    if (gradeSelect) {
+      await user.selectOptions(gradeSelect, 'grd-10')
+    }
+
+    // Fill Name
+    const nameInput = screen.getByPlaceholderText('10-01')
+    await user.type(nameInput, '10-B')
+
+    // Submit
+    const submitBtn = screen.getByRole('button', { name: /Guardar Grupo/i })
+    await user.click(submitBtn)
+
+    await waitFor(() => {
+      expect(mockCreateGroup).toHaveBeenCalledWith(
+        expect.objectContaining({
+          campus_id: 'camp-01',
+          academic_year_id: 'year-2026',
+          grade_id: 'grd-10',
+          name: '10-B',
+          shift: 'MANANA',
+          capacity_limit: 35,
+        })
+      )
+    })
+  })
+
   it('renders StudentsView with SIMAT search and student record', async () => {
     render(
       <MemoryRouter>
@@ -361,7 +524,84 @@ describe('Academic Management Views', () => {
     })
   })
 
-  it('renders GuardiansView with civil registry details', async () => {
+  it('renders EnrollmentsView with active status badge and contextual create selectors', async () => {
+    mockCreateEnrollment.mockResolvedValue({
+      id: 'enr-new-01',
+      student_id: 'std-001',
+      group_id: 'grp-1001',
+      academic_year_id: 'year-2026',
+      enrollment_date: '2026-02-15',
+      status: 'ACTIVE',
+      status_reason: null,
+      created_at: '2026-02-15T00:00:00Z',
+      updated_at: '2026-02-15T00:00:00Z',
+    })
+
+    render(
+      <MemoryRouter>
+        <AuthProvider>
+          <EnrollmentsView />
+        </AuthProvider>
+      </MemoryRouter>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText('ACTIVA')).toBeInTheDocument()
+    })
+
+    // Open Create Modal
+    const createBtn = screen.getByRole('button', { name: /\+ Formalizar Matrícula/i })
+    await userEvent.click(createBtn)
+
+    expect(screen.getByText('Formalizar Nueva Matrícula')).toBeInTheDocument()
+
+    // Verify selectors are populated and select options
+    await waitFor(() => {
+      expect(screen.getByRole('option', { name: /Carlos Pérez/i })).toBeInTheDocument()
+      expect(screen.getByRole('option', { name: /Año Lectivo 2026/i })).toBeInTheDocument()
+      expect(screen.getByRole('option', { name: /10-01/i })).toBeInTheDocument()
+    })
+
+    const studentSelect = screen.getByLabelText(/Estudiante \*/i)
+    await userEvent.selectOptions(studentSelect, 'std-001')
+
+    const groupSelect = screen.getByLabelText(/Salón \/ Grupo Destino \*/i)
+    await userEvent.selectOptions(groupSelect, 'grp-1001')
+
+    const submitBtn = screen.getByRole('button', { name: /Registrar Matrícula/i })
+    await userEvent.click(submitBtn)
+
+    await waitFor(() => {
+      expect(mockCreateEnrollment).toHaveBeenCalledWith(
+        expect.objectContaining({
+          student_id: 'std-001',
+          academic_year_id: 'year-2026',
+          group_id: 'grp-1001',
+          status: 'ACTIVE',
+        })
+      )
+    })
+  })
+
+  it('renders TransfersView form with active enrollment and target group selectors', async () => {
+    render(
+      <MemoryRouter>
+        <AuthProvider>
+          <TransfersView />
+        </AuthProvider>
+      </MemoryRouter>
+    )
+
+    expect(screen.getByText(/Trasladar Estudiante de Salón/i)).toBeInTheDocument()
+    expect(screen.getByText(/Historial de Traslados por Matrícula/i)).toBeInTheDocument()
+
+    // Verify Active Enrollment selector populated
+    await waitFor(() => {
+      expect(screen.getAllByText(/Carlos Pérez/i).length).toBeGreaterThan(0)
+    })
+  })
+
+  it('renders GuardiansView with civil registry details and link student modal selector', async () => {
     render(
       <MemoryRouter>
         <AuthProvider>
@@ -374,33 +614,17 @@ describe('Academic Management Views', () => {
       expect(screen.getByText('Marta Gómez')).toBeInTheDocument()
       expect(screen.getByText('3109876543')).toBeInTheDocument()
     })
-  })
 
-  it('renders EnrollmentsView with active status badge', async () => {
-    render(
-      <MemoryRouter>
-        <AuthProvider>
-          <EnrollmentsView />
-        </AuthProvider>
-      </MemoryRouter>
-    )
+    // Open Link Student Modal
+    const linkBtn = screen.getByRole('button', { name: /Vincular a Estudiante/i })
+    await userEvent.click(linkBtn)
 
+    expect(screen.getByText(/Vincular Acudiente — Marta Gómez/i)).toBeInTheDocument()
+
+    // Verify student selector in link modal
     await waitFor(() => {
-      expect(screen.getByText('ACTIVA')).toBeInTheDocument()
+      expect(screen.getByRole('option', { name: /Carlos Pérez/i })).toBeInTheDocument()
     })
-  })
-
-  it('renders TransfersView form and history inspector', () => {
-    render(
-      <MemoryRouter>
-        <AuthProvider>
-          <TransfersView />
-        </AuthProvider>
-      </MemoryRouter>
-    )
-
-    expect(screen.getByText(/Trasladar Estudiante de Salón/i)).toBeInTheDocument()
-    expect(screen.getByText(/Historial de Traslados por Matrícula/i)).toBeInTheDocument()
   })
 
   it('renders AcademicAssignmentsView with workload allocation table', async () => {
@@ -416,6 +640,31 @@ describe('Academic Management Views', () => {
       expect(screen.getByText('4 h/sem')).toBeInTheDocument()
       expect(screen.getByText('ACTIVA')).toBeInTheDocument()
     })
+  })
+
+  it('allows opening create modal and renders resolved selectors for Teacher, Year, Group, Subject', async () => {
+    render(
+      <MemoryRouter>
+        <AuthProvider>
+          <AcademicAssignmentsView />
+        </AuthProvider>
+      </MemoryRouter>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /\+ Asignar Carga Académica/i })).toBeInTheDocument()
+    })
+
+    await userEvent.click(screen.getByRole('button', { name: /\+ Asignar Carga Académica/i }))
+
+    await waitFor(() => {
+      expect(screen.getByText('Asignar Carga Académica Docente')).toBeInTheDocument()
+    })
+
+    // Verify resolved dropdown options are populated
+    expect(screen.getByRole('option', { name: /Matemáticas - Grado 10/i })).toBeInTheDocument()
+    expect(screen.getByRole('option', { name: /10-01/i })).toBeInTheDocument()
+    expect(screen.getByRole('option', { name: /Año Lectivo 2026/i })).toBeInTheDocument()
   })
 
   it('renders unauthorized notice banner when navigating directly to a restricted tab', async () => {
