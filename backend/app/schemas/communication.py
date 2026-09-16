@@ -9,7 +9,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
 
 from app.models.communication import (
     CommunicationCategory,
@@ -137,6 +137,13 @@ class InstitutionalCommunicationResponse(BaseModel):
     acknowledged_receipts_count: int = 0
     created_at: datetime
     updated_at: datetime
+
+    @computed_field
+    @property
+    def author_name(self) -> str:
+        if self.author:
+            return f"{self.author.first_name} {self.author.last_name}".strip()
+        return "Institución Educativa"
 
 
 class CommunicationListResponse(BaseModel):

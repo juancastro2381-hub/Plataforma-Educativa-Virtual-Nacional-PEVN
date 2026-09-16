@@ -23,17 +23,23 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.audit.interfaces import IAuditService
+from app.audit.interfaces import AuditEvent, AuditEventType, IAuditService
 from app.audit.service import audit_service
-from app.core.exceptions import StudentNotFoundError
+from app.core.exceptions import AcademicDomainError, StudentNotFoundError
 from app.core.logging import get_logger
+from app.core.storage.service import get_storage_service
 from app.exceptions.errors import NotFoundError
 from app.models.academic_activity import (
     AcademicActivity,
+    ActivityDeliveryType,
     ActivityGrade,
+    ActivityResource,
     ActivityStatus,
     ActivitySubmissionStatus,
     DailyAttendance,
+    StudentSubmission,
+    SubmissionAttachment,
+    SubmissionStatus,
 )
 from app.models.academic_assignment import AcademicAssignment
 from app.models.enrollment import Enrollment, EnrollmentStatus
@@ -47,6 +53,8 @@ from app.models.virtual_classroom import MeetingRecording, VirtualClassroom
 from app.schemas.student_portal import (
     StudentActivitiesListResponse,
     StudentActivityItemResponse,
+    StudentActivityResourceItem,
+    StudentActivityResourceListResponse,
     StudentAttendanceItemResponse,
     StudentAttendanceListResponse,
     StudentAttendanceSummary,
@@ -56,10 +64,14 @@ from app.schemas.student_portal import (
     StudentProfileResponse,
     StudentRecordingItemResponse,
     StudentRecordingsListResponse,
+    StudentSubmissionAttemptResponse,
+    StudentSubmissionDetailResponse,
+    StudentSubmissionDraftUpdateRequest,
     StudentSubjectItemResponse,
     StudentSubjectsListResponse,
     StudentVirtualClassroomItemResponse,
     StudentVirtualClassroomsListResponse,
+    SubmissionAttachmentItemResponse,
 )
 
 _logger = get_logger(__name__)
@@ -269,6 +281,7 @@ class StudentPortalService:
             .options(
                 selectinload(AcademicActivity.subject),
                 selectinload(AcademicActivity.teacher).selectinload(Teacher.user),
+                selectinload(AcademicActivity.resources),
             )
             .order_by(AcademicActivity.due_date.asc().nulls_last())
         )
@@ -297,6 +310,20 @@ class StudentPortalService:
 
             teacher_name = activity.teacher.user.full_name if activity.teacher and activity.teacher.user else None
 
+            res_items = [
+                StudentActivityResourceItem(
+                    id=r.id,
+                    resource_type=r.resource_type.value,
+                    title=r.title,
+                    url=r.url,
+                    original_filename=r.original_filename,
+                    file_size_bytes=r.file_size_bytes,
+                    mime_type=r.mime_type,
+                    created_at=r.created_at,
+                )
+                for r in (activity.resources or [])
+            ]
+
             items.append(
                 StudentActivityItemResponse(
                     id=activity.id,
@@ -304,6 +331,7 @@ class StudentPortalService:
                     description=activity.description,
                     activity_type=activity.activity_type,
                     status=activity.status,
+                    delivery_type=activity.delivery_type,
                     submission_status=computed_status,
                     publication_date=activity.publication_date,
                     due_date=activity.due_date,
@@ -316,6 +344,7 @@ class StudentPortalService:
                     teacher_name=teacher_name,
                     instructions=activity.instructions,
                     resource_url=activity.resource_url,
+                    resources=res_items,
                 )
             )
 
@@ -349,6 +378,7 @@ class StudentPortalService:
             .options(
                 selectinload(AcademicActivity.subject),
                 selectinload(AcademicActivity.teacher).selectinload(Teacher.user),
+                selectinload(AcademicActivity.resources),
             )
         )
         row = (await self._session.execute(stmt)).first()
@@ -370,12 +400,37 @@ class StudentPortalService:
 
         teacher_name = activity.teacher.user.full_name if activity.teacher and activity.teacher.user else None
 
+        res_stmt = (
+            select(ActivityResource)
+            .where(
+                ActivityResource.activity_id == activity.id,
+                ActivityResource.institution_id == student.institution_id,
+            )
+            .order_by(ActivityResource.created_at.asc())
+        )
+        resources_list = list((await self._session.execute(res_stmt)).scalars().all())
+
+        res_items = [
+            StudentActivityResourceItem(
+                id=r.id,
+                resource_type=r.resource_type.value,
+                title=r.title,
+                url=r.url,
+                original_filename=r.original_filename,
+                file_size_bytes=r.file_size_bytes,
+                mime_type=r.mime_type,
+                created_at=r.created_at,
+            )
+            for r in resources_list
+        ]
+
         return StudentActivityItemResponse(
             id=activity.id,
             title=activity.title,
             description=activity.description,
             activity_type=activity.activity_type,
             status=activity.status,
+            delivery_type=activity.delivery_type,
             submission_status=computed_status,
             publication_date=activity.publication_date,
             due_date=activity.due_date,
@@ -388,7 +443,551 @@ class StudentPortalService:
             teacher_name=teacher_name,
             instructions=activity.instructions,
             resource_url=activity.resource_url,
+            resources=res_items,
         )
+
+    async def list_activity_resources(
+        self,
+        student: Student,
+        activity_id: uuid.UUID,
+    ) -> list[ActivityResource]:
+        """List materials for a published activity in the student's active group."""
+        enrollment = await self.get_active_enrollment(student.id)
+        if not enrollment or not enrollment.group:
+            raise NotFoundError("Actividad académica no encontrada o no autorizada.")
+
+        act_stmt = select(AcademicActivity).where(
+            AcademicActivity.id == activity_id,
+            AcademicActivity.group_id == enrollment.group_id,
+            AcademicActivity.status == ActivityStatus.PUBLISHED,
+        )
+        activity = (await self._session.execute(act_stmt)).scalar_one_or_none()
+        if not activity:
+            raise NotFoundError("Actividad académica no encontrada o no autorizada.")
+
+        res_stmt = (
+            select(ActivityResource)
+            .where(
+                ActivityResource.activity_id == activity.id,
+                ActivityResource.institution_id == student.institution_id,
+            )
+            .order_by(ActivityResource.created_at.asc())
+        )
+        return list((await self._session.execute(res_stmt)).scalars().all())
+
+    async def get_resource_for_download(
+        self,
+        student: Student,
+        activity_id: uuid.UUID,
+        resource_id: uuid.UUID,
+        *,
+        actor_id: str | None = None,
+        actor_ip: str = "0.0.0.0",
+    ) -> tuple[ActivityResource, str]:
+        """Validate student group authorization and retrieve physical file path for download streaming."""
+        enrollment = await self.get_active_enrollment(student.id)
+        if not enrollment or not enrollment.group:
+            raise NotFoundError("Actividad académica no encontrada o no autorizada.")
+
+        act_stmt = select(AcademicActivity).where(
+            AcademicActivity.id == activity_id,
+            AcademicActivity.group_id == enrollment.group_id,
+            AcademicActivity.status == ActivityStatus.PUBLISHED,
+        )
+        activity = (await self._session.execute(act_stmt)).scalar_one_or_none()
+        if not activity:
+            raise NotFoundError("Actividad académica no encontrada o no autorizada.")
+
+        res_stmt = select(ActivityResource).where(
+            ActivityResource.id == resource_id,
+            ActivityResource.activity_id == activity.id,
+            ActivityResource.institution_id == student.institution_id,
+        )
+        resource = (await self._session.execute(res_stmt)).scalar_one_or_none()
+        if not resource or resource.resource_type.value != "FILE" or not resource.file_path:
+            raise NotFoundError("Archivo de recurso no encontrado o no disponible para descarga.")
+
+        storage = get_storage_service()
+        physical_path = storage.get_physical_path(resource.file_path)
+
+        await self._audit.record(
+            AuditEvent(
+                event_type=AuditEventType.RESOURCE_DOWNLOADED,
+                actor_id=actor_id or str(student.user_id),
+                actor_ip=actor_ip,
+                target_id=str(resource_id),
+                target_type="ActivityResource",
+                institution_id=str(student.institution_id),
+                metadata={"title": resource.title, "activity_id": str(activity.id)},
+            ),
+            session=self._session,
+        )
+        return resource, physical_path
+
+    # =======================================================================
+    # Student Submissions & Deliveries (Phase B3-H13)
+    # =======================================================================
+
+    async def _get_authorized_activity(
+        self,
+        student: Student,
+        activity_id: uuid.UUID,
+    ) -> AcademicActivity:
+        """Helper to ensure student is enrolled in the activity's group and tenant."""
+        enrollment = await self.get_active_enrollment(student.id)
+        if not enrollment or not enrollment.group:
+            raise NotFoundError("Actividad académica no encontrada o no autorizada.")
+
+        stmt = (
+            select(AcademicActivity)
+            .where(
+                AcademicActivity.id == activity_id,
+                AcademicActivity.group_id == enrollment.group_id,
+                AcademicActivity.institution_id == student.institution_id,
+            )
+        )
+        activity = (await self._session.execute(stmt)).scalar_one_or_none()
+        if not activity:
+            raise NotFoundError("Actividad académica no encontrada o no autorizada.")
+        return activity
+
+    async def get_submission_detail(
+        self,
+        student: Student,
+        activity_id: uuid.UUID,
+    ) -> StudentSubmissionDetailResponse:
+        """
+        Retrieve student's submission status, active attempt draft, and historical attempts.
+        If no attempt exists and activity is PUBLISHED, creates Attempt 1 in DRAFT state.
+        If latest attempt was RETURNED and activity is PUBLISHED, creates next Attempt in DRAFT state.
+        """
+        activity = await self._get_authorized_activity(student, activity_id)
+
+        # Fetch all attempts for (activity_id, student.id)
+        # populate_existing=True ensures relationships (e.g. attachments) are refreshed
+        # from the database even if the parent object is already in the identity map.
+        sub_stmt = (
+            select(StudentSubmission)
+            .options(
+                selectinload(StudentSubmission.attachments),
+            )
+            .where(
+                StudentSubmission.activity_id == activity_id,
+                StudentSubmission.student_id == student.id,
+                StudentSubmission.institution_id == student.institution_id,
+            )
+            .order_by(StudentSubmission.attempt_number.asc())
+            .execution_options(populate_existing=True)
+        )
+        attempts = list((await self._session.execute(sub_stmt)).scalars().all())
+
+        latest_attempt = attempts[-1] if attempts else None
+
+        # Auto-create draft attempt if needed
+        now_utc = datetime.now(UTC)
+        if activity.status == ActivityStatus.PUBLISHED:
+            if not attempts:
+                new_draft = StudentSubmission(
+                    institution_id=student.institution_id,
+                    activity_id=activity.id,
+                    student_id=student.id,
+                    attempt_number=1,
+                    status=SubmissionStatus.DRAFT,
+                    is_late=False,
+                    created_at=now_utc,
+                    updated_at=now_utc,
+                )
+                self._session.add(new_draft)
+                await self._session.flush()
+                # Re-select with selectinload to guarantee all attributes are populated
+                st_draft = (
+                    select(StudentSubmission)
+                    .options(selectinload(StudentSubmission.attachments))
+                    .where(StudentSubmission.id == new_draft.id)
+                )
+                new_draft = (await self._session.execute(st_draft)).scalar_one()
+                attempts.append(new_draft)
+                latest_attempt = new_draft
+            elif latest_attempt and latest_attempt.status == SubmissionStatus.RETURNED:
+                # Spawn next attempt as DRAFT
+                next_number = latest_attempt.attempt_number + 1
+                new_draft = StudentSubmission(
+                    institution_id=student.institution_id,
+                    activity_id=activity.id,
+                    student_id=student.id,
+                    attempt_number=next_number,
+                    status=SubmissionStatus.DRAFT,
+                    is_late=False,
+                    created_at=now_utc,
+                    updated_at=now_utc,
+                )
+                self._session.add(new_draft)
+                await self._session.flush()
+                st_draft = (
+                    select(StudentSubmission)
+                    .options(selectinload(StudentSubmission.attachments))
+                    .where(StudentSubmission.id == new_draft.id)
+                )
+                new_draft = (await self._session.execute(st_draft)).scalar_one()
+                attempts.append(new_draft)
+                latest_attempt = new_draft
+
+        # Fetch ActivityGrade if exists
+        grade_stmt = select(ActivityGrade).where(
+            ActivityGrade.activity_id == activity_id,
+            ActivityGrade.student_id == student.id,
+        )
+        grade = (await self._session.execute(grade_stmt)).scalar_one_or_none()
+
+        can_edit_draft = (
+            activity.status == ActivityStatus.PUBLISHED
+            and latest_attempt is not None
+            and latest_attempt.status == SubmissionStatus.DRAFT
+        )
+        can_submit = can_edit_draft
+
+        def _to_attempt_resp(att: StudentSubmission) -> StudentSubmissionAttemptResponse:
+            att_items = [
+                SubmissionAttachmentItemResponse(
+                    id=a.id,
+                    original_filename=a.original_filename,
+                    file_size_bytes=a.file_size_bytes,
+                    mime_type=a.mime_type,
+                    created_at=a.created_at,
+                )
+                for a in (att.attachments or [])
+            ]
+            return StudentSubmissionAttemptResponse(
+                id=att.id,
+                activity_id=att.activity_id,
+                student_id=att.student_id,
+                attempt_number=att.attempt_number,
+                status=att.status,
+                student_response=att.student_response,
+                submitted_at=att.submitted_at,
+                is_late=att.is_late,
+                return_feedback=att.return_feedback,
+                returned_at=att.returned_at,
+                created_at=att.created_at,
+                updated_at=att.updated_at,
+                attachments=att_items,
+            )
+
+        history_items = [
+            _to_attempt_resp(att)
+            for att in attempts
+            if latest_attempt and att.id != latest_attempt.id
+        ]
+        current_resp = _to_attempt_resp(latest_attempt) if latest_attempt else None
+
+        return StudentSubmissionDetailResponse(
+            activity_id=activity.id,
+            activity_title=activity.title,
+            activity_status=activity.status,
+            delivery_type=activity.delivery_type,
+            due_date=activity.due_date,
+            can_submit=can_submit,
+            can_edit_draft=can_edit_draft,
+            current_attempt=current_resp,
+            history=history_items,
+            grade_score=grade.score if grade else None,
+            grade_feedback=grade.feedback if grade else None,
+            graded_at=grade.graded_at if grade else None,
+        )
+
+    async def _get_active_draft_attempt(
+        self,
+        student: Student,
+        activity_id: uuid.UUID,
+    ) -> tuple[AcademicActivity, StudentSubmission]:
+        """Helper to fetch published activity and its active DRAFT attempt."""
+        activity = await self._get_authorized_activity(student, activity_id)
+        if activity.status != ActivityStatus.PUBLISHED:
+            raise AcademicDomainError("No se pueden realizar cambios en actividades cerradas o no publicadas.")
+
+        # Ensure detail ensures draft existence
+        detail = await self.get_submission_detail(student, activity_id)
+        if not detail.current_attempt or detail.current_attempt.status != SubmissionStatus.DRAFT:
+            raise AcademicDomainError("No hay un borrador activo disponible para modificar.")
+
+        stmt = (
+            select(StudentSubmission)
+            .options(selectinload(StudentSubmission.attachments))
+            .where(StudentSubmission.id == detail.current_attempt.id)
+        )
+        draft = (await self._session.execute(stmt)).scalar_one()
+        return activity, draft
+
+    async def save_submission_draft(
+        self,
+        student: Student,
+        activity_id: uuid.UUID,
+        data: StudentSubmissionDraftUpdateRequest,
+    ) -> StudentSubmissionAttemptResponse:
+        """Update student response in the active draft attempt."""
+        activity, draft = await self._get_active_draft_attempt(student, activity_id)
+        draft.student_response = data.student_response
+        draft.updated_at = datetime.now(UTC)
+        await self._session.flush()
+
+        stmt = (
+            select(StudentSubmission)
+            .options(selectinload(StudentSubmission.attachments))
+            .where(StudentSubmission.id == draft.id)
+        )
+        draft = (await self._session.execute(stmt)).scalar_one()
+
+        att_items = [
+            SubmissionAttachmentItemResponse(
+                id=a.id,
+                original_filename=a.original_filename,
+                file_size_bytes=a.file_size_bytes,
+                mime_type=a.mime_type,
+                created_at=a.created_at,
+            )
+            for a in (draft.attachments or [])
+        ]
+        return StudentSubmissionAttemptResponse(
+            id=draft.id,
+            activity_id=draft.activity_id,
+            student_id=draft.student_id,
+            attempt_number=draft.attempt_number,
+            status=draft.status,
+            student_response=draft.student_response,
+            submitted_at=draft.submitted_at,
+            is_late=draft.is_late,
+            return_feedback=draft.return_feedback,
+            returned_at=draft.returned_at,
+            created_at=draft.created_at,
+            updated_at=draft.updated_at,
+            attachments=att_items,
+        )
+
+    async def upload_submission_file(
+        self,
+        student: Student,
+        activity_id: uuid.UUID,
+        filename: str,
+        content: bytes,
+        declared_mime_type: str | None = None,
+    ) -> SubmissionAttachmentItemResponse:
+        """Upload a file attachment to the active draft attempt (max 3 files, non-TEXT activity)."""
+        activity, draft = await self._get_active_draft_attempt(student, activity_id)
+
+        if activity.delivery_type == ActivityDeliveryType.TEXT:
+            raise AcademicDomainError("Esta actividad está configurada como SOLO TEXTO y no admite archivos adjuntos.")
+
+        existing_count = len(draft.attachments or [])
+        if existing_count >= 3:
+            raise AcademicDomainError("Se ha alcanzado el límite máximo de 3 archivos adjuntos para esta entrega.")
+
+        storage = get_storage_service()
+        attachment_id = uuid.uuid4()
+        now_utc = datetime.now(UTC)
+
+        rel_path, mime_type, size_bytes = await storage.save_submission_attachment(
+            institution_id=student.institution_id,
+            activity_id=activity.id,
+            student_id=student.id,
+            submission_id=draft.id,
+            attachment_id=attachment_id,
+            original_filename=filename,
+            content=content,
+            declared_mime_type=declared_mime_type,
+        )
+
+        attachment = SubmissionAttachment(
+            id=attachment_id,
+            institution_id=student.institution_id,
+            submission_id=draft.id,
+            file_path=rel_path,
+            original_filename=filename,
+            file_size_bytes=size_bytes,
+            mime_type=mime_type,
+            created_at=now_utc,
+            updated_at=now_utc,
+        )
+        self._session.add(attachment)
+        await self._session.flush()
+
+        stmt = select(SubmissionAttachment).where(SubmissionAttachment.id == attachment.id)
+        attachment = (await self._session.execute(stmt)).scalar_one()
+
+        return SubmissionAttachmentItemResponse(
+            id=attachment.id,
+            original_filename=attachment.original_filename,
+            file_size_bytes=attachment.file_size_bytes,
+            mime_type=attachment.mime_type,
+            created_at=attachment.created_at,
+        )
+
+    async def delete_submission_file(
+        self,
+        student: Student,
+        activity_id: uuid.UUID,
+        attachment_id: uuid.UUID,
+    ) -> bool:
+        """Delete an uploaded attachment from the active draft attempt."""
+        activity, draft = await self._get_active_draft_attempt(student, activity_id)
+
+        stmt = select(SubmissionAttachment).where(
+            SubmissionAttachment.id == attachment_id,
+            SubmissionAttachment.submission_id == draft.id,
+            SubmissionAttachment.institution_id == student.institution_id,
+        )
+        attachment = (await self._session.execute(stmt)).scalar_one_or_none()
+        if not attachment:
+            raise NotFoundError("Archivo adjunto no encontrado en el borrador activo.")
+
+        storage = get_storage_service()
+        await storage.delete_file(attachment.file_path)
+        await self._session.delete(attachment)
+        await self._session.flush()
+        return True
+
+    async def submit_activity(
+        self,
+        student: Student,
+        activity_id: uuid.UUID,
+        *,
+        actor_id: str | None = None,
+        actor_ip: str = "0.0.0.0",
+    ) -> StudentSubmissionDetailResponse:
+        """
+        Confirm and submit the activity.
+        Enforces delivery_type constraints, evaluates is_late in UTC,
+        updates ActivityGrade status to SUBMITTED, and records audit.
+        """
+        activity, draft = await self._get_active_draft_attempt(student, activity_id)
+
+        attachments = draft.attachments or []
+        has_text = bool(draft.student_response and draft.student_response.strip())
+        att_count = len(attachments)
+
+        if activity.delivery_type == ActivityDeliveryType.TEXT:
+            if not has_text:
+                raise AcademicDomainError("Debe escribir una respuesta de texto para completar la entrega.")
+            if att_count > 0:
+                raise AcademicDomainError("Esta actividad de solo texto no admite archivos adjuntos.")
+        elif activity.delivery_type == ActivityDeliveryType.FILE:
+            if att_count < 1:
+                raise AcademicDomainError("Debe adjuntar al menos un archivo (máximo 3) para completar la entrega.")
+            if att_count > 3:
+                raise AcademicDomainError("No puede adjuntar más de 3 archivos.")
+        elif activity.delivery_type == ActivityDeliveryType.TEXT_AND_FILE:
+            if not has_text:
+                raise AcademicDomainError("Debe escribir una respuesta de texto para completar la entrega.")
+            if att_count < 1:
+                raise AcademicDomainError("Debe adjuntar al menos un archivo (máximo 3) para completar la entrega.")
+            if att_count > 3:
+                raise AcademicDomainError("No puede adjuntar más de 3 archivos.")
+
+        # Server-side UTC deadline evaluation
+        now_utc = datetime.now(UTC)
+        is_late = False
+        if activity.due_date:
+            due_utc = activity.due_date if activity.due_date.tzinfo else activity.due_date.replace(tzinfo=UTC)
+            if now_utc > due_utc:
+                is_late = True
+
+        draft.is_late = is_late
+        draft.submitted_at = now_utc
+        draft.status = SubmissionStatus.LATE if is_late else SubmissionStatus.SUBMITTED
+
+        # Synchronize ActivityGrade
+        gr_stmt = select(ActivityGrade).where(
+            ActivityGrade.activity_id == activity.id,
+            ActivityGrade.student_id == student.id,
+        )
+        grade = (await self._session.execute(gr_stmt)).scalar_one_or_none()
+        if not grade:
+            grade = ActivityGrade(
+                activity_id=activity.id,
+                student_id=student.id,
+                status=ActivitySubmissionStatus.SUBMITTED,
+                score=None,
+            )
+            self._session.add(grade)
+        else:
+            grade.status = ActivitySubmissionStatus.SUBMITTED
+            grade.score = None
+
+        await self._session.flush()
+
+        # Audit recording
+        event_type = (
+            AuditEventType.SUBMISSION_RESUBMITTED
+            if draft.attempt_number > 1
+            else AuditEventType.SUBMISSION_CREATED
+        )
+        await self._audit.record(
+            AuditEvent(
+                event_type=event_type,
+                actor_id=actor_id or str(student.user_id),
+                actor_ip=actor_ip,
+                target_id=str(draft.id),
+                target_type="StudentSubmission",
+                institution_id=str(student.institution_id),
+                metadata={
+                    "activity_id": str(activity.id),
+                    "attempt_number": draft.attempt_number,
+                    "is_late": is_late,
+                    "delivery_type": activity.delivery_type.value,
+                },
+            ),
+            session=self._session,
+        )
+
+        return await self.get_submission_detail(student, activity_id)
+
+    async def get_submission_attachment_for_download(
+        self,
+        student: Student,
+        activity_id: uuid.UUID,
+        attachment_id: uuid.UUID,
+        *,
+        actor_id: str | None = None,
+        actor_ip: str = "0.0.0.0",
+    ) -> tuple[SubmissionAttachment, str]:
+        """
+        Anti-IDOR download of student's own submission attachment.
+        Verifies attachment belongs to a submission of this student and activity.
+        """
+        activity = await self._get_authorized_activity(student, activity_id)
+
+        att_stmt = (
+            select(SubmissionAttachment)
+            .join(StudentSubmission, SubmissionAttachment.submission_id == StudentSubmission.id)
+            .where(
+                SubmissionAttachment.id == attachment_id,
+                SubmissionAttachment.institution_id == student.institution_id,
+                StudentSubmission.activity_id == activity.id,
+                StudentSubmission.student_id == student.id,
+            )
+        )
+        attachment = (await self._session.execute(att_stmt)).scalar_one_or_none()
+        if not attachment:
+            raise NotFoundError("Archivo adjunto no encontrado o no pertenece a tus entregas.")
+
+        storage = get_storage_service()
+        physical_path = storage.get_physical_path(attachment.file_path)
+
+        await self._audit.record(
+            AuditEvent(
+                event_type=AuditEventType.SUBMISSION_DOWNLOADED,
+                actor_id=actor_id or str(student.user_id),
+                actor_ip=actor_ip,
+                target_id=str(attachment.id),
+                target_type="SubmissionAttachment",
+                institution_id=str(student.institution_id),
+                metadata={
+                    "activity_id": str(activity.id),
+                    "original_filename": attachment.original_filename,
+                },
+            ),
+            session=self._session,
+        )
+        return attachment, physical_path
 
     async def list_grades(
         self,

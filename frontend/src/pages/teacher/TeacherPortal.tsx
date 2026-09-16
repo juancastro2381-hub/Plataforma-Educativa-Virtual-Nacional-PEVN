@@ -22,12 +22,20 @@ import { TeacherActivitiesView } from './TeacherActivitiesView'
 import { TeacherGradesView } from './TeacherGradesView'
 import { TeacherAttendanceView } from './TeacherAttendanceView'
 import { TeacherPlanningView } from './TeacherPlanningView'
+import { TeacherIncidentsView } from './TeacherIncidentsView'
+import { TeacherCommunicationsView } from './TeacherCommunicationsView'
+import { TeacherNewsView } from './TeacherNewsView'
 
-type TeacherTab = 'dashboard' | 'load' | 'groups' | 'activities' | 'grades' | 'attendance' | 'planning'
+type TeacherTab = 'dashboard' | 'load' | 'groups' | 'activities' | 'grades' | 'attendance' | 'coexistence' | 'planning' | 'communications' | 'news'
+
+const VALID_TABS: TeacherTab[] = ['dashboard', 'load', 'groups', 'activities', 'grades', 'attendance', 'coexistence', 'planning', 'communications', 'news']
 
 export const TeacherPortal: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams()
-  const initialTab = (searchParams.get('tab') as TeacherTab) || 'dashboard'
+  const tabFromUrl = searchParams.get('tab')
+  const initialTab: TeacherTab = tabFromUrl && VALID_TABS.includes(tabFromUrl as TeacherTab)
+    ? (tabFromUrl as TeacherTab)
+    : 'dashboard'
   const [activeTab, setActiveTab] = useState<TeacherTab>(initialTab)
 
   const [summary, setSummary] = useState<TeacherDashboardSummaryResponse | null>(null)
@@ -41,15 +49,26 @@ export const TeacherPortal: React.FC = () => {
 
   // Sync tab with URL query parameter
   useEffect(() => {
-    const tabParam = searchParams.get('tab') as TeacherTab
-    if (tabParam && ['dashboard', 'load', 'groups', 'activities', 'grades', 'attendance', 'planning'].includes(tabParam)) {
-      setActiveTab(tabParam)
+    const tabParam = searchParams.get('tab')
+    if (tabParam && VALID_TABS.includes(tabParam as TeacherTab)) {
+      setActiveTab(tabParam as TeacherTab)
     }
   }, [searchParams])
 
-  const handleTabChange = (newTab: TeacherTab) => {
+  const groupIdFromUrl = searchParams.get('groupId') || undefined
+  const activityIdFromUrl = searchParams.get('activityId') || undefined
+  const statusFromUrl = searchParams.get('status') || undefined
+
+  const handleTabChange = (
+    newTab: TeacherTab,
+    context?: { groupId?: string; activityId?: string; status?: string }
+  ) => {
     setActiveTab(newTab)
-    setSearchParams({ tab: newTab })
+    const nextParams: Record<string, string> = { tab: newTab }
+    if (context?.groupId) nextParams.groupId = context.groupId
+    if (context?.activityId) nextParams.activityId = context.activityId
+    if (context?.status) nextParams.status = context.status
+    setSearchParams(nextParams)
   }
 
   const loadAllTeacherData = async () => {
@@ -91,7 +110,10 @@ export const TeacherPortal: React.FC = () => {
     { id: 'activities', label: 'Actividades', icon: '📝' },
     { id: 'grades', label: 'Calificaciones', icon: '📊' },
     { id: 'attendance', label: 'Asistencia', icon: '📋' },
+    { id: 'coexistence', label: 'Convivencia', icon: '🛡️' },
     { id: 'planning', label: 'Planeación', icon: '🎯' },
+    { id: 'communications', label: 'Comunicaciones', icon: '📢' },
+    { id: 'news', label: 'Noticias', icon: '📰' },
   ]
 
   return (
@@ -127,7 +149,7 @@ export const TeacherPortal: React.FC = () => {
           return (
             <button
               key={t.id}
-              onClick={() => handleTabChange(t.id)}
+              onClick={() => { handleTabChange(t.id); }}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -174,7 +196,7 @@ export const TeacherPortal: React.FC = () => {
           <TeacherDashboardView
             summary={summary}
             loading={loading}
-            onTabChange={(tab) => handleTabChange(tab as TeacherTab)}
+            onTabChange={(tab, ctx) => { handleTabChange(tab as TeacherTab, ctx); }}
           />
         )}
 
@@ -193,6 +215,7 @@ export const TeacherPortal: React.FC = () => {
             groups={groups}
             teacherName={summary?.teacher_name}
             loading={loading}
+            onNavigateToTab={(tab, ctx) => { handleTabChange(tab as TeacherTab, ctx); }}
           />
         )}
 
@@ -203,6 +226,8 @@ export const TeacherPortal: React.FC = () => {
             loading={loading}
             onRefresh={loadAllTeacherData}
             onSelectActivityForGrading={handleSelectActivityForGrading}
+            initialGroupId={groupIdFromUrl}
+            initialStatus={statusFromUrl}
           />
         )}
 
@@ -210,19 +235,42 @@ export const TeacherPortal: React.FC = () => {
           <TeacherGradesView
             activities={activities}
             assignments={assignments}
-            initialSelectedActivityId={selectedGradingActivityId}
+            initialSelectedActivityId={activityIdFromUrl || selectedGradingActivityId}
+            initialGroupId={groupIdFromUrl}
           />
         )}
 
         {activeTab === 'attendance' && (
           <TeacherAttendanceView
             assignments={assignments}
+            initialGroupId={groupIdFromUrl}
+          />
+        )}
+
+        {activeTab === 'coexistence' && (
+          <TeacherIncidentsView
+            groups={groups}
+            teacherName={summary?.teacher_name}
+            initialGroupId={groupIdFromUrl}
           />
         )}
 
         {activeTab === 'planning' && (
           <TeacherPlanningView
             assignments={assignments}
+            initialGroupId={groupIdFromUrl}
+          />
+        )}
+
+        {activeTab === 'communications' && (
+          <TeacherCommunicationsView
+            teacherName={summary?.teacher_name}
+          />
+        )}
+
+        {activeTab === 'news' && (
+          <TeacherNewsView
+            teacherName={summary?.teacher_name}
           />
         )}
       </div>

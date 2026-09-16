@@ -17,13 +17,27 @@ import type {
   AcademicPlanUpdateRequest,
   ActivityGradeBatchUpdateRequest,
   ActivityGradesListResponse,
+  ActivityResourceListResponse,
+  ActivityResourceResponse,
   DailyAttendanceBatchRequest,
   DailyAttendanceListResponse,
   TeacherAssignmentsListResponse,
   TeacherDashboardSummaryResponse,
   TeacherGroupRosterResponse,
   TeacherGroupsListResponse,
+  TeacherSubmissionsListResponse,
+  TeacherSubmissionDetailResponse,
 } from '@/types/teacher'
+import type {
+  CoexistenceSituationType,
+  IncidentFollowUpItem,
+  IncidentFollowUpPayload,
+  IncidentStatus,
+  StudentIncidentCreateRequest,
+  StudentIncidentItem,
+  StudentIncidentListResponse,
+  StudentIncidentUpdateRequest,
+} from '@/types/communication'
 
 export const teacherApi = {
   // 1. Dashboard
@@ -95,6 +109,127 @@ export const teacherApi = {
     await apiClient.delete(`/api/v1/teacher/activities/${activityId}`)
   },
 
+  // 4.1. Pedagogical Activity Resources (B3-H11)
+  listActivityResources: async (activityId: string): Promise<ActivityResourceListResponse> => {
+    const res = await apiClient.get<ActivityResourceListResponse>(
+      `/api/v1/teacher/activities/${activityId}/resources`
+    )
+    return res.data
+  },
+
+  createUrlResource: async (
+    activityId: string,
+    data: { title: string; url: string; description?: string | null }
+  ): Promise<ActivityResourceResponse> => {
+    const res = await apiClient.post<ActivityResourceResponse>(
+      `/api/v1/teacher/activities/${activityId}/resources/url`,
+      data
+    )
+    return res.data
+  },
+
+  uploadFileResource: async (
+    activityId: string,
+    data: { title: string; file: File; description?: string | null }
+  ): Promise<ActivityResourceResponse> => {
+    const formData = new FormData()
+    formData.append('title', data.title)
+    formData.append('resource_type', 'FILE')
+    formData.append('file', data.file)
+    if (data.description) {
+      formData.append('description', data.description)
+    }
+    const res = await apiClient.post<ActivityResourceResponse>(
+      `/api/v1/teacher/activities/${activityId}/resources`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    )
+    return res.data
+  },
+
+  deleteResource: async (activityId: string, resourceId: string): Promise<void> => {
+    await apiClient.delete(`/api/v1/teacher/activities/${activityId}/resources/${resourceId}`)
+  },
+
+  downloadActivityResource: async (
+    activityId: string,
+    resourceId: string
+  ): Promise<{ data: Blob; filename?: string }> => {
+    const res = await apiClient.get<Blob>(
+      `/api/v1/teacher/activities/${activityId}/resources/${resourceId}/download`,
+      {
+        responseType: 'blob',
+      }
+    )
+    let filename: string | undefined = undefined
+    const rawHeaders = res.headers as unknown as Record<string, unknown>
+    const disposition = typeof rawHeaders['content-disposition'] === 'string' ? rawHeaders['content-disposition'] : undefined
+    if (disposition && disposition.includes('filename=')) {
+      const filenameMatch = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(disposition)
+      if (filenameMatch && filenameMatch[1]) {
+        filename = filenameMatch[1].replace(/['"]/g, '')
+      }
+    }
+    return { data: res.data, filename }
+  },
+
+  // 4.2. Student Submissions Review & Returns (Phase B3-H13)
+  getActivitySubmissions: async (activityId: string): Promise<TeacherSubmissionsListResponse> => {
+    const res = await apiClient.get<TeacherSubmissionsListResponse>(
+      `/api/v1/teacher/activities/${activityId}/submissions`
+    )
+    return res.data
+  },
+
+  getStudentSubmissionDetail: async (
+    activityId: string,
+    studentId: string
+  ): Promise<TeacherSubmissionDetailResponse> => {
+    const res = await apiClient.get<TeacherSubmissionDetailResponse>(
+      `/api/v1/teacher/activities/${activityId}/submissions/${studentId}`
+    )
+    return res.data
+  },
+
+  returnStudentSubmission: async (
+    activityId: string,
+    studentId: string,
+    returnFeedback: string
+  ): Promise<TeacherSubmissionDetailResponse> => {
+    const res = await apiClient.post<TeacherSubmissionDetailResponse>(
+      `/api/v1/teacher/activities/${activityId}/submissions/${studentId}/return`,
+      { return_feedback: returnFeedback }
+    )
+    return res.data
+  },
+
+  downloadStudentSubmissionAttachment: async (
+    activityId: string,
+    studentId: string,
+    attachmentId: string
+  ): Promise<{ data: Blob; filename?: string }> => {
+    const res = await apiClient.get<Blob>(
+      `/api/v1/teacher/activities/${activityId}/submissions/${studentId}/attachments/${attachmentId}/download`,
+      {
+        responseType: 'blob',
+      }
+    )
+    let filename: string | undefined = undefined
+    const rawHeaders = res.headers as unknown as Record<string, unknown>
+    const disposition = typeof rawHeaders['content-disposition'] === 'string' ? rawHeaders['content-disposition'] : undefined
+    if (disposition && disposition.includes('filename=')) {
+      const filenameMatch = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(disposition)
+      if (filenameMatch && filenameMatch[1]) {
+        filename = filenameMatch[1].replace(/['"]/g, '')
+      }
+    }
+    return { data: res.data, filename }
+  },
+
   // 5. Grades & Evaluations
   getActivityGrades: async (activityId: string): Promise<ActivityGradesListResponse> => {
     const res = await apiClient.get<ActivityGradesListResponse>(`/api/v1/teacher/activities/${activityId}/grades`)
@@ -158,5 +293,51 @@ export const teacherApi = {
 
   deletePlanning: async (planId: string): Promise<void> => {
     await apiClient.delete(`/api/v1/teacher/planning/${planId}`)
+  },
+
+  // 8. Coexistence & Observador del Estudiante
+  getIncidents: async (params?: {
+    student_id?: string
+    situation_type?: CoexistenceSituationType
+    status?: IncidentStatus
+  }): Promise<StudentIncidentListResponse> => {
+    const res = await apiClient.get<StudentIncidentListResponse>('/api/v1/incidents', {
+      params,
+    })
+    return res.data
+  },
+
+  getIncident: async (incidentId: string): Promise<StudentIncidentItem> => {
+    const res = await apiClient.get<StudentIncidentItem>(`/api/v1/incidents/${incidentId}`)
+    return res.data
+  },
+
+  createIncident: async (
+    payload: StudentIncidentCreateRequest
+  ): Promise<StudentIncidentItem> => {
+    const res = await apiClient.post<StudentIncidentItem>('/api/v1/incidents', payload)
+    return res.data
+  },
+
+  updateIncident: async (
+    incidentId: string,
+    payload: StudentIncidentUpdateRequest
+  ): Promise<StudentIncidentItem> => {
+    const res = await apiClient.put<StudentIncidentItem>(
+      `/api/v1/incidents/${incidentId}`,
+      payload
+    )
+    return res.data
+  },
+
+  addFollowUp: async (
+    incidentId: string,
+    payload: IncidentFollowUpPayload
+  ): Promise<IncidentFollowUpItem> => {
+    const res = await apiClient.post<IncidentFollowUpItem>(
+      `/api/v1/incidents/${incidentId}/follow-ups`,
+      payload
+    )
+    return res.data
   },
 }

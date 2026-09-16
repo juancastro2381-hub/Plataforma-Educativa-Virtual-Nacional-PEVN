@@ -20,7 +20,8 @@ import uuid
 from datetime import date
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, File, Query, Request, Response, UploadFile, status
+from fastapi.responses import FileResponse
 
 from app.api.deps import (
     ClientIpDep,
@@ -44,14 +45,24 @@ from app.schemas.news import (
 from app.schemas.student_portal import (
     StudentActivitiesListResponse,
     StudentActivityItemResponse,
+    StudentActivityResourceListResponse,
+    StudentAttendanceItemResponse,
     StudentAttendanceListResponse,
+    StudentAttendanceSummary,
     StudentDashboardResponse,
+    StudentGradeItemResponse,
     StudentGradesListResponse,
     StudentProfileResponse,
+    StudentRecordingItemResponse,
     StudentRecordingsListResponse,
+    StudentSubmissionAttemptResponse,
+    StudentSubmissionDetailResponse,
+    StudentSubmissionDraftUpdateRequest,
+    StudentSubjectItemResponse,
     StudentSubjectsListResponse,
     StudentVirtualClassroomItemResponse,
     StudentVirtualClassroomsListResponse,
+    SubmissionAttachmentItemResponse,
 )
 from app.services.communication_service import CommunicationService
 from app.services.incident_service import CoexistenceIncidentService
@@ -167,6 +178,206 @@ async def get_student_activity_detail(
     service = StudentPortalService(session=db)
     student = await service.get_student_by_user_id(current_user.id, current_user.institution_id)
     return await service.get_activity_detail(student, activity_id)
+
+
+@router.get(
+    "/activities/{activity_id}/resources",
+    response_model=StudentActivityResourceListResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Listar materiales / recursos de una actividad (Estudiante)",
+    description="Lista los recursos pedagógicos autorizados asociados a la actividad del grupo del estudiante.",
+    dependencies=[Depends(require_permission("activities", "read"))],
+)
+async def list_student_activity_resources(
+    activity_id: uuid.UUID,
+    current_user: CurrentUserDep,
+    db: SessionDep,
+) -> StudentActivityResourceListResponse:
+    service = StudentPortalService(session=db)
+    student = await service.get_student_by_user_id(current_user.id, current_user.institution_id)
+    resources = await service.list_activity_resources(student, activity_id)
+    return StudentActivityResourceListResponse(items=resources, total=len(resources))
+
+
+@router.get(
+    "/activities/{activity_id}/resources/{resource_id}/download",
+    status_code=status.HTTP_200_OK,
+    summary="Descargar archivo de recurso pedagógico (Estudiante)",
+    description="Descarga de forma segura y autenticada el archivo adjunto de una actividad del estudiante.",
+    dependencies=[Depends(require_permission("activities", "read"))],
+)
+async def download_student_activity_resource(
+    activity_id: uuid.UUID,
+    resource_id: uuid.UUID,
+    current_user: CurrentUserDep,
+    db: SessionDep,
+    request: Request,
+) -> FileResponse:
+    service = StudentPortalService(session=db)
+    student = await service.get_student_by_user_id(current_user.id, current_user.institution_id)
+    resource, file_path = await service.get_resource_for_download(
+        student,
+        activity_id,
+        resource_id,
+        actor_id=str(current_user.id),
+        actor_ip=request.client.host if request.client else "0.0.0.0",
+    )
+    filename = resource.original_filename or f"recurso_{resource.id}"
+    return FileResponse(
+        path=str(file_path),
+        filename=filename,
+        media_type=resource.mime_type or "application/octet-stream",
+        content_disposition_type="attachment",
+    )
+
+
+# ===========================================================================
+# 4.1 Student Submissions & Deliveries (Phase B3-H13)
+# ===========================================================================
+
+@router.get(
+    "/activities/{activity_id}/submission",
+    response_model=StudentSubmissionDetailResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Detalle de entrega de actividad (Estudiante)",
+    description="Consulta el estado de entrega, el borrador actual (o crea el primero), y el historial de intentos.",
+    dependencies=[Depends(require_permission("submissions", "read"))],
+)
+async def get_student_submission(
+    activity_id: uuid.UUID,
+    current_user: CurrentUserDep,
+    db: SessionDep,
+) -> StudentSubmissionDetailResponse:
+    service = StudentPortalService(session=db)
+    student = await service.get_student_by_user_id(current_user.id, current_user.institution_id)
+    detail = await service.get_submission_detail(student, activity_id)
+    await db.commit()
+    return detail
+
+
+@router.post(
+    "/activities/{activity_id}/submission/draft",
+    response_model=StudentSubmissionAttemptResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Guardar borrador de entrega (Estudiante)",
+    description="Guarda el texto de respuesta en el borrador de entrega en curso sin presentarlo formalmente.",
+    dependencies=[Depends(require_permission("submissions", "update"))],
+)
+async def save_student_submission_draft(
+    activity_id: uuid.UUID,
+    data: StudentSubmissionDraftUpdateRequest,
+    current_user: CurrentUserDep,
+    db: SessionDep,
+) -> StudentSubmissionAttemptResponse:
+    service = StudentPortalService(session=db)
+    student = await service.get_student_by_user_id(current_user.id, current_user.institution_id)
+    attempt = await service.save_submission_draft(student, activity_id, data)
+    await db.commit()
+    return attempt
+
+
+@router.post(
+    "/activities/{activity_id}/submission/files",
+    response_model=SubmissionAttachmentItemResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Adjuntar archivo a borrador de entrega (Estudiante)",
+    description="Carga y adjunta un archivo a la entrega en borrador (máximo 3 archivos, <= 10MB).",
+    dependencies=[Depends(require_permission("submissions", "update"))],
+)
+async def upload_student_submission_file(
+    activity_id: uuid.UUID,
+    file: Annotated[UploadFile, File(...)],
+    current_user: CurrentUserDep,
+    db: SessionDep,
+) -> SubmissionAttachmentItemResponse:
+    service = StudentPortalService(session=db)
+    student = await service.get_student_by_user_id(current_user.id, current_user.institution_id)
+    content = await file.read()
+    attachment = await service.upload_submission_file(
+        student,
+        activity_id,
+        filename=file.filename or "archivo_entrega",
+        content=content,
+        declared_mime_type=file.content_type,
+    )
+    await db.commit()
+    return attachment
+
+
+@router.delete(
+    "/activities/{activity_id}/submission/files/{attachment_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Eliminar archivo adjunto de borrador (Estudiante)",
+    dependencies=[Depends(require_permission("submissions", "update"))],
+)
+async def delete_student_submission_file(
+    activity_id: uuid.UUID,
+    attachment_id: uuid.UUID,
+    current_user: CurrentUserDep,
+    db: SessionDep,
+) -> Response:
+    service = StudentPortalService(session=db)
+    student = await service.get_student_by_user_id(current_user.id, current_user.institution_id)
+    await service.delete_submission_file(student, activity_id, attachment_id)
+    await db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post(
+    "/activities/{activity_id}/submission/submit",
+    response_model=StudentSubmissionDetailResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Presentar entrega de actividad académica (Estudiante)",
+    description="Confirma y envía la entrega formal del estudiante. Evalúa tardanza en UTC.",
+    dependencies=[Depends(require_permission("submissions", "create"))],
+)
+async def submit_student_activity(
+    activity_id: uuid.UUID,
+    current_user: CurrentUserDep,
+    db: SessionDep,
+    request: Request,
+) -> StudentSubmissionDetailResponse:
+    service = StudentPortalService(session=db)
+    student = await service.get_student_by_user_id(current_user.id, current_user.institution_id)
+    detail = await service.submit_activity(
+        student,
+        activity_id,
+        actor_id=str(current_user.id),
+        actor_ip=request.client.host if request.client else "0.0.0.0",
+    )
+    await db.commit()
+    return detail
+
+
+@router.get(
+    "/activities/{activity_id}/submission/attachments/{attachment_id}/download",
+    status_code=status.HTTP_200_OK,
+    summary="Descargar archivo adjunto de entrega propia (Estudiante)",
+    description="Descarga autenticada y segura de un archivo adjunto presentado por el estudiante.",
+    dependencies=[Depends(require_permission("submissions", "read"))],
+)
+async def download_student_submission_attachment(
+    activity_id: uuid.UUID,
+    attachment_id: uuid.UUID,
+    current_user: CurrentUserDep,
+    db: SessionDep,
+    request: Request,
+) -> FileResponse:
+    service = StudentPortalService(session=db)
+    student = await service.get_student_by_user_id(current_user.id, current_user.institution_id)
+    attachment, file_path = await service.get_submission_attachment_for_download(
+        student,
+        activity_id,
+        attachment_id,
+        actor_id=str(current_user.id),
+        actor_ip=request.client.host if request.client else "0.0.0.0",
+    )
+    return FileResponse(
+        path=str(file_path),
+        filename=attachment.original_filename or f"entrega_{attachment.id}",
+        media_type=attachment.mime_type or "application/octet-stream",
+        content_disposition_type="attachment",
+    )
 
 
 # ===========================================================================

@@ -9,7 +9,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, computed_field
 
 from app.models.communication import PublishingStatus
 from app.models.news import NewsCategory
@@ -60,6 +60,18 @@ class InstitutionalNewsResponse(BaseModel):
     author: UserResponse | None = None
     created_at: datetime
     updated_at: datetime
+
+    @computed_field
+    @property
+    def author_name(self) -> str:
+        if self.author:
+            return f"{self.author.first_name} {self.author.last_name}".strip()
+        return "Institución Educativa"
+
+    @computed_field
+    @property
+    def is_published(self) -> bool:
+        return self.status == PublishingStatus.PUBLICADO
 
 
 class NewsListResponse(BaseModel):

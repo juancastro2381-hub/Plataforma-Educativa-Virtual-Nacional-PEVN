@@ -17,16 +17,20 @@ from decimal import Decimal
 from typing import TYPE_CHECKING
 
 from sqlalchemy import (
+    BigInteger,
+    Boolean,
     CheckConstraint,
     Date,
     DateTime,
     Enum as SQLEnum,
     ForeignKey,
     Index,
+    Integer,
     Numeric,
     String,
     Text,
     UniqueConstraint,
+    func,
     text,
 )
 from sqlalchemy.dialects.postgresql import UUID
@@ -58,11 +62,33 @@ class ActivityType(enum.StrEnum):
     CLASS_ACTIVITY = "CLASS_ACTIVITY"
 
 
+class ActivityResourceType(enum.StrEnum):
+    """Types of materials / resources attached to an academic activity."""
+    URL = "URL"
+    FILE = "FILE"
+
+
+class ActivityDeliveryType(enum.StrEnum):
+    """Activity submission modality constraints."""
+    TEXT = "TEXT"
+    FILE = "FILE"
+    TEXT_AND_FILE = "TEXT_AND_FILE"
+
+
 class ActivityStatus(enum.StrEnum):
     """Lifecycle statuses for academic activities."""
     DRAFT = "DRAFT"
     PUBLISHED = "PUBLISHED"
     CLOSED = "CLOSED"
+
+
+class SubmissionStatus(enum.StrEnum):
+    """Lifecycle statuses for student submissions."""
+    DRAFT = "DRAFT"
+    SUBMITTED = "SUBMITTED"
+    LATE = "LATE"
+    RETURNED = "RETURNED"
+    GRADED = "GRADED"
 
 
 class ActivitySubmissionStatus(enum.StrEnum):
@@ -220,7 +246,18 @@ class AcademicActivity(Base):
     resource_url: Mapped[str | None] = mapped_column(
         String(500),
         nullable=True,
-        doc="Reference link or educational material URL.",
+        doc="Reference link or educational material URL (legacy field, preserved for backward compatibility).",
+    )
+    delivery_type: Mapped[ActivityDeliveryType] = mapped_column(
+        SQLEnum(
+            ActivityDeliveryType,
+            name="activity_delivery_type_enum",
+            values_callable=lambda obj: [e.value for e in obj],
+        ),
+        nullable=False,
+        default=ActivityDeliveryType.FILE,
+        server_default="FILE",
+        doc="Required modality for student submissions (TEXT, FILE, TEXT_AND_FILE).",
     )
     # Relationships
     teacher: Mapped[Teacher] = relationship("Teacher")
@@ -232,10 +269,122 @@ class AcademicActivity(Base):
         back_populates="activity",
         cascade="all, delete-orphan",
     )
+    resources: Mapped[list[ActivityResource]] = relationship(
+        "ActivityResource",
+        back_populates="activity",
+        cascade="all, delete-orphan",
+        order_by="ActivityResource.created_at",
+    )
+    submissions: Mapped[list[StudentSubmission]] = relationship(
+        "StudentSubmission",
+        back_populates="activity",
+        cascade="all, delete-orphan",
+        order_by="StudentSubmission.attempt_number",
+    )
 
 
 # ===========================================================================
-# 2. Activity Grade / Evaluation Model
+# 2. Activity Pedagogical Resource Model (Phase B3-H11)
+# ===========================================================================
+
+class ActivityResource(Base):
+    """
+    Activity Pedagogical Resource / Attachment Entity (Material Pedagógico de Actividad).
+
+    Represents support materials provided by the teacher for an academic activity.
+    Can be an external URL or an uploaded secure file.
+    """
+
+    __tablename__ = "activity_resources"
+    __table_args__ = (
+        CheckConstraint(
+            "(resource_type = 'URL' AND url IS NOT NULL) OR "
+            "(resource_type = 'FILE' AND file_path IS NOT NULL AND original_filename IS NOT NULL)",
+            name="ck_activity_resources_type_fields",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        server_default=text("gen_random_uuid()"),
+    )
+    activity_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("academic_activities.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    institution_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("institutions.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+        doc="Tenant boundary for isolation.",
+    )
+    resource_type: Mapped[ActivityResourceType] = mapped_column(
+        SQLEnum(
+            ActivityResourceType,
+            name="activity_resource_type_enum",
+            values_callable=lambda obj: [e.value for e in obj],
+        ),
+        nullable=False,
+        default=ActivityResourceType.URL,
+        doc="Type of resource: external URL or uploaded FILE.",
+    )
+    title: Mapped[str] = mapped_column(
+        String(200),
+        nullable=False,
+        doc="Display title of the resource.",
+    )
+    url: Mapped[str | None] = mapped_column(
+        String(500),
+        nullable=True,
+        doc="External web link when resource_type is URL.",
+    )
+    file_path: Mapped[str | None] = mapped_column(
+        String(500),
+        nullable=True,
+        doc="Opaque relative storage path when resource_type is FILE.",
+    )
+    original_filename: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+        doc="User-facing original name of the uploaded file.",
+    )
+    file_size_bytes: Mapped[int | None] = mapped_column(
+        BigInteger,
+        nullable=True,
+        doc="File size in bytes.",
+    )
+    mime_type: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True,
+        doc="MIME type of the uploaded file.",
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+
+    # Relationships
+    activity: Mapped[AcademicActivity] = relationship(
+        "AcademicActivity",
+        back_populates="resources",
+    )
+    institution: Mapped[Institution] = relationship("Institution")
+
+
+# ===========================================================================
+# 3. Activity Grade / Evaluation Model
 # ===========================================================================
 
 class ActivityGrade(Base):
@@ -312,6 +461,217 @@ class ActivityGrade(Base):
     )
     student: Mapped[Student] = relationship("Student")
     graded_by: Mapped[Teacher | None] = relationship("Teacher")
+
+
+# ===========================================================================
+# 4. Student Submission & Attachment Models (Phase B3-H13)
+# ===========================================================================
+
+class StudentSubmission(Base):
+    """
+    Student Activity Submission Attempt (Entrega de Actividad por Estudiante).
+
+    Captures student answers (text and/or attached files) with multi-attempt support.
+    Grades and evaluative feedback remain strictly in ActivityGrade.
+    """
+
+    __tablename__ = "student_submissions"
+    __table_args__ = (
+        UniqueConstraint(
+            "activity_id",
+            "student_id",
+            "attempt_number",
+            name="uq_student_submissions_activity_student_attempt",
+        ),
+        Index(
+            "ix_student_submissions_tenant_activity_student",
+            "institution_id",
+            "activity_id",
+            "student_id",
+        ),
+        Index(
+            "ix_student_submissions_activity_status",
+            "activity_id",
+            "status",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        server_default=text("gen_random_uuid()"),
+    )
+    institution_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("institutions.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+        doc="Tenant boundary.",
+    )
+    activity_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("academic_activities.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+        doc="Target activity.",
+    )
+    student_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("students.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+        doc="Submitting student.",
+    )
+    attempt_number: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=1,
+        server_default="1",
+        doc="Monotonically increasing attempt number for resubmissions.",
+    )
+    status: Mapped[SubmissionStatus] = mapped_column(
+        SQLEnum(
+            SubmissionStatus,
+            name="submission_status_enum",
+            values_callable=lambda obj: [e.value for e in obj],
+        ),
+        nullable=False,
+        default=SubmissionStatus.DRAFT,
+        server_default="DRAFT",
+        doc="Submission lifecycle state.",
+    )
+    student_response: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+        doc="Textual answer or commentary submitted by the student.",
+    )
+    submitted_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        doc="Timestamp when student confirmed delivery.",
+    )
+    is_late: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default=text("false"),
+        doc="True if submitted past activity due_date in UTC.",
+    )
+    return_feedback: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+        doc="Pedagogical feedback provided by teacher upon returning the attempt for revision.",
+    )
+    returned_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        doc="Timestamp when teacher returned the attempt.",
+    )
+    returned_by_teacher_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("teachers.id", ondelete="SET NULL"),
+        nullable=True,
+        doc="Teacher who returned this submission attempt.",
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+
+    # Relationships
+    activity: Mapped[AcademicActivity] = relationship(
+        "AcademicActivity",
+        back_populates="submissions",
+    )
+    student: Mapped[Student] = relationship("Student")
+    institution: Mapped[Institution] = relationship("Institution")
+    returned_by: Mapped[Teacher | None] = relationship("Teacher")
+    attachments: Mapped[list[SubmissionAttachment]] = relationship(
+        "SubmissionAttachment",
+        back_populates="submission",
+        cascade="all, delete-orphan",
+        order_by="SubmissionAttachment.created_at",
+    )
+
+
+class SubmissionAttachment(Base):
+    """
+    Submission Attachment Entity (Archivo Adjunto a una Entrega de Estudiante).
+
+    Represents a student-uploaded document associated with a specific submission attempt.
+    """
+
+    __tablename__ = "submission_attachments"
+    __table_args__ = (
+        Index(
+            "ix_submission_attachments_tenant_submission",
+            "institution_id",
+            "submission_id",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        server_default=text("gen_random_uuid()"),
+    )
+    institution_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("institutions.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+        doc="Tenant boundary.",
+    )
+    submission_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("student_submissions.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+        doc="Associated submission attempt.",
+    )
+    file_path: Mapped[str] = mapped_column(
+        String(500),
+        nullable=False,
+        doc="Opaque relative storage path on disk.",
+    )
+    original_filename: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+        doc="User-facing original filename.",
+    )
+    file_size_bytes: Mapped[int] = mapped_column(
+        BigInteger,
+        nullable=False,
+        doc="File size in bytes.",
+    )
+    mime_type: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+        doc="Detected MIME type.",
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+    # Submission attachments are immutable upload evidence; migration 023 intentionally does not include updated_at.
+    updated_at = None
+
+    # Relationships
+    submission: Mapped[StudentSubmission] = relationship(
+        "StudentSubmission",
+        back_populates="attachments",
+    )
+    institution: Mapped[Institution] = relationship("Institution")
 
 
 # ===========================================================================

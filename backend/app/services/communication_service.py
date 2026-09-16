@@ -29,10 +29,12 @@ from app.models.communication import (
     PublishingStatus,
     TargetScopeType,
 )
+from app.models.academic_assignment import AcademicAssignment
 from app.models.enrollment import Enrollment, EnrollmentStatus
 from app.models.group import Group
 from app.models.guardian import Guardian, StudentGuardian
 from app.models.student import Student
+from app.models.teacher import Teacher
 from app.models.user import User
 
 if TYPE_CHECKING:
@@ -592,3 +594,100 @@ class CommunicationService:
                 results.append((comm, is_read, is_ack))
 
         return results
+
+    async def list_teacher_communications(
+        self,
+        *,
+        teacher: Teacher,
+        user: User,
+    ) -> list[tuple[InstitutionalCommunication, bool, bool]]:
+        """
+        Retrieve active, non-expired communications targeted to this teacher's workload/institution.
+        Returns list of (communication, is_read, is_acknowledged).
+        """
+        # 1. Resolve teacher's active assignments (groups, grades, campuses)
+        asg_stmt = (
+            select(AcademicAssignment)
+            .options(selectinload(AcademicAssignment.group))
+            .where(
+                AcademicAssignment.teacher_id == teacher.id,
+                AcademicAssignment.is_active == True,  # noqa: E712
+            )
+        )
+        assignments = list((await self._session.execute(asg_stmt)).scalars().all())
+        teacher_group_ids: list[uuid.UUID] = [a.group_id for a in assignments if a.group_id]
+        teacher_grade_ids: list[uuid.UUID] = [
+            a.group.grade_id for a in assignments if a.group and a.group.grade_id
+        ]
+        teacher_campus_ids: list[uuid.UUID] = [
+            a.group.campus_id for a in assignments if a.group and a.group.campus_id
+        ]
+
+        # Also directed groups (where teacher is director de grupo)
+        dir_grp_stmt = select(Group).where(Group.group_director_teacher_id == teacher.id)
+        dir_groups = list((await self._session.execute(dir_grp_stmt)).scalars().all())
+        for dg in dir_groups:
+            if dg.id not in teacher_group_ids:
+                teacher_group_ids.append(dg.id)
+            if dg.grade_id and dg.grade_id not in teacher_grade_ids:
+                teacher_grade_ids.append(dg.grade_id)
+            if dg.campus_id and dg.campus_id not in teacher_campus_ids:
+                teacher_campus_ids.append(dg.campus_id)
+
+        # 2. Query published non-expired communications for this institution
+        now = datetime.now(UTC)
+        query = (
+            select(InstitutionalCommunication)
+            .options(
+                selectinload(InstitutionalCommunication.author),
+                selectinload(InstitutionalCommunication.audiences),
+                selectinload(InstitutionalCommunication.receipts),
+            )
+            .where(
+                InstitutionalCommunication.institution_id == teacher.institution_id,
+                InstitutionalCommunication.status == PublishingStatus.PUBLICADO,
+                or_(
+                    InstitutionalCommunication.expires_at == None,  # noqa: E711
+                    InstitutionalCommunication.expires_at > now,
+                ),
+            )
+            .order_by(InstitutionalCommunication.created_at.desc())
+        )
+        all_comms = list((await self._session.execute(query)).scalars().all())
+
+        results: list[tuple[InstitutionalCommunication, bool, bool]] = []
+        for comm in all_comms:
+            is_match = False
+            if comm.target_scope in (TargetScopeType.TODOS_INSTITUCION, TargetScopeType.SOLO_DOCENTES):
+                is_match = True
+            elif comm.target_scope in (TargetScopeType.SOLO_ESTUDIANTES, TargetScopeType.SOLO_ACUDIENTES):
+                is_match = False
+            elif not comm.audiences:
+                is_match = True
+            else:
+                for aud in comm.audiences:
+                    if aud.role_name and aud.role_name.lower() not in ("teacher", "docente"):
+                        continue
+                    if aud.group_id and aud.group_id in teacher_group_ids:
+                        is_match = True
+                        break
+                    if aud.grade_id and aud.grade_id in teacher_grade_ids:
+                        is_match = True
+                        break
+                    if aud.campus_id and aud.campus_id in teacher_campus_ids:
+                        is_match = True
+                        break
+                    if not aud.group_id and not aud.grade_id and not aud.campus_id and (
+                        aud.role_name and aud.role_name.lower() in ("teacher", "docente")
+                    ):
+                        is_match = True
+                        break
+
+            if is_match:
+                user_receipt = next((r for r in comm.receipts if r.user_id == user.id), None)
+                is_read = user_receipt is not None
+                is_ack = user_receipt.is_acknowledged if user_receipt else False
+                results.append((comm, is_read, is_ack))
+
+        return results
+

@@ -10,6 +10,7 @@ import type {
   AcademicPlanCreateRequest,
   AcademicPlanResponse,
   AcademicPlanStatus,
+  AcademicPlanUpdateRequest,
   TeacherAssignmentItemResponse,
 } from '@/types/teacher'
 import { teacherApi } from '@/services/teacher'
@@ -18,12 +19,19 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 
 interface Props {
   assignments: TeacherAssignmentItemResponse[]
+  initialGroupId?: string
 }
 
-export const TeacherPlanningView: React.FC<Props> = ({ assignments }) => {
+export const TeacherPlanningView: React.FC<Props> = ({ assignments, initialGroupId }) => {
   const [plans, setPlans] = useState<AcademicPlanResponse[]>([])
   const [loading, setLoading] = useState(false)
-  const [filterGroup, setFilterGroup] = useState<string>('')
+  const [filterGroup, setFilterGroup] = useState<string>(initialGroupId || '')
+
+  useEffect(() => {
+    if (initialGroupId) {
+      setFilterGroup(initialGroupId)
+    }
+  }, [initialGroupId])
 
   // Create Modal
   const [showCreateModal, setShowCreateModal] = useState(false)
@@ -40,6 +48,75 @@ export const TeacherPlanningView: React.FC<Props> = ({ assignments }) => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
   const [formSuccess, setFormSuccess] = useState<string | null>(null)
+
+  // Edit Modal
+  const [editingPlan, setEditingPlan] = useState<AcademicPlanResponse | null>(null)
+  const [editUnitName, setEditUnitName] = useState('')
+  const [editCompetencies, setEditCompetencies] = useState('')
+  const [editLearningObjectives, setEditLearningObjectives] = useState('')
+  const [editMethodology, setEditMethodology] = useState('')
+  const [editEvaluationCriteria, setEditEvaluationCriteria] = useState('')
+  const [editResources, setEditResources] = useState('')
+  const [editStatus, setEditStatus] = useState<AcademicPlanStatus>('DRAFT')
+  const [editStartDate, setEditStartDate] = useState('')
+  const [editEndDate, setEditEndDate] = useState('')
+  const [isSavingEdit, setIsSavingEdit] = useState(false)
+  const [editFormError, setEditFormError] = useState<string | null>(null)
+  const [editFormSuccess, setEditFormSuccess] = useState<string | null>(null)
+
+  const handleOpenEditModal = (plan: AcademicPlanResponse) => {
+    setEditingPlan(plan)
+    setEditUnitName(plan.unit_name)
+    setEditCompetencies(plan.competencies || '')
+    setEditLearningObjectives(plan.learning_objectives || '')
+    setEditMethodology(plan.methodology || '')
+    setEditEvaluationCriteria(plan.evaluation_criteria || '')
+    setEditResources(plan.resources || '')
+    setEditStatus(plan.status)
+    setEditStartDate(plan.start_date || '')
+    setEditEndDate(plan.end_date || '')
+    setEditFormError(null)
+    setEditFormSuccess(null)
+  }
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingPlan) return
+    setEditFormError(null)
+    setEditFormSuccess(null)
+
+    if (!editUnitName.trim()) {
+      setEditFormError('El nombre de la unidad temática es obligatorio.')
+      return
+    }
+
+    setIsSavingEdit(true)
+    try {
+      const payload: AcademicPlanUpdateRequest = {
+        unit_name: editUnitName.trim(),
+        competencies: editCompetencies.trim() || null,
+        learning_objectives: editLearningObjectives.trim() || null,
+        methodology: editMethodology.trim() || null,
+        evaluation_criteria: editEvaluationCriteria.trim() || null,
+        resources: editResources.trim() || null,
+        status: editStatus,
+        start_date: editStartDate || null,
+        end_date: editEndDate || null,
+      }
+
+      await teacherApi.updatePlanning(editingPlan.id, payload)
+      setEditFormSuccess('¡Planeación curricular actualizada exitosamente!')
+      await loadPlans()
+      setTimeout(() => {
+        setEditingPlan(null)
+      }, 1000)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al actualizar la planeación.'
+      setEditFormError(msg)
+    } finally {
+      setIsSavingEdit(false)
+    }
+  }
 
   // Details Modal
   const [selectedPlan, setSelectedPlan] = useState<AcademicPlanResponse | null>(null)
@@ -250,7 +327,7 @@ export const TeacherPlanningView: React.FC<Props> = ({ assignments }) => {
                       {getStatusBadge(p.status)}
                     </td>
                     <td style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>
-                      <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'flex-end' }}>
+                      <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                         <button
                           onClick={() => setSelectedPlan(p)}
                           style={{
@@ -264,6 +341,21 @@ export const TeacherPlanningView: React.FC<Props> = ({ assignments }) => {
                           }}
                         >
                           👁️ Ver Detalle
+                        </button>
+                        <button
+                          onClick={() => handleOpenEditModal(p)}
+                          style={{
+                            padding: '0.3rem 0.6rem',
+                            borderRadius: '6px',
+                            border: '1px solid #CBD5E1',
+                            backgroundColor: '#F8FAFC',
+                            color: '#1E293B',
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          ✏️ Editar
                         </button>
                         <button
                           onClick={() => handleDeletePlan(p)}
@@ -555,11 +647,198 @@ export const TeacherPlanningView: React.FC<Props> = ({ assignments }) => {
               )}
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+              <Button
+                variant="primary"
+                onClick={() => {
+                  const planToEdit = selectedPlan
+                  setSelectedPlan(null)
+                  handleOpenEditModal(planToEdit)
+                }}
+              >
+                ✏️ Editar Planeación
+              </Button>
               <Button variant="secondary" onClick={() => setSelectedPlan(null)}>
                 Cerrar
               </Button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Plan Modal */}
+      {editingPlan && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.65)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 50,
+            padding: '1rem',
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: '#FFFFFF',
+              borderRadius: '16px',
+              maxWidth: '680px',
+              width: '100%',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              padding: '1.5rem',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: '#0F172A' }}>
+                  Editar Unidad de Planeación Curricular
+                </h3>
+                <div style={{ fontSize: '0.8125rem', color: '#1E40AF', fontWeight: 600, marginTop: '0.2rem' }}>
+                  {editingPlan.subject_name} • Grupo {editingPlan.group_name} • {editingPlan.academic_year_name}
+                </div>
+              </div>
+              <button
+                onClick={() => setEditingPlan(null)}
+                style={{ background: 'transparent', border: 'none', fontSize: '1.25rem', cursor: 'pointer', color: '#94A3B8' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {editFormError && (
+              <div style={{ backgroundColor: '#FEF2F2', border: '1px solid #FCA5A5', color: '#991B1B', padding: '0.75rem', borderRadius: '8px', marginBottom: '1rem', fontSize: '0.875rem' }}>
+                {editFormError}
+              </div>
+            )}
+
+            {editFormSuccess && (
+              <div style={{ backgroundColor: '#F0FDF4', border: '1px solid #86EFAC', color: '#166534', padding: '0.75rem', borderRadius: '8px', marginBottom: '1rem', fontSize: '0.875rem' }}>
+                {editFormSuccess}
+              </div>
+            )}
+
+            <form onSubmit={handleEditSubmit}>
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#334155', marginBottom: '0.35rem' }}>
+                  Nombre de la Unidad Didáctica / Temática: *
+                </label>
+                <input
+                  type="text"
+                  value={editUnitName}
+                  onChange={(e) => setEditUnitName(e.target.value)}
+                  placeholder="Ej: Unidad 2: Cinemática y Leyes de Newton"
+                  required
+                  style={{ width: '100%', padding: '0.625rem', borderRadius: '6px', border: '1px solid #CBD5E1', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#334155', marginBottom: '0.35rem' }}>
+                    Estado: *
+                  </label>
+                  <select
+                    value={editStatus}
+                    onChange={(e) => setEditStatus(e.target.value as AcademicPlanStatus)}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '0.875rem' }}
+                  >
+                    <option value="DRAFT">Borrador</option>
+                    <option value="APPROVED">Aprobada</option>
+                    <option value="IN_PROGRESS">En Ejecución</option>
+                    <option value="COMPLETED">Completada</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#334155', marginBottom: '0.35rem' }}>
+                    Fecha de Inicio:
+                  </label>
+                  <input
+                    type="date"
+                    value={editStartDate}
+                    onChange={(e) => setEditStartDate(e.target.value)}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid #CBD5E1', boxSizing: 'border-box' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#334155', marginBottom: '0.35rem' }}>
+                    Fecha de Finalización:
+                  </label>
+                  <input
+                    type="date"
+                    value={editEndDate}
+                    onChange={(e) => setEditEndDate(e.target.value)}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid #CBD5E1', boxSizing: 'border-box' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#334155', marginBottom: '0.35rem' }}>
+                  Competencias a Desarrollar (MEN):
+                </label>
+                <textarea
+                  rows={2}
+                  value={editCompetencies}
+                  onChange={(e) => setEditCompetencies(e.target.value)}
+                  placeholder="Formulación de hipótesis, modelamiento matemático y razonamiento cuantitativo..."
+                  style={{ width: '100%', padding: '0.625rem', borderRadius: '6px', border: '1px solid #CBD5E1', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#334155', marginBottom: '0.35rem' }}>
+                  Objetivos de Aprendizaje (DBA):
+                </label>
+                <textarea
+                  rows={2}
+                  value={editLearningObjectives}
+                  onChange={(e) => setEditLearningObjectives(e.target.value)}
+                  placeholder="El estudiante interpreta situaciones físicas aplicando principios de dinámica..."
+                  style={{ width: '100%', padding: '0.625rem', borderRadius: '6px', border: '1px solid #CBD5E1', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#334155', marginBottom: '0.35rem' }}>
+                  Metodología Pedagógica:
+                </label>
+                <textarea
+                  rows={2}
+                  value={editMethodology}
+                  onChange={(e) => setEditMethodology(e.target.value)}
+                  placeholder="Aprendizaje basado en problemas (ABP), laboratorios virtuales y talleres colaborativos..."
+                  style={{ width: '100%', padding: '0.625rem', borderRadius: '6px', border: '1px solid #CBD5E1', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#334155', marginBottom: '0.35rem' }}>
+                  Criterios e Instrumentos de Evaluación:
+                </label>
+                <textarea
+                  rows={2}
+                  value={editEvaluationCriteria}
+                  onChange={(e) => setEditEvaluationCriteria(e.target.value)}
+                  placeholder="Rúbrica de evaluación continua, quices formativos y sustentación final..."
+                  style={{ width: '100%', padding: '0.625rem', borderRadius: '6px', border: '1px solid #CBD5E1', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                <Button variant="secondary" type="button" onClick={() => setEditingPlan(null)}>
+                  Cancelar
+                </Button>
+                <Button variant="primary" type="submit" disabled={isSavingEdit}>
+                  {isSavingEdit ? 'Guardando Cambios...' : '💾 Guardar Cambios'}
+                </Button>
+              </div>
+            </form>
           </div>
         </div>
       )}

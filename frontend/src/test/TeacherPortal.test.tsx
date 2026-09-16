@@ -36,6 +36,7 @@ vi.mock('@/services/teacher', () => ({
     listActivities: vi.fn(),
     getActivity: vi.fn(),
     createActivity: vi.fn(),
+    updateActivity: vi.fn(),
     publishActivity: vi.fn(),
     closeActivity: vi.fn(),
     deleteActivity: vi.fn(),
@@ -45,6 +46,7 @@ vi.mock('@/services/teacher', () => ({
     recordDailyAttendance: vi.fn(),
     listPlanning: vi.fn(),
     createPlanning: vi.fn(),
+    updatePlanning: vi.fn(),
     deletePlanning: vi.fn(),
   },
 }))
@@ -139,6 +141,7 @@ const mockActivities = {
       teacher_id: '11111111-1111-1111-1111-111111111111',
       academic_assignment_id: 'asg-1',
       subject_name: 'Física Clásica',
+      group_id: 'grp-1',
       group_name: '10-A',
       title: 'Taller 1: Cinemática',
       description: 'Problemas de MRU y MRUA',
@@ -152,8 +155,27 @@ const mockActivities = {
       created_at: '2026-02-01T00:00:00Z',
       updated_at: '2026-02-01T00:00:00Z',
     },
+    {
+      id: 'act-2',
+      teacher_id: '11111111-1111-1111-1111-111111111111',
+      academic_assignment_id: 'asg-1',
+      subject_name: 'Física Clásica',
+      group_id: 'grp-1',
+      group_name: '10-A',
+      title: 'Taller 2: Leyes de Newton (Borrador)',
+      description: 'Actividad borrador en preparación',
+      activity_type: 'WORKSHOP' as const,
+      max_score: 5.0,
+      weight_percentage: 20.0,
+      due_date: '2026-04-01T23:59:00Z',
+      status: 'DRAFT' as const,
+      total_submissions: 0,
+      total_graded: 0,
+      created_at: '2026-02-15T00:00:00Z',
+      updated_at: '2026-02-15T00:00:00Z',
+    },
   ],
-  total: 1,
+  total: 2,
 }
 
 const mockGradesheet = {
@@ -233,9 +255,11 @@ describe('TeacherPortal Component Tests', () => {
     vi.mocked(teacherApi.listGroups).mockResolvedValue(mockGroups as any)
     vi.mocked(teacherApi.getGroupRoster).mockResolvedValue(mockRoster as any)
     vi.mocked(teacherApi.listActivities).mockResolvedValue(mockActivities as any)
+    vi.mocked(teacherApi.updateActivity).mockResolvedValue(mockActivities.items[0] as any)
     vi.mocked(teacherApi.getActivityGrades).mockResolvedValue(mockGradesheet as any)
     vi.mocked(teacherApi.getDailyAttendance).mockResolvedValue(mockAttendance as any)
     vi.mocked(teacherApi.listPlanning).mockResolvedValue(mockPlanning as any)
+    vi.mocked(teacherApi.updatePlanning).mockResolvedValue(mockPlanning.items[0] as any)
   })
 
   it('renders all 7 navigation subtabs and displays dashboard summary KPIs', async () => {
@@ -403,5 +427,114 @@ describe('TeacherPortal Component Tests', () => {
 
     expect(screen.getByText('APROBADA')).toBeInTheDocument()
     expect(screen.getByText('+ Nueva Planeación Curricular')).toBeInTheDocument()
+  })
+
+  it('Phase B3: allows editing an activity in DRAFT status and preserves draft state', async () => {
+    render(
+      <MemoryRouter initialEntries={['/teacher?tab=activities']}>
+        <TeacherPortal />
+      </MemoryRouter>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText('Taller 2: Leyes de Newton (Borrador)')).toBeInTheDocument()
+    })
+
+    // Expect edit button for DRAFT activity
+    const editButtons = screen.getAllByRole('button', { name: /✏️ Editar/i })
+    expect(editButtons.length).toBeGreaterThan(0)
+    fireEvent.click(editButtons[0])
+
+    // Verify modal opens
+    await waitFor(() => {
+      expect(screen.getByText('Editar Actividad Académica (Borrador)')).toBeInTheDocument()
+    })
+
+    const saveButton = screen.getByRole('button', { name: /💾 Guardar Cambios \(Borrador\)/i })
+    fireEvent.click(saveButton)
+
+    await waitFor(() => {
+      expect(teacherApi.updateActivity).toHaveBeenCalledWith(
+        'act-2',
+        expect.objectContaining({
+          title: 'Taller 2: Leyes de Newton (Borrador)',
+        })
+      )
+    })
+  })
+
+  it('Phase B3: allows editing a curricular lesson plan and persists changes', async () => {
+    render(
+      <MemoryRouter initialEntries={['/teacher?tab=planning']}>
+        <TeacherPortal />
+      </MemoryRouter>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText('Unidad 1: Mecánica Clásica')).toBeInTheDocument()
+    })
+
+    // Expect edit button for plan
+    const editButton = screen.getByRole('button', { name: /✏️ Editar/i })
+    fireEvent.click(editButton)
+
+    // Verify modal opens
+    await waitFor(() => {
+      expect(screen.getByText('Editar Unidad de Planeación Curricular')).toBeInTheDocument()
+    })
+
+    const saveButton = screen.getByRole('button', { name: /💾 Guardar Cambios/i })
+    fireEvent.click(saveButton)
+
+    await waitFor(() => {
+      expect(teacherApi.updatePlanning).toHaveBeenCalledWith(
+        'plan-1',
+        expect.objectContaining({
+          unit_name: 'Unidad 1: Mecánica Clásica',
+        })
+      )
+    })
+  })
+
+  it('Phase B3: navigates contextually from Mis Grupos preserving group context in target tab', async () => {
+    render(
+      <MemoryRouter initialEntries={['/teacher?tab=groups']}>
+        <TeacherPortal />
+      </MemoryRouter>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText('Mis Grupos y Salones de Clase')).toBeInTheDocument()
+    })
+
+    // Click contextual Activities button for group grp-1
+    const contextActBtn = screen.getByTestId('btn-context-activities-grp-1')
+    fireEvent.click(contextActBtn)
+
+    // Verify navigation to activities with group context
+    await waitFor(() => {
+      expect(screen.getByText('Actividades Académicas y Evaluaciones')).toBeInTheDocument()
+    })
+  })
+
+  it('Phase B3: navigates contextually from Dashboard with status filter for published activities', async () => {
+    render(
+      <MemoryRouter initialEntries={['/teacher?tab=dashboard']}>
+        <TeacherPortal />
+      </MemoryRouter>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText('¡Bienvenido, Prof. Carlos Mendoza!')).toBeInTheDocument()
+    })
+
+    // Click KPI card Actividades Publicadas
+    const kpiBtn = screen.getByTestId('kpi-activities')
+    fireEvent.click(kpiBtn)
+
+    // Verify tab switched to Actividades
+    await waitFor(() => {
+      expect(screen.getByText('Actividades Académicas y Evaluaciones')).toBeInTheDocument()
+    })
   })
 })

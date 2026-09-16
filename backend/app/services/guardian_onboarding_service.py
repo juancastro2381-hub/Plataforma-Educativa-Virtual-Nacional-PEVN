@@ -31,6 +31,7 @@ from app.models.institution import Institution
 from app.models.invitation import GuardianInvitation
 from app.models.role import Role, UserRole
 from app.models.student import Student
+from app.models.token import PasswordResetToken
 from app.models.user import DocumentType, User
 
 GUARDIAN_ACTIVATION_EXPIRY_HOURS = 24
@@ -201,6 +202,52 @@ class GuardianOnboardingService:
         invitation = (await self._session.execute(stmt)).scalar_one_or_none()
 
         if not invitation:
+            # Fallback: check if this is an administrative PasswordResetToken (e.g. provisioned guardian account)
+            reset_stmt = (
+                select(PasswordResetToken)
+                .where(PasswordResetToken.token_hash == token_digest)
+                .options(selectinload(PasswordResetToken.user).selectinload(User.institution))
+            )
+            reset_token_rec = (await self._session.execute(reset_stmt)).scalar_one_or_none()
+            if reset_token_rec:
+                if reset_token_rec.is_used:
+                    raise ConflictError(
+                        "El token de activación ya ha sido redimido previamente.",
+                        code="TOKEN_ALREADY_USED",
+                    )
+                if reset_token_rec.is_expired:
+                    raise ConflictError(
+                        "El enlace de activación ha expirado.",
+                        code="TOKEN_EXPIRED",
+                    )
+                user = reset_token_rec.user
+                g_stmt = select(Guardian).where(Guardian.user_id == user.id)
+                guardian = (await self._session.execute(g_stmt)).scalar_one_or_none()
+                guardian_name = f"{user.first_name} {user.last_name}" if user else "Acudiente"
+                institution_name = user.institution.name if (user and user.institution) else "Institución Educativa"
+                student_name = "Estudiante a cargo"
+                if guardian:
+                    sg_stmt = (
+                        select(StudentGuardian)
+                        .where(StudentGuardian.guardian_id == guardian.id)
+                        .options(selectinload(StudentGuardian.student).selectinload(Student.user))
+                    )
+                    sg = (await self._session.execute(sg_stmt)).scalars().first()
+                    if sg and sg.student:
+                        if sg.student.user:
+                            student_name = f"{sg.student.user.first_name} {sg.student.user.last_name}"
+                        else:
+                            student_name = f"Estudiante SIMAT {sg.student.code_simat}"
+
+                return {
+                    "valid": True,
+                    "guardian_name": guardian_name,
+                    "student_name": student_name,
+                    "institution_name": institution_name,
+                    "email": user.email if user else "",
+                    "expires_at": reset_token_rec.expires_at,
+                }
+
             raise NotFoundError(
                 "El token de activación no es válido o no existe.",
                 code="INVALID_TOKEN",
@@ -226,14 +273,24 @@ class GuardianOnboardingService:
 
         guardian = invitation.guardian
         student = invitation.student
-        student_user = student.user
         institution = invitation.institution
+        guardian_name = f"{guardian.first_name} {guardian.last_name}" if guardian else "Acudiente"
+        institution_name = institution.name if institution else "Institución Educativa"
+
+        if student:
+            student_user = student.user
+            if student_user is not None:
+                student_name = f"{student_user.first_name} {student_user.last_name}"
+            else:
+                student_name = f"Estudiante SIMAT {student.code_simat}"
+        else:
+            student_name = "Estudiante a cargo"
 
         return {
             "valid": True,
-            "guardian_name": f"{guardian.first_name} {guardian.last_name}",
-            "student_name": f"{student_user.first_name} {student_user.last_name}",
-            "institution_name": institution.name,
+            "guardian_name": guardian_name,
+            "student_name": student_name,
+            "institution_name": institution_name,
             "email": invitation.email,
             "expires_at": invitation.expires_at,
         }
@@ -277,7 +334,29 @@ class GuardianOnboardingService:
         invitation = (await self._session.execute(stmt)).scalar_one_or_none()
 
         if not invitation or not invitation.is_valid:
-            # Re-run verify to throw precise conflict error
+            # Fallback: check if this is an administrative PasswordResetToken
+            reset_stmt = (
+                select(PasswordResetToken)
+                .where(PasswordResetToken.token_hash == token_digest)
+                .options(selectinload(PasswordResetToken.user))
+            )
+            reset_token_rec = (await self._session.execute(reset_stmt)).scalar_one_or_none()
+            if reset_token_rec and reset_token_rec.is_valid:
+                from app.services.auth_service import auth_service
+                await auth_service.confirm_password_reset(
+                    db=self._session,
+                    raw_reset_token=token,
+                    new_password=password,
+                    client_ip=client_ip,
+                    correlation_id=correlation_id,
+                )
+                user = reset_token_rec.user
+                user.is_active = True
+                user.must_change_password = False
+                await self._session.flush()
+                return user
+
+            # Re-run verify to throw precise conflict/not-found error
             await self.verify_token(token=token)
 
         guardian = invitation.guardian

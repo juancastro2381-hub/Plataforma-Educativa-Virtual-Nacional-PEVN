@@ -38,13 +38,18 @@ export interface CommunicationAudienceItem {
   grade_name?: string | null
   group_id?: string | null
   group_name?: string | null
-  target_role?: string | null
+  role_name?: string | null
+  student_id?: string | null
+  student_name?: string | null
+  guardian_id?: string | null
+  guardian_name?: string | null
 }
 
 export interface InstitutionalCommunicationItem {
   id: string
   institution_id: string
   title: string
+  summary?: string
   content: string
   category: CommunicationCategory
   priority: CommunicationPriority
@@ -52,9 +57,11 @@ export interface InstitutionalCommunicationItem {
   published_at: string | null
   expires_at: string | null
   requires_acknowledgment: boolean
-  is_pinned: boolean
+  is_pinned?: boolean
   author_name: string
-  has_read: boolean
+  has_read?: boolean
+  is_read?: boolean
+  is_acknowledged?: boolean
   read_at: string | null
   acknowledged_at: string | null
   created_at: string
@@ -77,6 +84,11 @@ export interface InstitutionalCommunicationListResponse {
 // ---------------------------------------------------------------------------
 
 export type NewsCategory =
+  | 'LOGRO_ACADEMICO'
+  | 'EVENTO_CULTURAL'
+  | 'EVENTO_DEPORTIVO'
+  | 'PROYECTO_INSTITUCIONAL'
+  | 'NOTICIA_GENERAL'
   | 'ACADEMICA'
   | 'DEPORTES'
   | 'CULTURAL'
@@ -93,8 +105,8 @@ export interface InstitutionalNewsItem {
   content: string
   category: NewsCategory
   cover_image_url: string | null
-  is_published: boolean
-  is_featured: boolean
+  is_published?: boolean
+  is_featured?: boolean
   published_at: string | null
   author_name: string
   created_at: string
@@ -109,9 +121,45 @@ export interface InstitutionalNewsListResponse {
 // School Coexistence & Observador del Estudiante
 // ---------------------------------------------------------------------------
 
-export type CoexistenceSituationType = 'TIPO_I' | 'TIPO_II' | 'TIPO_III'
+export type CoexistenceSituationType =
+  | 'TIPO_I'
+  | 'TIPO_II'
+  | 'TIPO_III'
+  | 'OBSERVACION_POSITIVA'
 
 export type IncidentStatus = 'ABIERTO' | 'EN_SEGUIMIENTO' | 'CERRADO'
+
+export interface IncidentFollowUpPayload {
+  follow_up_date?: string | null
+  notes: string
+}
+
+export interface StudentIncidentCreateRequest {
+  student_id: string
+  situation_type: CoexistenceSituationType
+  incident_date?: string | null
+  location?: string | null
+  description: string
+  student_version?: string | null
+  pedagogical_measures: string
+  commitments?: string | null
+  status?: IncidentStatus
+  is_visible_to_guardian?: boolean
+  is_visible_to_student?: boolean
+}
+
+export interface StudentIncidentUpdateRequest {
+  situation_type?: CoexistenceSituationType
+  incident_date?: string | null
+  location?: string | null
+  description?: string
+  student_version?: string | null
+  pedagogical_measures?: string
+  commitments?: string | null
+  status?: IncidentStatus
+  is_visible_to_guardian?: boolean
+  is_visible_to_student?: boolean
+}
 
 export interface IncidentFollowUpItem {
   id: string

@@ -118,6 +118,23 @@ class Settings(BaseSettings):
     BBB_SIGNING_ALGORITHM: str = "sha1"  # "sha1" or "sha256"
     BBB_TIMEOUT_SECONDS: float = 10.0
 
+    # ---- Secure File Storage (Phase B3-H11) --------------------------------
+    STORAGE_LOCAL_PATH: str = "./data/storage"
+    MAX_UPLOAD_SIZE_BYTES: int = 20 * 1024 * 1024  # 20 MB
+    ALLOWED_FILE_EXTENSIONS: list[str] = [
+        ".pdf",
+        ".doc",
+        ".docx",
+        ".xls",
+        ".xlsx",
+        ".ppt",
+        ".pptx",
+        ".jpg",
+        ".jpeg",
+        ".png",
+        ".zip",
+    ]
+
     # ---- Validators --------------------------------------------------------
 
     @field_validator("CORS_ORIGINS", mode="before")

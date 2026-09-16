@@ -15,9 +15,10 @@ interface Props {
   groups: TeacherGroupItemResponse[]
   teacherName?: string
   loading: boolean
+  onNavigateToTab?: (tab: string, context?: { groupId?: string }) => void
 }
 
-export const TeacherGroupsView: React.FC<Props> = ({ groups, teacherName, loading }) => {
+export const TeacherGroupsView: React.FC<Props> = ({ groups, teacherName, loading, onNavigateToTab }) => {
   const [selectedGroup, setSelectedGroup] = useState<TeacherGroupItemResponse | null>(null)
   const [rosterData, setRosterData] = useState<TeacherGroupRosterResponse | null>(null)
   const [rosterLoading, setRosterLoading] = useState(false)
@@ -155,6 +156,121 @@ export const TeacherGroupsView: React.FC<Props> = ({ groups, teacherName, loadin
                   <div style={{ color: '#475569' }}>
                     <strong>Materias que Imparte:</strong> {grp.subjects_taught.length > 0 ? grp.subjects_taught.join(', ') : 'Asignación Institucional'}
                   </div>
+                </div>
+
+                {/* Contextual Actions Bar */}
+                <div style={{ marginBottom: '1rem' }}>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: '0.4rem' }}>
+                    Navegación Contextual del Salón:
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.4rem', marginBottom: '0.4rem' }}>
+                    <button
+                      type="button"
+                      data-testid={`btn-context-activities-${grp.group_id}`}
+                      onClick={() => onNavigateToTab?.('activities', { groupId: grp.group_id })}
+                      style={{
+                        padding: '0.45rem 0.5rem',
+                        borderRadius: '6px',
+                        border: '1px solid #CBD5E1',
+                        backgroundColor: '#F8FAFC',
+                        color: '#334155',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.35rem',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <span>📝</span> Actividades
+                    </button>
+                    <button
+                      type="button"
+                      data-testid={`btn-context-grades-${grp.group_id}`}
+                      onClick={() => onNavigateToTab?.('grades', { groupId: grp.group_id })}
+                      style={{
+                        padding: '0.45rem 0.5rem',
+                        borderRadius: '6px',
+                        border: '1px solid #CBD5E1',
+                        backgroundColor: '#F8FAFC',
+                        color: '#334155',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.35rem',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <span>📊</span> Calificaciones
+                    </button>
+                    <button
+                      type="button"
+                      data-testid={`btn-context-attendance-${grp.group_id}`}
+                      onClick={() => onNavigateToTab?.('attendance', { groupId: grp.group_id })}
+                      style={{
+                        padding: '0.45rem 0.5rem',
+                        borderRadius: '6px',
+                        border: '1px solid #CBD5E1',
+                        backgroundColor: '#F8FAFC',
+                        color: '#334155',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.35rem',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <span>📋</span> Asistencia
+                    </button>
+                    <button
+                      type="button"
+                      data-testid={`btn-context-planning-${grp.group_id}`}
+                      onClick={() => onNavigateToTab?.('planning', { groupId: grp.group_id })}
+                      style={{
+                        padding: '0.45rem 0.5rem',
+                        borderRadius: '6px',
+                        border: '1px solid #CBD5E1',
+                        backgroundColor: '#F8FAFC',
+                        color: '#334155',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.35rem',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <span>🎯</span> Planeación
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    data-testid={`btn-context-coexistence-${grp.group_id}`}
+                    onClick={() => onNavigateToTab?.('coexistence', { groupId: grp.group_id })}
+                    style={{
+                      width: '100%',
+                      padding: '0.45rem 0.5rem',
+                      borderRadius: '6px',
+                      border: '1px solid #CBD5E1',
+                      backgroundColor: '#F8FAFC',
+                      color: '#334155',
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.35rem',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <span>🛡️</span> Observador / Convivencia
+                  </button>
                 </div>
               </div>
 

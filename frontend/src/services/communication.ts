@@ -9,13 +9,19 @@
 
 import apiClient from '@/services/api/client'
 import type {
+  CoexistenceSituationType,
+  IncidentFollowUpItem,
+  IncidentFollowUpPayload,
+  IncidentStatus,
   InstitutionalCommunicationDetail,
   InstitutionalCommunicationItem,
   InstitutionalCommunicationListResponse,
   InstitutionalNewsItem,
   InstitutionalNewsListResponse,
+  StudentIncidentCreateRequest,
   StudentIncidentItem,
   StudentIncidentListResponse,
+  StudentIncidentUpdateRequest,
 } from '@/types/communication'
 
 export const communicationApi = {
@@ -110,6 +116,64 @@ export const communicationApi = {
   },
 
   // -------------------------------------------------------------------------
+  // Teacher Portal Feeds (Phase B2)
+  // -------------------------------------------------------------------------
+
+  /**
+   * List active institutional communications for the authenticated teacher.
+   */
+  getTeacherCommunications: async (): Promise<InstitutionalCommunicationListResponse> => {
+    const res = await apiClient.get<InstitutionalCommunicationListResponse>(
+      '/api/v1/teacher/communications'
+    )
+    return res.data
+  },
+
+  /**
+   * Get single communication detail for teacher and register read receipt.
+   */
+  getTeacherCommunicationById: async (
+    communicationId: string
+  ): Promise<InstitutionalCommunicationItem> => {
+    const res = await apiClient.get<InstitutionalCommunicationItem>(
+      `/api/v1/teacher/communications/${communicationId}`
+    )
+    return res.data
+  },
+
+  /**
+   * Acknowledge receipt of a mandatory communication (Teacher).
+   */
+  acknowledgeTeacherCommunication: async (
+    communicationId: string
+  ): Promise<InstitutionalCommunicationItem> => {
+    const res = await apiClient.post<InstitutionalCommunicationItem>(
+      `/api/v1/teacher/communications/${communicationId}/acknowledge`
+    )
+    return res.data
+  },
+
+  /**
+   * List institutional news for teacher portal.
+   */
+  getTeacherNews: async (params?: { category?: string }): Promise<InstitutionalNewsListResponse> => {
+    const res = await apiClient.get<InstitutionalNewsListResponse>('/api/v1/teacher/news', {
+      params,
+    })
+    return res.data
+  },
+
+  /**
+   * List institutional news from general endpoint.
+   */
+  listNews: async (params?: { category?: string }): Promise<InstitutionalNewsListResponse> => {
+    const res = await apiClient.get<InstitutionalNewsListResponse>('/api/v1/news', {
+      params,
+    })
+    return res.data
+  },
+
+  // -------------------------------------------------------------------------
   // Generic / Detail Endpoints
   // -------------------------------------------------------------------------
 
@@ -138,6 +202,58 @@ export const communicationApi = {
    */
   getIncidentById: async (incidentId: string): Promise<StudentIncidentItem> => {
     const res = await apiClient.get<StudentIncidentItem>(`/api/v1/incidents/${incidentId}`)
+    return res.data
+  },
+
+  /**
+   * List incidents scoped to institutional boundary and teacher assigned groups.
+   */
+  getIncidents: async (params?: {
+    student_id?: string
+    situation_type?: CoexistenceSituationType
+    status?: IncidentStatus
+  }): Promise<StudentIncidentListResponse> => {
+    const res = await apiClient.get<StudentIncidentListResponse>('/api/v1/incidents', {
+      params,
+    })
+    return res.data
+  },
+
+  /**
+   * Record a new school coexistence incident in Observador del Estudiante.
+   */
+  createIncident: async (
+    payload: StudentIncidentCreateRequest
+  ): Promise<StudentIncidentItem> => {
+    const res = await apiClient.post<StudentIncidentItem>('/api/v1/incidents', payload)
+    return res.data
+  },
+
+  /**
+   * Modify an existing coexistence incident.
+   */
+  updateIncident: async (
+    incidentId: string,
+    payload: StudentIncidentUpdateRequest
+  ): Promise<StudentIncidentItem> => {
+    const res = await apiClient.put<StudentIncidentItem>(
+      `/api/v1/incidents/${incidentId}`,
+      payload
+    )
+    return res.data
+  },
+
+  /**
+   * Add a pedagogical follow-up note to an incident.
+   */
+  addFollowUp: async (
+    incidentId: string,
+    payload: IncidentFollowUpPayload
+  ): Promise<IncidentFollowUpItem> => {
+    const res = await apiClient.post<IncidentFollowUpItem>(
+      `/api/v1/incidents/${incidentId}/follow-ups`,
+      payload
+    )
     return res.data
   },
 }

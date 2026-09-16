@@ -29,14 +29,30 @@ import uuid
 from datetime import date
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, Request, Response, status
+from fastapi import APIRouter, Depends, File, Form, Query, Request, Response, UploadFile, status
+from fastapi.responses import FileResponse
 
 from app.api.deps import (
+    ClientIpDep,
     CurrentUserDep,
     SessionDep,
     require_permission,
 )
-from app.models.academic_activity import ActivityStatus
+from app.models.academic_activity import (
+    AcademicActivity,
+    ActivityDeliveryType,
+    ActivityStatus,
+    SubmissionStatus,
+)
+from app.schemas.communication import (
+    CommunicationListResponse,
+    CommunicationReceiptResponse,
+    InstitutionalCommunicationResponse,
+)
+from app.schemas.news import (
+    InstitutionalNewsResponse,
+    NewsListResponse,
+)
 from app.schemas.teacher_portal import (
     AcademicActivityCreateRequest,
     AcademicActivityListResponse,
@@ -48,13 +64,21 @@ from app.schemas.teacher_portal import (
     AcademicPlanUpdateRequest,
     ActivityGradeBatchUpdateRequest,
     ActivityGradesListResponse,
+    ActivityResourceCreateUrlRequest,
+    ActivityResourceListResponse,
+    ActivityResourceResponse,
     DailyAttendanceBatchRequest,
     DailyAttendanceListResponse,
     TeacherAssignmentsListResponse,
     TeacherDashboardSummaryResponse,
     TeacherGroupRosterResponse,
     TeacherGroupsListResponse,
+    TeacherSubmissionDetailResponse,
+    TeacherSubmissionReturnRequest,
+    TeacherSubmissionsListResponse,
 )
+from app.services.communication_service import CommunicationService
+from app.services.news_service import NewsService
 from app.services.teacher_portal_service import TeacherPortalService
 
 router = APIRouter(prefix="/teacher", tags=["Teacher Portal"])
@@ -149,6 +173,69 @@ async def get_group_roster(
 # 4. Academic Activities
 # ===========================================================================
 
+def format_activity_response(a: AcademicActivity) -> AcademicActivityResponse:
+    """Helper to consistently format AcademicActivity with computed metrics and nested resources."""
+    submitted_students = set()
+    if getattr(a, "submissions", None):
+        for s in a.submissions:
+            if s.status in (
+                SubmissionStatus.SUBMITTED,
+                SubmissionStatus.LATE,
+                SubmissionStatus.RETURNED,
+                SubmissionStatus.GRADED,
+            ):
+                submitted_students.add(s.student_id)
+
+    resources_list = []
+    if getattr(a, "resources", None):
+        for r in a.resources:
+            resources_list.append(
+                ActivityResourceResponse(
+                    id=r.id,
+                    activity_id=r.activity_id,
+                    institution_id=r.institution_id,
+                    resource_type=r.resource_type,
+                    title=r.title,
+                    url=r.url,
+                    original_filename=r.original_filename,
+                    file_size_bytes=r.file_size_bytes,
+                    mime_type=r.mime_type,
+                    created_at=r.created_at,
+                    updated_at=r.updated_at,
+                )
+            )
+
+    total_graded = sum(1 for g in a.grades if g.score is not None) if getattr(a, "grades", None) else 0
+
+    return AcademicActivityResponse(
+        id=a.id,
+        institution_id=a.institution_id,
+        teacher_id=a.teacher_id,
+        teacher_name=f"{a.teacher.user.first_name} {a.teacher.user.last_name}" if a.teacher and a.teacher.user else None,
+        subject_id=a.subject_id,
+        subject_name=a.subject.name if a.subject else None,
+        group_id=a.group_id,
+        group_name=a.group.name if a.group else None,
+        academic_year_id=a.academic_year_id,
+        academic_year_name=a.academic_year.name if a.academic_year else None,
+        title=a.title,
+        description=a.description,
+        activity_type=a.activity_type,
+        delivery_type=a.delivery_type or ActivityDeliveryType.FILE,
+        status=a.status,
+        publication_date=a.publication_date,
+        due_date=a.due_date,
+        max_score=a.max_score,
+        instructions=a.instructions,
+        resource_url=a.resource_url,
+        total_submissions=len(submitted_students),
+        total_graded=total_graded,
+        resources=resources_list,
+        created_at=a.created_at,
+        updated_at=a.updated_at,
+    )
+
+
 @router.get(
     "/activities",
     response_model=AcademicActivityListResponse,
@@ -171,34 +258,7 @@ async def list_teacher_activities(
         subject_id=subject_id,
         status=activity_status,
     )
-    items = [
-        AcademicActivityResponse(
-            id=a.id,
-            institution_id=a.institution_id,
-            teacher_id=a.teacher_id,
-            teacher_name=f"{a.teacher.user.first_name} {a.teacher.user.last_name}" if a.teacher and a.teacher.user else None,
-            subject_id=a.subject_id,
-            subject_name=a.subject.name if a.subject else None,
-            group_id=a.group_id,
-            group_name=a.group.name if a.group else None,
-            academic_year_id=a.academic_year_id,
-            academic_year_name=a.academic_year.name if a.academic_year else None,
-            title=a.title,
-            description=a.description,
-            activity_type=a.activity_type,
-            status=a.status,
-            publication_date=a.publication_date,
-            due_date=a.due_date,
-            max_score=a.max_score,
-            instructions=a.instructions,
-            resource_url=a.resource_url,
-            total_submissions=len(a.grades) if a.grades else 0,
-            total_graded=sum(1 for g in a.grades if g.score is not None) if a.grades else 0,
-            created_at=a.created_at,
-            updated_at=a.updated_at,
-        )
-        for a in records
-    ]
+    items = [format_activity_response(a) for a in records]
     return AcademicActivityListResponse(items=items, total=len(items))
 
 
@@ -224,31 +284,8 @@ async def create_teacher_activity(
         actor_id=str(current_user.id),
         actor_ip=request.client.host if request.client else "0.0.0.0",
     )
-    return AcademicActivityResponse(
-        id=activity.id,
-        institution_id=activity.institution_id,
-        teacher_id=activity.teacher_id,
-        teacher_name=f"{activity.teacher.user.first_name} {activity.teacher.user.last_name}" if activity.teacher and activity.teacher.user else None,
-        subject_id=activity.subject_id,
-        subject_name=activity.subject.name if activity.subject else None,
-        group_id=activity.group_id,
-        group_name=activity.group.name if activity.group else None,
-        academic_year_id=activity.academic_year_id,
-        academic_year_name=activity.academic_year.name if activity.academic_year else None,
-        title=activity.title,
-        description=activity.description,
-        activity_type=activity.activity_type,
-        status=activity.status,
-        publication_date=activity.publication_date,
-        due_date=activity.due_date,
-        max_score=activity.max_score,
-        instructions=activity.instructions,
-        resource_url=activity.resource_url,
-        total_submissions=0,
-        total_graded=0,
-        created_at=activity.created_at,
-        updated_at=activity.updated_at,
-    )
+    await db.commit()
+    return format_activity_response(activity)
 
 
 @router.get(
@@ -266,31 +303,7 @@ async def get_teacher_activity(
     service = TeacherPortalService(session=db)
     teacher = await service.get_teacher_profile(current_user.id, current_user.institution_id)
     activity = await service.get_activity(teacher, activity_id)
-    return AcademicActivityResponse(
-        id=activity.id,
-        institution_id=activity.institution_id,
-        teacher_id=activity.teacher_id,
-        teacher_name=f"{activity.teacher.user.first_name} {activity.teacher.user.last_name}" if activity.teacher and activity.teacher.user else None,
-        subject_id=activity.subject_id,
-        subject_name=activity.subject.name if activity.subject else None,
-        group_id=activity.group_id,
-        group_name=activity.group.name if activity.group else None,
-        academic_year_id=activity.academic_year_id,
-        academic_year_name=activity.academic_year.name if activity.academic_year else None,
-        title=activity.title,
-        description=activity.description,
-        activity_type=activity.activity_type,
-        status=activity.status,
-        publication_date=activity.publication_date,
-        due_date=activity.due_date,
-        max_score=activity.max_score,
-        instructions=activity.instructions,
-        resource_url=activity.resource_url,
-        total_submissions=len(activity.grades) if activity.grades else 0,
-        total_graded=sum(1 for g in activity.grades if g.score is not None) if activity.grades else 0,
-        created_at=activity.created_at,
-        updated_at=activity.updated_at,
-    )
+    return format_activity_response(activity)
 
 
 @router.patch(
@@ -316,31 +329,8 @@ async def update_teacher_activity(
         actor_id=str(current_user.id),
         actor_ip=request.client.host if request.client else "0.0.0.0",
     )
-    return AcademicActivityResponse(
-        id=activity.id,
-        institution_id=activity.institution_id,
-        teacher_id=activity.teacher_id,
-        teacher_name=f"{activity.teacher.user.first_name} {activity.teacher.user.last_name}" if activity.teacher and activity.teacher.user else None,
-        subject_id=activity.subject_id,
-        subject_name=activity.subject.name if activity.subject else None,
-        group_id=activity.group_id,
-        group_name=activity.group.name if activity.group else None,
-        academic_year_id=activity.academic_year_id,
-        academic_year_name=activity.academic_year.name if activity.academic_year else None,
-        title=activity.title,
-        description=activity.description,
-        activity_type=activity.activity_type,
-        status=activity.status,
-        publication_date=activity.publication_date,
-        due_date=activity.due_date,
-        max_score=activity.max_score,
-        instructions=activity.instructions,
-        resource_url=activity.resource_url,
-        total_submissions=len(activity.grades) if activity.grades else 0,
-        total_graded=sum(1 for g in activity.grades if g.score is not None) if activity.grades else 0,
-        created_at=activity.created_at,
-        updated_at=activity.updated_at,
-    )
+    await db.commit()
+    return format_activity_response(activity)
 
 
 @router.post(
@@ -365,31 +355,8 @@ async def publish_teacher_activity(
         actor_id=str(current_user.id),
         actor_ip=request.client.host if request.client else "0.0.0.0",
     )
-    return AcademicActivityResponse(
-        id=activity.id,
-        institution_id=activity.institution_id,
-        teacher_id=activity.teacher_id,
-        teacher_name=f"{activity.teacher.user.first_name} {activity.teacher.user.last_name}" if activity.teacher and activity.teacher.user else None,
-        subject_id=activity.subject_id,
-        subject_name=activity.subject.name if activity.subject else None,
-        group_id=activity.group_id,
-        group_name=activity.group.name if activity.group else None,
-        academic_year_id=activity.academic_year_id,
-        academic_year_name=activity.academic_year.name if activity.academic_year else None,
-        title=activity.title,
-        description=activity.description,
-        activity_type=activity.activity_type,
-        status=activity.status,
-        publication_date=activity.publication_date,
-        due_date=activity.due_date,
-        max_score=activity.max_score,
-        instructions=activity.instructions,
-        resource_url=activity.resource_url,
-        total_submissions=len(activity.grades) if activity.grades else 0,
-        total_graded=sum(1 for g in activity.grades if g.score is not None) if activity.grades else 0,
-        created_at=activity.created_at,
-        updated_at=activity.updated_at,
-    )
+    await db.commit()
+    return format_activity_response(activity)
 
 
 @router.post(
@@ -413,31 +380,8 @@ async def close_teacher_activity(
         actor_id=str(current_user.id),
         actor_ip=request.client.host if request.client else "0.0.0.0",
     )
-    return AcademicActivityResponse(
-        id=activity.id,
-        institution_id=activity.institution_id,
-        teacher_id=activity.teacher_id,
-        teacher_name=f"{activity.teacher.user.first_name} {activity.teacher.user.last_name}" if activity.teacher and activity.teacher.user else None,
-        subject_id=activity.subject_id,
-        subject_name=activity.subject.name if activity.subject else None,
-        group_id=activity.group_id,
-        group_name=activity.group.name if activity.group else None,
-        academic_year_id=activity.academic_year_id,
-        academic_year_name=activity.academic_year.name if activity.academic_year else None,
-        title=activity.title,
-        description=activity.description,
-        activity_type=activity.activity_type,
-        status=activity.status,
-        publication_date=activity.publication_date,
-        due_date=activity.due_date,
-        max_score=activity.max_score,
-        instructions=activity.instructions,
-        resource_url=activity.resource_url,
-        total_submissions=len(activity.grades) if activity.grades else 0,
-        total_graded=sum(1 for g in activity.grades if g.score is not None) if activity.grades else 0,
-        created_at=activity.created_at,
-        updated_at=activity.updated_at,
-    )
+    await db.commit()
+    return format_activity_response(activity)
 
 
 @router.delete(
@@ -459,6 +403,278 @@ async def delete_teacher_activity(
         activity_id,
         actor_id=str(current_user.id),
         actor_ip=request.client.host if request.client else "0.0.0.0",
+    )
+
+
+# ===========================================================================
+# 4.1. Pedagogical Activity Resources (B3-H11)
+# ===========================================================================
+
+@router.get(
+    "/activities/{activity_id}/resources",
+    response_model=ActivityResourceListResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Listar materiales / recursos de una actividad pedagógica",
+    dependencies=[Depends(require_permission("activities", "read"))],
+)
+async def list_teacher_activity_resources(
+    activity_id: uuid.UUID,
+    current_user: CurrentUserDep,
+    db: SessionDep,
+) -> ActivityResourceListResponse:
+    service = TeacherPortalService(session=db)
+    teacher = await service.get_teacher_profile(current_user.id, current_user.institution_id)
+    resources = await service.list_activity_resources(teacher, activity_id)
+    return ActivityResourceListResponse(items=resources, total=len(resources))
+
+
+@router.post(
+    "/activities/{activity_id}/resources",
+    response_model=ActivityResourceResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Adjuntar material pedagógico (Multipart Form: Archivo o URL)",
+    dependencies=[Depends(require_permission("activities", "update"))],
+)
+async def create_teacher_activity_resource(
+    activity_id: uuid.UUID,
+    title: Annotated[str, Form()],
+    current_user: CurrentUserDep,
+    db: SessionDep,
+    request: Request,
+    resource_type: Annotated[str, Form()] = "URL",
+    url: Annotated[str | None, Form()] = None,
+    description: Annotated[str | None, Form()] = None,
+    file: Annotated[UploadFile | None, File()] = None,
+) -> ActivityResourceResponse:
+    service = TeacherPortalService(session=db)
+    teacher = await service.get_teacher_profile(current_user.id, current_user.institution_id)
+    actor_id = str(current_user.id)
+    actor_ip = request.client.host if request.client else "0.0.0.0"
+
+    norm_type = resource_type.strip().upper()
+    if norm_type == "FILE" or file is not None:
+        if not file:
+            from fastapi import HTTPException
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Se requiere adjuntar un archivo para recursos de tipo FILE",
+            )
+        file_bytes = await file.read()
+        resource = await service.create_file_resource(
+            teacher=teacher,
+            activity_id=activity_id,
+            title=title,
+            original_filename=file.filename or "archivo",
+            content=file_bytes,
+            declared_mime_type=file.content_type,
+            actor_id=actor_id,
+            actor_ip=actor_ip,
+        )
+    else:
+        if not url:
+            from fastapi import HTTPException
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Se requiere la URL del recurso",
+            )
+        resource = await service.create_url_resource(
+            teacher=teacher,
+            activity_id=activity_id,
+            title=title,
+            url=url,
+            actor_id=actor_id,
+            actor_ip=actor_ip,
+        )
+
+    await db.commit()
+    return resource
+
+
+@router.post(
+    "/activities/{activity_id}/resources/url",
+    response_model=ActivityResourceResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Adjuntar recurso pedagógico de tipo URL (JSON)",
+    dependencies=[Depends(require_permission("activities", "update"))],
+)
+async def create_teacher_activity_url_resource(
+    activity_id: uuid.UUID,
+    data: ActivityResourceCreateUrlRequest,
+    current_user: CurrentUserDep,
+    db: SessionDep,
+    request: Request,
+) -> ActivityResourceResponse:
+    service = TeacherPortalService(session=db)
+    teacher = await service.get_teacher_profile(current_user.id, current_user.institution_id)
+    resource = await service.create_url_resource(
+        teacher=teacher,
+        activity_id=activity_id,
+        title=data.title,
+        url=str(data.url),
+        actor_id=str(current_user.id),
+        actor_ip=request.client.host if request.client else "0.0.0.0",
+    )
+    await db.commit()
+    return resource
+
+
+@router.delete(
+    "/activities/{activity_id}/resources/{resource_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Eliminar recurso pedagógico de una actividad",
+    dependencies=[Depends(require_permission("activities", "update"))],
+)
+async def delete_teacher_activity_resource(
+    activity_id: uuid.UUID,
+    resource_id: uuid.UUID,
+    current_user: CurrentUserDep,
+    db: SessionDep,
+    request: Request,
+) -> None:
+    service = TeacherPortalService(session=db)
+    teacher = await service.get_teacher_profile(current_user.id, current_user.institution_id)
+    await service.delete_resource(
+        teacher,
+        activity_id,
+        resource_id,
+        actor_id=str(current_user.id),
+        actor_ip=request.client.host if request.client else "0.0.0.0",
+    )
+    await db.commit()
+
+
+@router.get(
+    "/activities/{activity_id}/resources/{resource_id}/download",
+    status_code=status.HTTP_200_OK,
+    summary="Descargar archivo de recurso pedagógico (Docente)",
+    dependencies=[Depends(require_permission("activities", "read"))],
+)
+async def download_teacher_activity_resource(
+    activity_id: uuid.UUID,
+    resource_id: uuid.UUID,
+    current_user: CurrentUserDep,
+    db: SessionDep,
+    request: Request,
+) -> FileResponse:
+    service = TeacherPortalService(session=db)
+    teacher = await service.get_teacher_profile(current_user.id, current_user.institution_id)
+    resource, file_path = await service.get_resource_for_download(
+        teacher,
+        activity_id,
+        resource_id,
+        actor_id=str(current_user.id),
+        actor_ip=request.client.host if request.client else "0.0.0.0",
+    )
+    filename = resource.original_filename or f"recurso_{resource.id}"
+    return FileResponse(
+        path=str(file_path),
+        filename=filename,
+        media_type=resource.mime_type or "application/octet-stream",
+        content_disposition_type="attachment",
+    )
+
+
+# ===========================================================================
+# 4.2. Student Submissions Review & Returns (Phase B3-H13)
+# ===========================================================================
+
+@router.get(
+    "/activities/{activity_id}/submissions",
+    response_model=TeacherSubmissionsListResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Listar entregas de estudiantes de una actividad (Docente)",
+    description="Consulta la lista de estudiantes del grupo con su estado de entrega actual, fecha y adjuntos.",
+    dependencies=[Depends(require_permission("submissions", "read"))],
+)
+async def list_teacher_activity_submissions(
+    activity_id: uuid.UUID,
+    current_user: CurrentUserDep,
+    db: SessionDep,
+) -> TeacherSubmissionsListResponse:
+    service = TeacherPortalService(session=db)
+    teacher = await service.get_teacher_profile(current_user.id, current_user.institution_id)
+    return await service.list_activity_submissions(teacher, activity_id)
+
+
+@router.get(
+    "/activities/{activity_id}/submissions/{student_id}",
+    response_model=TeacherSubmissionDetailResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Detalle de entrega e historial de intentos de un estudiante (Docente)",
+    description="Consulta todos los intentos históricos, respuestas, adjuntos y nota oficial de un estudiante.",
+    dependencies=[Depends(require_permission("submissions", "read"))],
+)
+async def get_teacher_student_submission(
+    activity_id: uuid.UUID,
+    student_id: uuid.UUID,
+    current_user: CurrentUserDep,
+    db: SessionDep,
+) -> TeacherSubmissionDetailResponse:
+    service = TeacherPortalService(session=db)
+    teacher = await service.get_teacher_profile(current_user.id, current_user.institution_id)
+    return await service.get_student_submission_detail(teacher, activity_id, student_id)
+
+
+@router.post(
+    "/activities/{activity_id}/submissions/{student_id}/return",
+    response_model=TeacherSubmissionDetailResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Devolver entrega de estudiante para corrección pedagógica (Docente)",
+    description="Pasa la última entrega a estado RETURNED, registra retroalimentación y restablece la nota a PENDING.",
+    dependencies=[Depends(require_permission("submissions", "return"))],
+)
+async def return_teacher_student_submission(
+    activity_id: uuid.UUID,
+    student_id: uuid.UUID,
+    data: TeacherSubmissionReturnRequest,
+    current_user: CurrentUserDep,
+    db: SessionDep,
+    request: Request,
+) -> TeacherSubmissionDetailResponse:
+    service = TeacherPortalService(session=db)
+    teacher = await service.get_teacher_profile(current_user.id, current_user.institution_id)
+    result = await service.return_student_submission(
+        teacher,
+        activity_id,
+        student_id,
+        data.return_feedback,
+        actor_id=str(current_user.id),
+        actor_ip=request.client.host if request.client else "0.0.0.0",
+    )
+    await db.commit()
+    return result
+
+
+@router.get(
+    "/activities/{activity_id}/submissions/{student_id}/attachments/{attachment_id}/download",
+    status_code=status.HTTP_200_OK,
+    summary="Descargar archivo adjunto de entrega de estudiante (Docente)",
+    description="Descarga de forma segura y autorizada el archivo de entrega de un estudiante.",
+    dependencies=[Depends(require_permission("submissions", "read"))],
+)
+async def download_teacher_submission_attachment(
+    activity_id: uuid.UUID,
+    student_id: uuid.UUID,
+    attachment_id: uuid.UUID,
+    current_user: CurrentUserDep,
+    db: SessionDep,
+    request: Request,
+) -> FileResponse:
+    service = TeacherPortalService(session=db)
+    teacher = await service.get_teacher_profile(current_user.id, current_user.institution_id)
+    attachment, file_path = await service.get_student_attachment_for_download(
+        teacher,
+        activity_id,
+        student_id,
+        attachment_id,
+        actor_id=str(current_user.id),
+        actor_ip=request.client.host if request.client else "0.0.0.0",
+    )
+    return FileResponse(
+        path=str(file_path),
+        filename=attachment.original_filename,
+        media_type=attachment.mime_type or "application/octet-stream",
+        content_disposition_type="attachment",
     )
 
 
@@ -499,13 +715,15 @@ async def batch_update_activity_grades(
 ) -> ActivityGradesListResponse:
     service = TeacherPortalService(session=db)
     teacher = await service.get_teacher_profile(current_user.id, current_user.institution_id)
-    return await service.batch_grade_activity(
+    res = await service.batch_grade_activity(
         teacher,
         activity_id,
         data,
         actor_id=str(current_user.id),
         actor_ip=request.client.host if request.client else "0.0.0.0",
     )
+    await db.commit()
+    return res
 
 
 # ===========================================================================
@@ -552,13 +770,15 @@ async def record_daily_attendance(
 ) -> DailyAttendanceListResponse:
     service = TeacherPortalService(session=db)
     teacher = await service.get_teacher_profile(current_user.id, current_user.institution_id)
-    return await service.record_daily_attendance(
+    res = await service.record_daily_attendance(
         teacher,
         group_id=group_id,
         data=data,
         actor_id=str(current_user.id),
         actor_ip=request.client.host if request.client else "0.0.0.0",
     )
+    await db.commit()
+    return res
 
 
 # ===========================================================================
@@ -631,6 +851,7 @@ async def create_teacher_plan(
         actor_id=str(current_user.id),
         actor_ip=request.client.host if request.client else "0.0.0.0",
     )
+    await db.commit()
     return AcademicPlanResponse(
         id=plan.id,
         institution_id=plan.institution_id,
@@ -679,6 +900,7 @@ async def update_teacher_plan(
         actor_id=str(current_user.id),
         actor_ip=request.client.host if request.client else "0.0.0.0",
     )
+    await db.commit()
     return AcademicPlanResponse(
         id=plan.id,
         institution_id=plan.institution_id,
@@ -724,3 +946,130 @@ async def delete_teacher_plan(
         actor_id=str(current_user.id),
         actor_ip=request.client.host if request.client else "0.0.0.0",
     )
+    await db.commit()
+
+
+# ===========================================================================
+# 8. Institutional Communications & News (Phase 15 / B2)
+# ===========================================================================
+
+@router.get(
+    "/communications",
+    response_model=CommunicationListResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Listar comunicados dirigidos al docente",
+    dependencies=[Depends(require_permission("communications", "read"))],
+)
+async def list_teacher_communications(
+    current_user: CurrentUserDep,
+    db: SessionDep,
+) -> CommunicationListResponse:
+    portal_service = TeacherPortalService(session=db)
+    teacher = await portal_service.get_teacher_profile(current_user.id, current_user.institution_id)
+
+    comm_service = CommunicationService(session=db)
+    tuples = await comm_service.list_teacher_communications(
+        teacher=teacher,
+        user=current_user,
+    )
+
+    items = []
+    unread_count = 0
+    for comm, is_read, is_ack in tuples:
+        resp = InstitutionalCommunicationResponse.model_validate(comm)
+        resp.is_read = is_read
+        resp.is_acknowledged = is_ack
+        if not is_read:
+            unread_count += 1
+        items.append(resp)
+
+    return CommunicationListResponse(
+        items=items,
+        total=len(items),
+        unread_count=unread_count,
+    )
+
+
+@router.get(
+    "/communications/{communication_id}",
+    response_model=InstitutionalCommunicationResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Consultar comunicado oficial para el docente y registrar lectura",
+    dependencies=[Depends(require_permission("communications", "read"))],
+)
+async def get_teacher_communication(
+    communication_id: uuid.UUID,
+    current_user: CurrentUserDep,
+    db: SessionDep,
+) -> InstitutionalCommunicationResponse:
+    portal_service = TeacherPortalService(session=db)
+    teacher = await portal_service.get_teacher_profile(current_user.id, current_user.institution_id)
+
+    comm_service = CommunicationService(session=db)
+    comm = await comm_service.get_communication_by_id(
+        communication_id=communication_id,
+        institution_id=teacher.institution_id,
+        caller_user=current_user,
+        register_read=True,
+    )
+    await db.commit()
+
+    receipt = next((r for r in comm.receipts if r.user_id == current_user.id), None)
+    resp = InstitutionalCommunicationResponse.model_validate(comm)
+    resp.is_read = True
+    resp.is_acknowledged = receipt.is_acknowledged if receipt else False
+    resp.read_at = receipt.read_at if receipt else None
+    resp.acknowledged_at = receipt.acknowledged_at if receipt else None
+    return resp
+
+
+@router.post(
+    "/communications/{communication_id}/acknowledge",
+    response_model=CommunicationReceiptResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Confirmar acuse de recibo de comunicado por el docente",
+    dependencies=[Depends(require_permission("communications", "read"))],
+)
+async def acknowledge_teacher_communication(
+    communication_id: uuid.UUID,
+    current_user: CurrentUserDep,
+    db: SessionDep,
+    client_ip: ClientIpDep,
+) -> CommunicationReceiptResponse:
+    portal_service = TeacherPortalService(session=db)
+    teacher = await portal_service.get_teacher_profile(current_user.id, current_user.institution_id)
+
+    comm_service = CommunicationService(session=db)
+    receipt = await comm_service.acknowledge_communication(
+        communication_id=communication_id,
+        institution_id=teacher.institution_id,
+        user=current_user,
+        client_ip=client_ip,
+    )
+    await db.commit()
+    return CommunicationReceiptResponse.model_validate(receipt)
+
+
+@router.get(
+    "/news",
+    response_model=NewsListResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Listar noticias institucionales para el docente",
+    dependencies=[Depends(require_permission("news", "read"))],
+)
+async def list_teacher_news(
+    current_user: CurrentUserDep,
+    db: SessionDep,
+) -> NewsListResponse:
+    portal_service = TeacherPortalService(session=db)
+    teacher = await portal_service.get_teacher_profile(current_user.id, current_user.institution_id)
+
+    news_service = NewsService(session=db)
+    items = await news_service.list_news(
+        institution_id=teacher.institution_id,
+    )
+    return NewsListResponse(
+        items=[InstitutionalNewsResponse.model_validate(n) for n in items],
+        total=len(items),
+    )
+

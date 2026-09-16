@@ -11,7 +11,7 @@ import type { TeacherDashboardSummaryResponse } from '@/types/teacher'
 interface Props {
   summary: TeacherDashboardSummaryResponse | null
   loading: boolean
-  onTabChange: (tab: string) => void
+  onTabChange: (tab: string, context?: { groupId?: string; activityId?: string; status?: string }) => void
 }
 
 export const TeacherDashboardView: React.FC<Props> = ({ summary, loading, onTabChange }) => {
@@ -98,7 +98,8 @@ export const TeacherDashboardView: React.FC<Props> = ({ summary, loading, onTabC
         }}
       >
         <div
-          onClick={() => onTabChange('load')}
+          data-testid="kpi-load"
+          onClick={() => { onTabChange('load'); }}
           style={{
             backgroundColor: '#FFFFFF',
             borderRadius: '12px',
@@ -121,7 +122,8 @@ export const TeacherDashboardView: React.FC<Props> = ({ summary, loading, onTabC
         </div>
 
         <div
-          onClick={() => onTabChange('groups')}
+          data-testid="kpi-groups"
+          onClick={() => { onTabChange('groups'); }}
           style={{
             backgroundColor: '#FFFFFF',
             borderRadius: '12px',
@@ -144,7 +146,8 @@ export const TeacherDashboardView: React.FC<Props> = ({ summary, loading, onTabC
         </div>
 
         <div
-          onClick={() => onTabChange('activities')}
+          data-testid="kpi-activities"
+          onClick={() => { onTabChange('activities', { status: 'PUBLISHED' }); }}
           style={{
             backgroundColor: '#FFFFFF',
             borderRadius: '12px',
@@ -167,7 +170,8 @@ export const TeacherDashboardView: React.FC<Props> = ({ summary, loading, onTabC
         </div>
 
         <div
-          onClick={() => onTabChange('grades')}
+          data-testid="kpi-grades"
+          onClick={() => { onTabChange('grades'); }}
           style={{
             backgroundColor: '#FFFFFF',
             borderRadius: '12px',
@@ -211,7 +215,7 @@ export const TeacherDashboardView: React.FC<Props> = ({ summary, loading, onTabC
           }}
         >
           <div
-            onClick={() => onTabChange('activities')}
+            onClick={() => { onTabChange('activities'); }}
             style={{
               padding: '1rem',
               backgroundColor: '#F8FAFC',
@@ -228,7 +232,7 @@ export const TeacherDashboardView: React.FC<Props> = ({ summary, loading, onTabC
           </div>
 
           <div
-            onClick={() => onTabChange('attendance')}
+            onClick={() => { onTabChange('attendance'); }}
             style={{
               padding: '1rem',
               backgroundColor: '#F8FAFC',
@@ -245,7 +249,7 @@ export const TeacherDashboardView: React.FC<Props> = ({ summary, loading, onTabC
           </div>
 
           <div
-            onClick={() => onTabChange('grades')}
+            onClick={() => { onTabChange('grades'); }}
             style={{
               padding: '1rem',
               backgroundColor: '#F8FAFC',
@@ -262,7 +266,7 @@ export const TeacherDashboardView: React.FC<Props> = ({ summary, loading, onTabC
           </div>
 
           <div
-            onClick={() => onTabChange('planning')}
+            onClick={() => { onTabChange('planning'); }}
             style={{
               padding: '1rem',
               backgroundColor: '#F8FAFC',
@@ -275,6 +279,57 @@ export const TeacherDashboardView: React.FC<Props> = ({ summary, loading, onTabC
             <div style={{ fontWeight: 700, color: '#0F172A', fontSize: '0.9375rem' }}>Planeación Curricular</div>
             <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.8125rem', color: '#64748B' }}>
               Documentar unidades, competencias y evidencias de aprendizaje.
+            </p>
+          </div>
+
+          <div
+            onClick={() => { onTabChange('coexistence'); }}
+            style={{
+              padding: '1rem',
+              backgroundColor: '#F8FAFC',
+              borderRadius: '10px',
+              border: '1px solid #E2E8F0',
+              cursor: 'pointer',
+            }}
+          >
+            <div style={{ fontSize: '1.25rem', marginBottom: '0.25rem' }}>🛡️</div>
+            <div style={{ fontWeight: 700, color: '#0F172A', fontSize: '0.9375rem' }}>Observador / Convivencia</div>
+            <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.8125rem', color: '#64748B' }}>
+              Registrar observaciones, reconocimientos y faltas Tipo I, II o III (Ley 1620).
+            </p>
+          </div>
+
+          <div
+            onClick={() => { onTabChange('communications'); }}
+            style={{
+              padding: '1rem',
+              backgroundColor: '#F8FAFC',
+              borderRadius: '10px',
+              border: '1px solid #E2E8F0',
+              cursor: 'pointer',
+            }}
+          >
+            <div style={{ fontSize: '1.25rem', marginBottom: '0.25rem' }}>📢</div>
+            <div style={{ fontWeight: 700, color: '#0F172A', fontSize: '0.9375rem' }}>Circulares / Comunicados</div>
+            <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.8125rem', color: '#64748B' }}>
+              Consultar circulares oficiales de Rectoría y registrar acuse de recibo.
+            </p>
+          </div>
+
+          <div
+            onClick={() => { onTabChange('news'); }}
+            style={{
+              padding: '1rem',
+              backgroundColor: '#F8FAFC',
+              borderRadius: '10px',
+              border: '1px solid #E2E8F0',
+              cursor: 'pointer',
+            }}
+          >
+            <div style={{ fontSize: '1.25rem', marginBottom: '0.25rem' }}>📰</div>
+            <div style={{ fontWeight: 700, color: '#0F172A', fontSize: '0.9375rem' }}>Periódico Escolar</div>
+            <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.8125rem', color: '#64748B' }}>
+              Leer crónicas, eventos y logros de la comunidad pedagógica.
             </p>
           </div>
         </div>

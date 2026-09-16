@@ -21,10 +21,12 @@ from decimal import Decimal
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.models.academic_activity import (
+    ActivityDeliveryType,
     ActivityStatus,
     ActivitySubmissionStatus,
     ActivityType,
     AttendanceStatusEnum,
+    SubmissionStatus,
 )
 from app.models.user import DocumentType
 
@@ -88,6 +90,28 @@ class StudentSubjectsListResponse(BaseModel):
 # 3. Activities / Tasks / Homework
 # ===========================================================================
 
+class StudentActivityResourceItem(BaseModel):
+    """Resource item visible to an enrolled student."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    resource_type: str  # URL | FILE
+    title: str
+    url: str | None = None
+    original_filename: str | None = None
+    file_size_bytes: int | None = None
+    mime_type: str | None = None
+    created_at: datetime
+
+
+class StudentActivityResourceListResponse(BaseModel):
+    """List of materials attached to an activity."""
+
+    items: list[StudentActivityResourceItem]
+    total: int
+
+
 class StudentActivityItemResponse(BaseModel):
     """Activity representation tailored for student workflow and deadlines."""
 
@@ -98,6 +122,7 @@ class StudentActivityItemResponse(BaseModel):
     description: str | None = None
     activity_type: ActivityType
     status: ActivityStatus
+    delivery_type: ActivityDeliveryType = Field(default=ActivityDeliveryType.FILE)
     submission_status: str  # PENDING, OVERDUE, SUBMITTED, GRADED
     publication_date: datetime | None = None
     due_date: datetime | None = None
@@ -110,6 +135,7 @@ class StudentActivityItemResponse(BaseModel):
     teacher_name: str | None = None
     instructions: str | None = None
     resource_url: str | None = None
+    resources: list[StudentActivityResourceItem] = []
 
 
 class StudentActivitiesListResponse(BaseModel):
@@ -117,6 +143,65 @@ class StudentActivitiesListResponse(BaseModel):
 
     items: list[StudentActivityItemResponse]
     total: int
+
+
+# ===========================================================================
+# 3.1 Student Submissions & Deliveries (Phase B3-H13)
+# ===========================================================================
+
+class SubmissionAttachmentItemResponse(BaseModel):
+    """Attachment file metadata for a student submission attempt."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    original_filename: str
+    file_size_bytes: int
+    mime_type: str
+    created_at: datetime
+
+
+class StudentSubmissionAttemptResponse(BaseModel):
+    """Historical or current attempt record."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    activity_id: uuid.UUID
+    student_id: uuid.UUID
+    attempt_number: int
+    status: SubmissionStatus
+    student_response: str | None = None
+    submitted_at: datetime | None = None
+    is_late: bool
+    return_feedback: str | None = None
+    returned_at: datetime | None = None
+    created_at: datetime
+    updated_at: datetime
+    attachments: list[SubmissionAttachmentItemResponse] = []
+
+
+class StudentSubmissionDraftUpdateRequest(BaseModel):
+    """Payload to update an in-progress submission draft."""
+
+    student_response: str | None = Field(default=None, max_length=10000)
+
+
+class StudentSubmissionDetailResponse(BaseModel):
+    """Enriched submission view for the student portal, with current state and attempt history."""
+
+    activity_id: uuid.UUID
+    activity_title: str
+    activity_status: ActivityStatus
+    delivery_type: ActivityDeliveryType
+    due_date: datetime | None = None
+    can_submit: bool
+    can_edit_draft: bool
+    current_attempt: StudentSubmissionAttemptResponse | None = None
+    history: list[StudentSubmissionAttemptResponse] = []
+    grade_score: Decimal | None = None
+    grade_feedback: str | None = None
+    graded_at: datetime | None = None
 
 
 # ===========================================================================

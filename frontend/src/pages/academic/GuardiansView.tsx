@@ -1081,7 +1081,7 @@ export const GuardiansView: React.FC = () => {
               <input
                 type="text"
                 readOnly
-                value={`${window.location.origin}/guardian/activate?token=${tokenModal.token}`}
+                value={`${window.location.origin}/auth/reset-password?token=${encodeURIComponent(tokenModal.token)}`}
                 style={{
                   width: '100%',
                   padding: '0.45rem 0.6rem',
@@ -1097,7 +1097,7 @@ export const GuardiansView: React.FC = () => {
                 variant="primary"
                 size="sm"
                 onClick={() => {
-                  const url = `${window.location.origin}/guardian/activate?token=${tokenModal.token}`
+                  const url = `${window.location.origin}/auth/reset-password?token=${encodeURIComponent(tokenModal.token)}`
                   void navigator.clipboard.writeText(url)
                   setTokenModal((prev) => ({ ...prev, isCopied: true }))
                 }}

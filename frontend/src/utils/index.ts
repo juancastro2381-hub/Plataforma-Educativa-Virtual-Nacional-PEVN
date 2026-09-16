@@ -28,8 +28,31 @@ export function cn(...classes: (string | false | null | undefined)[]): string {
 /**
  * Format a date as a localized string for Colombian/Spanish context.
  */
-export function formatDate(date: Date | string, options?: Intl.DateTimeFormatOptions): string {
-  const d = typeof date === 'string' ? new Date(date) : date
+export function formatDate(
+  date: Date | string | null | undefined,
+  options?: Intl.DateTimeFormatOptions
+): string {
+  if (!date) return ''
+
+  let d: Date
+
+  if (typeof date === 'string') {
+    const dateOnlyMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date)
+
+    if (dateOnlyMatch) {
+      const [, year, month, day] = dateOnlyMatch
+      d = new Date(
+        Number(year),
+        Number(month) - 1,
+        Number(day)
+      )
+    } else {
+      d = new Date(date)
+    }
+  } else {
+    d = date
+  }
+
   return new Intl.DateTimeFormat('es-CO', {
     year: 'numeric',
     month: 'long',
@@ -41,7 +64,8 @@ export function formatDate(date: Date | string, options?: Intl.DateTimeFormatOpt
 /**
  * Format a date-time for display.
  */
-export function formatDateTime(date: Date | string): string {
+export function formatDateTime(date: Date | string | null | undefined): string {
+  if (!date) return ''
   return formatDate(date, {
     year: 'numeric',
     month: 'short',

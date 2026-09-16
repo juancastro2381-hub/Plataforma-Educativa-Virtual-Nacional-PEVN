@@ -19,17 +19,26 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 
 interface Props {
   assignments: TeacherAssignmentItemResponse[]
+  initialGroupId?: string
 }
 
-export const TeacherAttendanceView: React.FC<Props> = ({ assignments }) => {
+export const TeacherAttendanceView: React.FC<Props> = ({ assignments, initialGroupId }) => {
   // Extract unique groups
   const uniqueGroups = Array.from(
     new Map(assignments.map((a) => [a.group_id, { id: a.group_id, name: a.group_name }])).values()
   )
 
-  const [selectedGroupId, setSelectedGroupId] = useState<string>(uniqueGroups[0]?.id || '')
+  const [selectedGroupId, setSelectedGroupId] = useState<string>(
+    initialGroupId || uniqueGroups[0]?.id || ''
+  )
   const [attendanceDate, setAttendanceDate] = useState<string>(new Date().toISOString().split('T')[0])
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>('')
+
+  useEffect(() => {
+    if (initialGroupId && uniqueGroups.some((g) => g.id === initialGroupId)) {
+      setSelectedGroupId(initialGroupId)
+    }
+  }, [initialGroupId, uniqueGroups])
 
   const [sheet, setSheet] = useState<DailyAttendanceListResponse | null>(null)
   const [localStatuses, setLocalStatuses] = useState<Record<string, AttendanceStatusEnum>>({})

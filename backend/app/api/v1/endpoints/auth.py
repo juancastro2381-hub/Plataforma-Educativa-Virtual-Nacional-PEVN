@@ -204,6 +204,12 @@ async def logout(
         "verificar su contraseña actual."
     ),
 )
+@router.post(
+    "/change-password",
+    status_code=status.HTTP_200_OK,
+    summary="Cambiar contraseña (alias)",
+    include_in_schema=False,
+)
 async def change_password(
     payload: PasswordChangeRequest,
     current_user: CurrentUserDep,
@@ -244,6 +250,12 @@ async def change_password(
         "de uso único con respuesta en tiempo constante."
     ),
 )
+@router.post(
+    "/forgot-password",
+    status_code=status.HTTP_200_OK,
+    summary="Solicitar recuperación de contraseña (alias)",
+    include_in_schema=False,
+)
 async def request_password_reset(
     payload: PasswordResetRequest,
     request: Request,
@@ -278,6 +290,13 @@ async def request_password_reset(
         "no haya expirado."
     ),
 )
+@router.post(
+    "/verify-reset-token",
+    response_model=PasswordResetVerifyResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Verificar validez de token de restablecimiento (alias)",
+    include_in_schema=False,
+)
 async def verify_password_reset_token(
     payload: PasswordResetVerifyRequest,
     db: SessionDep,
@@ -304,6 +323,12 @@ async def verify_password_reset_token(
         "Completa el restablecimiento de contraseña utilizando un "
         "token de un solo uso."
     ),
+)
+@router.post(
+    "/reset-password",
+    status_code=status.HTTP_200_OK,
+    summary="Confirmar restablecimiento de contraseña (alias)",
+    include_in_schema=False,
 )
 async def confirm_password_reset(
     payload: PasswordResetConfirmRequest,

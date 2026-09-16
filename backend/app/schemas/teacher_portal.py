@@ -21,10 +21,13 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from app.models.academic_activity import (
     AcademicPlanStatus,
+    ActivityDeliveryType,
+    ActivityResourceType,
     ActivityStatus,
     ActivitySubmissionStatus,
     ActivityType,
     AttendanceStatusEnum,
+    SubmissionStatus,
 )
 from app.models.group import ShiftEnum
 
@@ -155,6 +158,7 @@ class AcademicActivityCreateRequest(BaseModel):
     title: Annotated[str, Field(min_length=3, max_length=200)]
     description: str | None = None
     activity_type: ActivityType = ActivityType.TASK
+    delivery_type: ActivityDeliveryType = ActivityDeliveryType.FILE
     due_date: datetime | None = None
     max_score: Annotated[Decimal, Field(gt=0, le=100)] = Decimal("5.00")
     instructions: str | None = None
@@ -167,10 +171,43 @@ class AcademicActivityUpdateRequest(BaseModel):
     title: Annotated[str, Field(min_length=3, max_length=200)] | None = None
     description: str | None = None
     activity_type: ActivityType | None = None
+    delivery_type: ActivityDeliveryType | None = None
     due_date: datetime | None = None
     max_score: Annotated[Decimal, Field(gt=0, le=100)] | None = None
     instructions: str | None = None
     resource_url: str | None = None
+
+
+class ActivityResourceResponse(BaseModel):
+    """Pedagogical resource response representation."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    activity_id: uuid.UUID
+    institution_id: uuid.UUID
+    resource_type: ActivityResourceType
+    title: str
+    url: str | None = None
+    original_filename: str | None = None
+    file_size_bytes: int | None = None
+    mime_type: str | None = None
+    created_at: datetime
+    updated_at: datetime
+
+
+class ActivityResourceCreateUrlRequest(BaseModel):
+    """Payload to add an external URL resource to an activity."""
+
+    title: Annotated[str, Field(min_length=1, max_length=200)]
+    url: Annotated[str, Field(min_length=1, max_length=500)]
+
+
+class ActivityResourceListResponse(BaseModel):
+    """List of activity resources."""
+
+    items: list[ActivityResourceResponse]
+    total: int
 
 
 class AcademicActivityResponse(BaseModel):
@@ -191,6 +228,7 @@ class AcademicActivityResponse(BaseModel):
     title: str
     description: str | None = None
     activity_type: ActivityType
+    delivery_type: ActivityDeliveryType = ActivityDeliveryType.FILE
     status: ActivityStatus
     publication_date: datetime | None = None
     due_date: datetime | None = None
@@ -199,6 +237,7 @@ class AcademicActivityResponse(BaseModel):
     resource_url: str | None = None
     total_submissions: int = 0
     total_graded: int = 0
+    resources: list[ActivityResourceResponse] = []
     created_at: datetime
     updated_at: datetime
 
@@ -208,6 +247,87 @@ class AcademicActivityListResponse(BaseModel):
 
     items: list[AcademicActivityResponse]
     total: int
+
+
+# ===========================================================================
+# 4.1 Teacher Submissions Review & Returns (Phase B3-H13)
+# ===========================================================================
+
+class TeacherSubmissionAttachmentResponse(BaseModel):
+    """Attachment details for teacher review."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    original_filename: str
+    file_size_bytes: int
+    mime_type: str
+    created_at: datetime
+
+
+class TeacherSubmissionAttemptResponse(BaseModel):
+    """Submission attempt details visible to teacher."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    attempt_number: int
+    status: SubmissionStatus
+    student_response: str | None = None
+    submitted_at: datetime | None = None
+    is_late: bool
+    return_feedback: str | None = None
+    returned_at: datetime | None = None
+    created_at: datetime
+    attachments: list[TeacherSubmissionAttachmentResponse] = []
+
+
+class TeacherSubmissionItemResponse(BaseModel):
+    """Summary item for the list of submissions of an activity."""
+
+    student_id: uuid.UUID
+    student_name: str
+    student_document: str
+    submission_id: uuid.UUID | None = None
+    attempt_number: int | None = None
+    status: SubmissionStatus | None = None
+    submitted_at: datetime | None = None
+    is_late: bool = False
+    attachments_count: int = 0
+    grade_score: Decimal | None = None
+    grade_status: ActivitySubmissionStatus = ActivitySubmissionStatus.PENDING
+    graded_at: datetime | None = None
+
+
+class TeacherSubmissionsListResponse(BaseModel):
+    """List of student submissions for a specific activity."""
+
+    activity_id: uuid.UUID
+    activity_title: str
+    delivery_type: ActivityDeliveryType
+    items: list[TeacherSubmissionItemResponse]
+    total: int
+
+
+class TeacherSubmissionReturnRequest(BaseModel):
+    """Payload to return a submission attempt for pedagogical correction."""
+
+    return_feedback: Annotated[str, Field(min_length=3, max_length=2000)]
+
+
+class TeacherSubmissionDetailResponse(BaseModel):
+    """Detailed view of a student's submission history and current attempt for teacher grading."""
+
+    activity_id: uuid.UUID
+    activity_title: str
+    delivery_type: ActivityDeliveryType
+    student_id: uuid.UUID
+    student_name: str
+    current_attempt: TeacherSubmissionAttemptResponse | None = None
+    history: list[TeacherSubmissionAttemptResponse] = []
+    grade_score: Decimal | None = None
+    grade_feedback: str | None = None
+    graded_at: datetime | None = None
 
 
 # ===========================================================================

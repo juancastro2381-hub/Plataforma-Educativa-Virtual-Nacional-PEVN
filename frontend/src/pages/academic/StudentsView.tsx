@@ -857,7 +857,7 @@ export const StudentsView: React.FC = () => {
           setTokenModal((prev) => ({ ...prev, isOpen: false }))
         }}
         title={tokenModal.title}
-        subtitle="Entregue este token seguro al estudiante o acudiente para restablecer credenciales."
+        subtitle="Entregue este enlace seguro al estudiante o acudiente para establecer sus credenciales."
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <div style={{ backgroundColor: '#F0FDF4', padding: '0.875rem', borderRadius: '8px', border: '1px solid #BBF7D0' }}>
@@ -865,19 +865,19 @@ export const StudentsView: React.FC = () => {
               Estudiante: {tokenModal.recipientName} ({tokenModal.recipientEmail})
             </div>
             <p style={{ fontSize: '0.75rem', color: '#15803D', marginTop: '0.25rem' }}>
-              El token es de un solo uso y cuenta con expiración segura de acuerdo con la política institucional.
+              El enlace es de un solo uso y cuenta con expiración segura de acuerdo con la política institucional.
             </p>
           </div>
 
           <div>
             <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#334155', marginBottom: '0.25rem' }}>
-              Token de Restablecimiento:
+              Enlace Directo de Configuración:
             </label>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
               <input
                 type="text"
                 readOnly
-                value={tokenModal.token}
+                value={`${window.location.origin}/auth/reset-password?token=${encodeURIComponent(tokenModal.token)}`}
                 style={{
                   width: '100%',
                   padding: '0.45rem 0.6rem',
@@ -893,7 +893,8 @@ export const StudentsView: React.FC = () => {
                 variant="primary"
                 size="sm"
                 onClick={() => {
-                  void navigator.clipboard.writeText(tokenModal.token)
+                  const url = `${window.location.origin}/auth/reset-password?token=${encodeURIComponent(tokenModal.token)}`
+                  void navigator.clipboard.writeText(url)
                   setTokenModal((prev) => ({ ...prev, isCopied: true }))
                 }}
               >

@@ -47,6 +47,14 @@ const SITUATION_TYPE_META: Record<
     border: '#FCA5A5',
     desc: 'Situaciones de presunta vulneración de derechos remitidas a comité de convivencia.',
   },
+  OBSERVACION_POSITIVA: {
+    label: 'Reconocimiento / Observación Positiva',
+    badge: 'Positiva',
+    bg: '#ECFDF5',
+    color: '#047857',
+    border: '#A7F3D0',
+    desc: 'Felicitación o anotación de mérito, liderazgo y desempeño formativo ejemplar.',
+  },
 }
 
 const STATUS_META: Record<IncidentStatus, { label: string; bg: string; color: string }> = {
@@ -149,7 +157,7 @@ export const StudentIncidentsView: React.FC<Props> = ({ onBackToDashboard: _onBa
           <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>⏳</div>
           <p>Consultando el observador estudiantil...</p>
         </div>
-      ) : incidents.length === 0 ? (
+      ) : error ? null : incidents.length === 0 ? (
         /* Exemplary Student Empty State */
         <div
           style={{

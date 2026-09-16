@@ -218,7 +218,7 @@ export const StudentCommunicationsView: React.FC<Props> = ({ onBackToDashboard: 
           <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>⏳</div>
           <p>Cargando comunicados...</p>
         </div>
-      ) : filtered.length === 0 ? (
+      ) : error ? null : filtered.length === 0 ? (
         <div
           style={{
             backgroundColor: '#FFFFFF',

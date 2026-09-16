@@ -17,6 +17,12 @@ interface Props {
 }
 
 const NEWS_CATEGORY_LABELS: Record<NewsCategory, { label: string; icon: string; color: string }> = {
+  LOGRO_ACADEMICO: { label: 'Logros Académicos', icon: '🏆', color: '#CA8A04' },
+  EVENTO_CULTURAL: { label: 'Eventos Culturales', icon: '🎨', color: '#9333EA' },
+  EVENTO_DEPORTIVO: { label: 'Deportes', icon: '⚽', color: '#16A34A' },
+  PROYECTO_INSTITUCIONAL: { label: 'Proyectos Institucionales', icon: '🔬', color: '#0284C7' },
+  NOTICIA_GENERAL: { label: 'Noticias Generales', icon: '📰', color: '#1D4ED8' },
+  // Compatibilidad con aliases previos
   ACADEMICA: { label: 'Académica', icon: '🎓', color: '#1D4ED8' },
   DEPORTES: { label: 'Deportes', icon: '⚽', color: '#16A34A' },
   CULTURAL: { label: 'Cultural', icon: '🎨', color: '#9333EA' },
@@ -167,7 +173,7 @@ export const StudentNewsView: React.FC<Props> = ({ onBackToDashboard: _onBackToD
       )}
 
       {/* Featured Banner */}
-      {selectedCategory === 'ALL' && featured && (
+      {selectedCategory === 'ALL' && featured && !error && (
         <div
           onClick={() => setSelectedArticle(featured)}
           style={{
@@ -222,7 +228,7 @@ export const StudentNewsView: React.FC<Props> = ({ onBackToDashboard: _onBackToD
           <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>⏳</div>
           <p>Cargando noticias...</p>
         </div>
-      ) : filteredNews.length === 0 ? (
+      ) : error ? null : filteredNews.length === 0 ? (
         <div
           style={{
             backgroundColor: '#FFFFFF',

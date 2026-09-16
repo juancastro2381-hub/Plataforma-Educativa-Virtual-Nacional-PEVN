@@ -275,6 +275,9 @@ export const StudentPortal: React.FC = () => {
         <StudentTaskDetailModal
           activity={selectedTask}
           onClose={() => setSelectedTask(null)}
+          onSubmitted={() => {
+            void loadStudentData()
+          }}
         />
       )}
 

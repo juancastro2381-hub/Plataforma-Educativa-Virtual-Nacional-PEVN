@@ -6,7 +6,9 @@
  */
 
 export type ActivityType = 'TASK' | 'WORKSHOP' | 'QUIZ' | 'EXAM' | 'PROJECT' | 'CLASS_ACTIVITY'
+export type ActivityDeliveryType = 'TEXT' | 'FILE' | 'TEXT_AND_FILE'
 export type ActivityStatus = 'DRAFT' | 'PUBLISHED' | 'CLOSED'
+export type SubmissionStatus = 'DRAFT' | 'SUBMITTED' | 'LATE' | 'RETURNED' | 'GRADED'
 export type ActivitySubmissionStatus = 'PENDING' | 'SUBMITTED' | 'GRADED'
 export type AttendanceStatusEnum = 'PRESENT' | 'ABSENT' | 'EXCUSED' | 'LATE'
 export type AcademicPlanStatus = 'DRAFT' | 'APPROVED' | 'IN_PROGRESS' | 'COMPLETED'
@@ -97,6 +99,7 @@ export interface AcademicActivityCreateRequest {
   title: string
   description?: string | null
   activity_type?: ActivityType
+  delivery_type?: ActivityDeliveryType
   due_date?: string | null
   max_score?: number
   instructions?: string | null
@@ -107,10 +110,31 @@ export interface AcademicActivityUpdateRequest {
   title?: string
   description?: string | null
   activity_type?: ActivityType
+  delivery_type?: ActivityDeliveryType
   due_date?: string | null
   max_score?: number
   instructions?: string | null
   resource_url?: string | null
+}
+
+export type ActivityResourceType = 'URL' | 'FILE'
+
+export interface ActivityResourceResponse {
+  id: string
+  activity_id: string
+  resource_type: ActivityResourceType
+  title: string
+  description: string | null
+  url: string | null
+  file_name: string | null
+  file_size_bytes: number | null
+  mime_type: string | null
+  created_at: string
+}
+
+export interface ActivityResourceListResponse {
+  items: ActivityResourceResponse[]
+  total: number
 }
 
 export interface AcademicActivityResponse {
@@ -127,12 +151,14 @@ export interface AcademicActivityResponse {
   title: string
   description: string | null
   activity_type: ActivityType
+  delivery_type?: ActivityDeliveryType
   status: ActivityStatus
   publication_date: string | null
   due_date: string | null
   max_score: number
   instructions: string | null
   resource_url: string | null
+  resources?: ActivityResourceResponse[]
   total_submissions: number
   total_graded: number
   created_at: string
@@ -142,6 +168,71 @@ export interface AcademicActivityResponse {
 export interface AcademicActivityListResponse {
   items: AcademicActivityResponse[]
   total: number
+}
+
+// ---------------------------------------------------------------------------
+// 4.1 Teacher Submissions Review (Phase B3-H13)
+// ---------------------------------------------------------------------------
+
+export interface TeacherSubmissionAttachmentResponse {
+  id: string
+  original_filename: string
+  file_size_bytes: number
+  mime_type: string
+  created_at: string
+}
+
+export interface TeacherSubmissionAttemptResponse {
+  id: string
+  attempt_number: number
+  status: SubmissionStatus
+  student_response: string | null
+  submitted_at: string | null
+  is_late: boolean
+  return_feedback: string | null
+  returned_at: string | null
+  created_at: string
+  attachments: TeacherSubmissionAttachmentResponse[]
+}
+
+export interface TeacherSubmissionItemResponse {
+  student_id: string
+  student_name: string
+  student_document: string
+  submission_id: string | null
+  attempt_number: number | null
+  status: SubmissionStatus | null
+  submitted_at: string | null
+  is_late: boolean
+  attachments_count: number
+  grade_score: number | null
+  grade_status: ActivitySubmissionStatus
+  graded_at: string | null
+}
+
+export interface TeacherSubmissionsListResponse {
+  activity_id: string
+  activity_title: string
+  delivery_type: ActivityDeliveryType
+  items: TeacherSubmissionItemResponse[]
+  total: number
+}
+
+export interface TeacherSubmissionReturnRequest {
+  return_feedback: string
+}
+
+export interface TeacherSubmissionDetailResponse {
+  activity_id: string
+  activity_title: string
+  delivery_type: ActivityDeliveryType
+  student_id: string
+  student_name: string
+  current_attempt: TeacherSubmissionAttemptResponse | null
+  history: TeacherSubmissionAttemptResponse[]
+  grade_score: number | null
+  grade_feedback: string | null
+  graded_at: string | null
 }
 
 export interface ActivityGradeItemResponse {

@@ -26,6 +26,8 @@ export type StudentTab =
 export type ActivitySubmissionStatus = 'PENDING' | 'OVERDUE' | 'SUBMITTED' | 'GRADED'
 export type ActivityType = 'HOMEWORK' | 'WORKSHOP' | 'EXAM' | 'QUIZ' | 'PROJECT' | 'CLASS_PARTICIPATION'
 export type ActivityStatus = 'DRAFT' | 'PUBLISHED' | 'CLOSED'
+export type ActivityDeliveryType = 'TEXT' | 'FILE' | 'TEXT_AND_FILE'
+export type SubmissionStatus = 'DRAFT' | 'SUBMITTED' | 'LATE' | 'RETURNED' | 'GRADED'
 export type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'EXCUSED' | 'LATE'
 export type VirtualClassroomStatus = 'SCHEDULED' | 'RUNNING' | 'ENDED' | 'CANCELLED'
 
@@ -78,11 +80,30 @@ export interface StudentSubjectsListResponse {
 // 3. Academic Activities / Tasks
 // ---------------------------------------------------------------------------
 
+export interface StudentActivityResourceItem {
+  id: string
+  activity_id: string
+  resource_type: 'URL' | 'FILE'
+  title: string
+  description: string | null
+  url: string | null
+  file_name: string | null
+  file_size_bytes: number | null
+  mime_type: string | null
+  created_at: string
+}
+
+export interface StudentActivityResourceListResponse {
+  items: StudentActivityResourceItem[]
+  total: number
+}
+
 export interface StudentActivityItemResponse {
   id: string
   title: string
   description: string | null
   activity_type: ActivityType
+  delivery_type?: ActivityDeliveryType
   status: ActivityStatus
   submission_status: ActivitySubmissionStatus
   publication_date: string | null
@@ -96,11 +117,55 @@ export interface StudentActivityItemResponse {
   teacher_name: string | null
   instructions: string | null
   resource_url: string | null
+  resources?: StudentActivityResourceItem[]
 }
 
 export interface StudentActivitiesListResponse {
   items: StudentActivityItemResponse[]
   total: number
+}
+
+// ---------------------------------------------------------------------------
+// 3.1 Student Submissions (Phase B3-H13)
+// ---------------------------------------------------------------------------
+
+export interface SubmissionAttachmentItem {
+  id: string
+  original_filename: string
+  file_size_bytes: number
+  mime_type: string
+  created_at: string
+}
+
+export interface StudentSubmissionAttempt {
+  id: string
+  activity_id: string
+  student_id: string
+  attempt_number: number
+  status: SubmissionStatus
+  student_response: string | null
+  submitted_at: string | null
+  is_late: boolean
+  return_feedback: string | null
+  returned_at: string | null
+  created_at: string
+  updated_at: string
+  attachments: SubmissionAttachmentItem[]
+}
+
+export interface StudentSubmissionDetailResponse {
+  activity_id: string
+  activity_title: string
+  activity_status: ActivityStatus
+  delivery_type: ActivityDeliveryType
+  due_date: string | null
+  can_submit: boolean
+  can_edit_draft: boolean
+  current_attempt: StudentSubmissionAttempt | null
+  history: StudentSubmissionAttempt[]
+  grade_score: number | string | null
+  grade_feedback: string | null
+  graded_at: string | null
 }
 
 // ---------------------------------------------------------------------------
@@ -164,7 +229,7 @@ export interface StudentVirtualClassroomItemResponse {
   id: string
   title: string
   description: string | null
-  status: VirtualClassroomStatus | string
+  status: VirtualClassroomStatus
   scheduled_start_time: string | null
   scheduled_end_time: string | null
   subject_name: string | null

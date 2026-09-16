@@ -17,25 +17,32 @@ import { teacherApi } from '@/services/teacher'
 import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { TeacherSieeEvaluationView } from './TeacherSieeEvaluationView'
+import { TeacherSubmissionsModal } from '@/components/teacher/TeacherSubmissionsModal'
 
 interface Props {
   activities: AcademicActivityResponse[]
   assignments?: TeacherAssignmentItemResponse[]
   initialSelectedActivityId?: string | null
+  initialGroupId?: string | null
 }
 
 export const TeacherGradesView: React.FC<Props> = ({
   activities,
   assignments = [],
   initialSelectedActivityId,
+  initialGroupId,
 }) => {
   const [evaluationMode, setEvaluationMode] = useState<'siee' | 'activities'>(
     initialSelectedActivityId ? 'activities' : 'siee'
   )
 
   const publishedActivities = activities.filter((a) => a.status === 'PUBLISHED' || a.status === 'CLOSED')
+  const groupActivities = initialGroupId
+    ? publishedActivities.filter((a) => a.group_id === initialGroupId)
+    : publishedActivities
+
   const [selectedActivityId, setSelectedActivityId] = useState<string>(
-    initialSelectedActivityId || (publishedActivities[0]?.id ?? '')
+    initialSelectedActivityId || (groupActivities[0]?.id ?? publishedActivities[0]?.id ?? '')
   )
 
   const [gradesheet, setGradesheet] = useState<ActivityGradesListResponse | null>(null)
@@ -44,6 +51,9 @@ export const TeacherGradesView: React.FC<Props> = ({
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [reviewingStudentId, setReviewingStudentId] = useState<string | null>(null)
+
+  const selectedActivity = publishedActivities.find((a) => a.id === selectedActivityId)
 
   const loadGradesheet = async (actId: string) => {
     if (!actId) {
@@ -312,6 +322,7 @@ export const TeacherGradesView: React.FC<Props> = ({
                         <th style={{ padding: '0.75rem', width: '50px' }}>#</th>
                         <th style={{ padding: '0.75rem', minWidth: '180px' }}>Estudiante</th>
                         <th style={{ padding: '0.75rem', minWidth: '100px' }}>Documento</th>
+                        <th style={{ padding: '0.75rem', width: '90px', textAlign: 'center' }}>Entrega</th>
                         <th style={{ padding: '0.75rem', width: '120px' }}>Nota (0 - {gradesheet.max_score})</th>
                         <th style={{ padding: '0.75rem', minWidth: '220px' }}>Retroalimentación Pedagógica</th>
                         <th style={{ padding: '0.75rem', width: '120px' }}>Estado</th>
@@ -326,6 +337,25 @@ export const TeacherGradesView: React.FC<Props> = ({
                           </td>
                           <td style={{ padding: '0.625rem 0.75rem', color: '#64748B' }}>
                             {item.student_document || '—'}
+                          </td>
+                          <td style={{ padding: '0.625rem 0.75rem', textAlign: 'center' }}>
+                            <button
+                              type="button"
+                              onClick={() => setReviewingStudentId(item.student_id)}
+                              style={{
+                                backgroundColor: '#EFF6FF',
+                                color: '#1D4ED8',
+                                border: '1px solid #BFDBFE',
+                                borderRadius: '6px',
+                                padding: '0.25rem 0.55rem',
+                                fontSize: '0.75rem',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                              }}
+                              title="Revisar entrega y archivos del estudiante"
+                            >
+                              📄 Ver
+                            </button>
                           </td>
                           <td style={{ padding: '0.625rem 0.75rem' }}>
                             <input
@@ -392,6 +422,16 @@ export const TeacherGradesView: React.FC<Props> = ({
             )}
           </div>
         </div>
+      )}
+
+      {/* Review Student Submission Modal */}
+      {reviewingStudentId && selectedActivity && (
+        <TeacherSubmissionsModal
+          activityId={selectedActivity.id}
+          activityTitle={selectedActivity.title}
+          initialStudentId={reviewingStudentId}
+          onClose={() => setReviewingStudentId(null)}
+        />
       )}
     </div>
   )

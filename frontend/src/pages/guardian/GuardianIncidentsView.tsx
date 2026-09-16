@@ -51,6 +51,14 @@ const SITUATION_TYPE_META: Record<
     border: '#FCA5A5',
     desc: 'Conductas que configuran presuntos delitos contra la libertad, integridad o formación sexual.',
   },
+  OBSERVACION_POSITIVA: {
+    label: 'Reconocimiento / Observación Positiva',
+    badge: 'Positiva',
+    bg: '#ECFDF5',
+    color: '#047857',
+    border: '#A7F3D0',
+    desc: 'Felicitación o anotación de mérito, liderazgo y desempeño formativo ejemplar.',
+  },
 }
 
 const STATUS_META: Record<IncidentStatus, { label: string; bg: string; color: string }> = {

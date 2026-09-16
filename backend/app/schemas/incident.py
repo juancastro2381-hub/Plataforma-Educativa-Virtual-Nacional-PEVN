@@ -9,7 +9,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, computed_field
 
 from app.models.coexistence_incident import (
     CoexistenceSituationType,
@@ -40,6 +40,13 @@ class IncidentFollowUpResponse(BaseModel):
     notes: str
     author: UserResponse | None = None
     created_at: datetime
+
+    @computed_field
+    @property
+    def author_name(self) -> str:
+        if self.author:
+            return f"{self.author.first_name} {self.author.last_name}".strip()
+        return "Docente / Orientador"
 
 
 class StudentIncidentCreateRequest(BaseModel):
@@ -115,6 +122,13 @@ class StudentIncidentResponse(BaseModel):
     follow_ups: list[IncidentFollowUpResponse] = []
     created_at: datetime
     updated_at: datetime
+
+    @computed_field
+    @property
+    def reporter_name(self) -> str:
+        if self.reporter:
+            return f"{self.reporter.first_name} {self.reporter.last_name}".strip()
+        return "Docente / Directivo"
 
 
 class StudentIncidentListResponse(BaseModel):
