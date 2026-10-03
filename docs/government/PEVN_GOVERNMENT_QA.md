@@ -12,7 +12,7 @@
 
 ### Q-PROD-01: ¿Qué es exactamente PEVN?
 - **Respuesta Factual:** Es una plataforma web integral de gestión académica, pedagógica, convivencial y de aulas virtuales diseñada específicamente para los colegios oficiales de Colombia. Integra en una única base de datos multi-inquilino la estructura de sedes DANE, matrícula SIMAT, asignación docente, Sistema Institucional de Evaluación (SIEE, Decreto 1290/2009), observador de convivencia (Ley 1620/2013), circulares oficiales y portales independientes para directivos, docentes, estudiantes y familias.
-- **Lo que SÍ hace hoy:** Gestiona la jornada escolar completa de 8 roles institucionales, asienta calificaciones híbridas con justificación docente obligatoria, registra asistencias, recibe tareas y evidencias digitales, tipifica faltas de convivencia y firma acuses de circulares.
+- **Lo que SÍ hace hoy:** Gestiona la jornada escolar completa de 8 roles institucionales, asienta calificaciones híbridas con justificación docente obligatoria, registra asistencias, recibe tareas y evidencias digitales, tipifica faltas de convivencia y registra acuses electrónicos de circulares.
 - **Lo que NO hace hoy:** No es un ERP financiero (no gestiona nómina ni Fondos de Servicios Docentes), no administra compras ni inventario físico escolar y no reemplaza los sistemas contables del Estado.
 
 ### Q-PROD-02: ¿Está PEVN desplegada nacionalmente en este momento?
@@ -60,7 +60,7 @@
 - **Respuesta Factual:** Todas las consultas en la base de datos exigen el filtro `institution_id` extraído del token JWT verificado en el servidor. Si un usuario manipula identificadores UUID en URLs para consultar datos de otro colegio o de un estudiante ajeno, el backend responde **`404 Not Found` (Blind 404)** en lugar de 403, imposibilitando al atacante determinar si el registro existe en otra institución.
 
 ### Q-SEC-04: ¿Qué información se registra en la auditoría inmutable?
-- **Respuesta Factual:** La tabla `audit_logs` en PostgreSQL registra eventos críticos (inicios de sesión, bloqueos, cambios de notas, firmas de circulares, aperturas y cierres de período) con fecha UTC tomada del reloj del motor de base de datos (`clock_timestamp()`), usuario actuante, IP, User-Agent y UUID de correlación.
+- **Respuesta Factual:** La tabla `audit_logs` en PostgreSQL registra eventos críticos (inicios de sesión, bloqueos, cambios de notas, confirmaciones de lectura de circulares, aperturas y cierres de período) con fecha UTC tomada del reloj del motor de base de datos (`clock_timestamp()`), usuario actuante, IP, User-Agent y UUID de correlación.
 - **Censura de Seguridad (Zero-Secrets):** La función `sanitize_audit_metadata()` censura de forma recursiva y automática cualquier contraseña, token, secreto o cookie con `[REDACTED]`.
 
 ### Q-SEC-05: ¿Se han realizado pruebas de penetración (*Ethical Hacking*) externas?
@@ -135,5 +135,5 @@
   - Las suites completas de pruebas automatizadas (432 pruebas backend).
 - **Régimen Económico:** **CERO PESOS ($0 COP) por licencias de software.** El Estado no pagará regalías ni suscripciones por estudiante. Los únicos costos serán los servidores de infraestructura y el personal humano de soporte que la entidad receptora decida contratar o asignar.
 
-### Q-DON-02: ¿Qué obligaciones adquiere la entidad pública que recibe la plataforma?
+### Q-DON-02: ¿Qué responsabilidades asumiría una entidad pública en caso de adoptar la plataforma?
 - **Respuesta Factual:** La entidad pública asumiría la responsabilidad de proveer los servidores donde se aloje el sistema, custodiar las copias de respaldo de las calificaciones oficiales y garantizar la atención de soporte técnico a su comunidad educativa.

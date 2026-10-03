@@ -1,16 +1,16 @@
 /**
- * PEVN Frontend — Coming Soon / Phase 1 Landing Page
+ * PEVN Frontend — Public Landing Page (Current-State View)
  *
- * The initial landing page for the PEVN platform during development.
- * Communicates the platform's purpose and current development status
- * in a professional, institutional manner.
+ * The official landing page for the PEVN platform.
+ * Communicates the platform's educational purpose, multi-tenant architecture,
+ * and certified implementation state in a professional, institutional manner.
  *
  * Design intent:
  *   - Deep institutional blue conveys trust and authority
  *   - Gold accent communicates achievement and excellence
- *   - Clean, uncluttered layout works on low-end devices
- *   - Mobile-first: designed for smartphones first
- *   - No political imagery — this is an educational service
+ *   - Clean, uncluttered layout works on all devices
+ *   - Mobile-first: responsive and accessible
+ *   - Neutral public sector presentation compliant with government standards
  */
 
 import type { ComponentType } from 'react'
@@ -29,14 +29,14 @@ export function ComingSoon() {
           <div className="absolute bottom-0 left-0 w-64 h-64 bg-pevn-gold/10 rounded-full -translate-x-16 translate-y-16" />
         </div>
 
-        <div className="relative max-w-4xl mx-auto px-6 py-16 sm:py-24 lg:py-32 text-center">
+        <div className="relative max-w-5xl mx-auto px-6 py-16 sm:py-24 lg:py-28 text-center">
           {/* Status badge */}
           <div className="inline-flex items-center gap-2 bg-emerald-500/20 border border-emerald-400/40 text-emerald-200 rounded-full px-4 py-2 text-sm font-medium mb-8 animate-fade-in">
             <span
               className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse-soft"
               aria-hidden="true"
             />
-            Fase 1 y Fase 2 — Completadas y Aprobadas
+            Plataforma Integral · Gestión Académica, Portales, SIEE y Convivencia Implementados
           </div>
 
           {/* Main heading */}
@@ -54,9 +54,9 @@ export function ComingSoon() {
             Sistema de Gestión Educativa para las Instituciones Públicas de Colombia
           </p>
 
-          <p className="text-base text-white/60 mb-12 max-w-xl mx-auto leading-relaxed animate-fade-in">
-            Una plataforma educativa segura, accesible y moderna para docentes, estudiantes,
-            directivos y administradores del sistema educativo colombiano.
+          <p className="text-base text-white/60 mb-12 max-w-2xl mx-auto leading-relaxed animate-fade-in">
+            Una plataforma educativa soberana, accesible y moderna para docentes, estudiantes,
+            familias, directivos y administradores del sistema educativo colombiano.
           </p>
 
           {/* Feature highlights */}
@@ -79,7 +79,7 @@ export function ComingSoon() {
           </div>
 
           {/* Development status note */}
-          <div className="inline-flex items-center gap-3 bg-white/10 border border-white/20 rounded-xl px-6 py-4 text-sm">
+          <div className="inline-flex items-center gap-3 bg-white/10 border border-white/20 rounded-xl px-6 py-4 text-sm max-w-3xl text-left sm:text-center">
             <svg
               className="w-5 h-5 text-pevn-gold flex-shrink-0"
               fill="currentColor"
@@ -93,63 +93,70 @@ export function ComingSoon() {
               />
             </svg>
             <span className="text-white/80">
-              Infraestructura base completada. Las funcionalidades educativas estarán disponibles en
-              fases posteriores.
+              Plataforma en evolución continua. Las principales funcionalidades académicas, evaluación SIEE,
+              portales por rol y convivencia escolar se encuentran implementadas y verificadas.
             </span>
           </div>
         </div>
       </section>
 
       {/* Phase roadmap section */}
-      <section className="bg-white py-12 px-6" aria-labelledby="roadmap-heading">
-        <div className="max-w-4xl mx-auto">
+      <section className="bg-white py-14 px-6" aria-labelledby="roadmap-heading">
+        <div className="max-w-6xl mx-auto">
           <h2 id="roadmap-heading" className="text-2xl font-bold text-pevn-blue text-center mb-8">
-            Roadmap de Desarrollo
+            Estado y Capacidades de la Plataforma
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {PHASES.map((phase, index) => (
               <div
                 key={phase.phase}
-                className={`rounded-xl p-5 border-2 ${
+                className={`rounded-xl p-5 border-2 flex flex-col justify-between ${
                   phase.status === 'complete'
                     ? 'border-emerald-500 bg-emerald-50/60 shadow-sm'
-                    : phase.status === 'active'
-                      ? 'border-pevn-gold bg-pevn-gold/5'
+                    : phase.status === 'software_ready'
+                      ? 'border-blue-500 bg-blue-50/50 shadow-sm'
                       : 'border-gray-200 bg-gray-50/70'
                 }`}
               >
-                <div className="flex items-center gap-2 mb-3">
-                  <span
-                    className={`w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center ${
-                      phase.status === 'complete'
-                        ? 'bg-emerald-600 text-white'
-                        : phase.status === 'active'
-                          ? 'bg-pevn-gold text-white'
-                          : 'bg-gray-300 text-gray-600'
-                    }`}
-                    aria-label={`Fase ${String(index + 1)}`}
-                  >
-                    {phase.status === 'complete' ? '✓' : String(index + 1)}
-                  </span>
-                  <span
-                    className={`text-xs font-semibold uppercase tracking-wide ${
-                      phase.status === 'complete'
-                        ? 'text-emerald-700 font-bold'
-                        : phase.status === 'active'
-                          ? 'text-pevn-gold'
-                          : 'text-gray-500'
-                    }`}
-                  >
-                    {phase.status === 'complete'
-                      ? '✓ Completada'
-                      : phase.status === 'active'
-                        ? '● En curso'
-                        : 'Pendiente'}
-                  </span>
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span
+                      className={`w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center ${
+                        phase.status === 'complete'
+                          ? 'bg-emerald-600 text-white'
+                          : phase.status === 'software_ready'
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-300 text-gray-600'
+                      }`}
+                      aria-label={`Módulo ${String(index + 1)}`}
+                    >
+                      {phase.status === 'complete' ? '✓' : phase.status === 'software_ready' ? '⚡' : String(index + 1)}
+                    </span>
+                    <span
+                      className={`text-xs font-semibold uppercase tracking-wide ${
+                        phase.status === 'complete'
+                          ? 'text-emerald-700 font-bold'
+                          : phase.status === 'software_ready'
+                            ? 'text-blue-700 font-bold'
+                            : 'text-gray-500'
+                      }`}
+                    >
+                      {phase.statusLabel}
+                    </span>
+                  </div>
+
+                  {phase.statusDetail && (
+                    <div className="mb-2">
+                      <span className="inline-block text-[10px] font-medium leading-tight text-amber-800 bg-amber-100/80 border border-amber-300/60 rounded px-1.5 py-0.5">
+                        {phase.statusDetail}
+                      </span>
+                    </div>
+                  )}
+
+                  <h3 className="font-semibold text-pevn-blue text-sm mb-1">{phase.phase}</h3>
+                  <p className="text-xs text-gray-600 leading-relaxed">{phase.description}</p>
                 </div>
-                <h3 className="font-semibold text-pevn-blue text-sm mb-1">{phase.phase}</h3>
-                <p className="text-xs text-gray-600 leading-relaxed">{phase.description}</p>
               </div>
             ))}
           </div>
@@ -172,7 +179,9 @@ interface Feature {
 interface PhaseItem {
   phase: string
   description: string
-  status: 'active' | 'complete' | 'pending'
+  status: 'complete' | 'software_ready' | 'pending'
+  statusLabel: string
+  statusDetail?: string
 }
 
 function ShieldIcon({ className }: { className?: string }) {
@@ -233,42 +242,72 @@ const FEATURES: Feature[] = [
   {
     title: 'Seguridad por Diseño',
     description:
-      'Arquitectura con seguridad como prioridad, aislamiento institucional y auditoría completa.',
+      'Arquitectura basada en controles rigurosos: hashing Argon2id, tokens efímeros en memoria, aislamiento multi-inquilino y auditoría inmutable.',
     Icon: ShieldIcon,
   },
   {
-    title: 'Multi-Institucional',
+    title: 'Arquitectura Multi-Institucional',
     description:
-      'Soporte para todas las instituciones educativas públicas del territorio colombiano.',
+      'Diseñada para gestionar instituciones educativas, sedes y sus comunidades de forma aislada, soberana y segura.',
     Icon: UsersIcon,
   },
   {
     title: 'Accesible y Móvil',
-    description: 'Diseñado para dispositivos de gama baja y conectividad limitada. WCAG AA.',
+    description:
+      'Diseñada con criterios de accesibilidad, interfaz responsiva y optimizada para dispositivos móviles y conexiones estándar.',
     Icon: DeviceIcon,
   },
 ]
 
 const PHASES: PhaseItem[] = [
   {
-    phase: 'Fase 1: Fundación',
-    description: 'Infraestructura base, arquitectura y configuración del entorno completadas.',
+    phase: '1. Fundación, Seguridad e Identidad',
+    description: 'Arquitectura base, autenticación Argon2id, tokens efímeros, control de acceso RBAC y auditoría inmutable.',
     status: 'complete',
+    statusLabel: '✓ Implementada',
   },
   {
-    phase: 'Fase 2: Autenticación y Autorización',
-    description: 'Autenticación, autorización, RBAC, aislamiento multi-institucional y auditoría de seguridad.',
+    phase: '2. Estructura Institucional y Matrícula',
+    description: 'Catálogo DANE/DUE de sedes, años lectivos, períodos, grupos, matrícula SIMAT y control de cupos.',
     status: 'complete',
+    statusLabel: '✓ Implementada',
   },
   {
-    phase: 'Fase 3: Gestión Académica',
-    description: 'Instituciones, docentes, estudiantes, cursos y matrículas.',
-    status: 'pending',
+    phase: '3. Gestión Académica y Portales Soberanos',
+    description: 'Portales dedicados para directivos, docentes, estudiantes y acudientes con asignaciones académicas.',
+    status: 'complete',
+    statusLabel: '✓ Implementada',
   },
   {
-    phase: 'Fase 4: Aulas Virtuales',
-    description: 'Integración BigBlueButton, grabaciones y herramientas de colaboración en tiempo real.',
+    phase: '4. Actividades Pedagógicas y Asistencia',
+    description: 'Gestión de tareas, entregas de estudiantes con archivos o texto, planilla de asistencia y planeación.',
+    status: 'complete',
+    statusLabel: '✓ Implementada',
+  },
+  {
+    phase: '5. Evaluación SIEE y Promoción Escolar',
+    description: 'Políticas autónomas (Decreto 1290), planillas periódicas, nivelaciones con tope legal y actas de promoción.',
+    status: 'complete',
+    statusLabel: '✓ Implementada',
+  },
+  {
+    phase: '6. Comunicaciones y Convivencia Escolar',
+    description: 'Circulares oficiales con acuse de recibo digital, periódico escolar y observador formativo (Ley 1620).',
+    status: 'complete',
+    statusLabel: '✓ Implementada',
+  },
+  {
+    phase: '7. Aulas Virtuales Sincrónicas',
+    description: 'Software y adaptador BBB con firmas criptográficas SHA integrados. Comisionamiento de servidor físico en curso.',
+    status: 'software_ready',
+    statusLabel: '● Software Integrado',
+    statusDetail: 'Validación de infraestructura BBB real pendiente',
+  },
+  {
+    phase: '8. Validación en Campo y Despliegue',
+    description: 'Aprovisionamiento de infraestructura de producción pública, dominio .gov.co y pruebas de carga masiva.',
     status: 'pending',
+    statusLabel: 'En Alistamiento',
   },
 ]
 

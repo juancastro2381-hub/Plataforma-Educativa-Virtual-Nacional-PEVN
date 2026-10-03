@@ -29,8 +29,8 @@
 > 
 > El sistema ofrece portales web independientes para estudiantes, acudientes, docentes, coordinadores y directivos, garantizando que cada actor acceda exactamente a lo que le compete con estricto respeto a la privacidad."
 
-### Minuto 2:00 – 3:30 | Demostración Sintética con Datos de Demostración Preexistentes
-> "Para ilustrar su funcionamiento con los datos de demostración preexistentes que hoy residen en el sistema, tomemos como referencia el `Colegio Glenn Doman` de nuestro entorno de pruebas. Aclaramos que se trata de datos sintéticos de demostración que no exponen información personal real de menores de edad.
+### Minuto 2:00 – 3:30 | Demostración con Datos del Entorno de Pruebas
+> "Para ilustrar su funcionamiento con los datos de demostración preexistentes que hoy residen en el sistema, tomemos como referencia el `Colegio Glenn Doman` de nuestro entorno de pruebas. Aclaramos que se trata de datos de demostración del entorno de pruebas, no correspondientes a un entorno productivo y que no exponen información personal real de menores de edad.
 > 
 > Desde el portal de Rectoría, el directivo administra sus sedes oficiales y abre el año escolar. El docente ingresa a su portal, encuentra su carga académica asignada y crea un taller en modo borrador. El estudiante asignado al grupo de demostración ingresa a su portal seguro, presenta su trabajo adjuntando su archivo y el docente califica en una planilla SIEE que calcula automáticamente el promedio, permitiendo ajustes razonados con justificación obligatoria.
 > 
@@ -70,7 +70,7 @@
 > Tercero, la **Convivencia Escolar (Ley 1620 de 2013)**: Incorpora un observador del estudiante que tipifica las situaciones escolares en Tipos I, II y III, garantizando el debido proceso con descargos del alumno, compromisos restaurativos y confidencialidad absoluta protegida por barreras Anti-IDOR."
 
 ### Minuto 3:30 – 6:30 | Recorrido Demostrativo con Datos de Demostración Preexistentes
-> "Para verificar esta operación, observemos el escenario consolidado en nuestra base de datos para el `Colegio Glenn Doman` (DANE `311001088461`), utilizando datos de demostración sintéticos:
+> "Para verificar esta operación, observemos el escenario consolidado en nuestra base de datos para el `Colegio Glenn Doman` (DANE `311001088461`), utilizando datos de demostración del entorno de pruebas, no correspondientes a un entorno productivo:
 > 
 > 1. En la consola de Rectoría, el directivo administra el calendario escolar y supervisa las asignaciones docentes.
 > 2. En el Portal Docente, el profesor titular accede a su carga horaria asignada. Crea una actividad académica de modalidad mixta (`TEXT_AND_FILE`), permitiendo entregas en borrador y controlando la ponderación porcentual del período.

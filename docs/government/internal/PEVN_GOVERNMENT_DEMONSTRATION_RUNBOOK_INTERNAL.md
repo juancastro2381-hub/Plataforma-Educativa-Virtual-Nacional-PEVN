@@ -135,7 +135,7 @@
 - **Ruta de Navegación:** `/guardian` $\rightarrow$ *Circulares*.
 - **Acción:** Visualizar circular `[QA-F15-20260907]`.
 
-### Hito 20: Firma de Acuse de Recibo Electrónico
+### Hito 20: Acuse de Recibo Electrónico de Circular
 - **Rol:** Acudiente (`alberto@example.com`).
 - **Cuenta Existente:** `alberto@example.com` / `[USE EXISTING DEMO CREDENTIAL]`.
 - **Ruta de Navegación:** `/guardian` $\rightarrow$ Detalle de la circular.
@@ -160,5 +160,5 @@
 
 ## 3. Resumen Operativo de Tiempos
 - **Recorrido Completo (23 Hitos):** ~32 a 38 minutos.
-- **Recorrido Sintético (11 Hitos):** ~15 a 18 minutos.
+- **Recorrido Abreviado (11 Hitos):** ~15 a 18 minutos.
 - **Recorrido Técnico Especializado (6 Hitos):** ~12 a 15 minutos.

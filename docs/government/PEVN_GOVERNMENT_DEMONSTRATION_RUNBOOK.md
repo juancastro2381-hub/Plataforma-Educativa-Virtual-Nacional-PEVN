@@ -6,13 +6,13 @@
 **Fecha:** 21 de Septiembre de 2026  
 **Regla de Seguridad de Credenciales:** Todas las credenciales de acceso se referencian como `[CUENTA DEMO]` y `[USE EXISTING DEMO CREDENTIAL]`. Ninguna contraseña o identificador personal de producción es expuesto en este documento.  
 **Regla de Datos:** Se utilizan **EXCLUSIVAMENTE los registros de demostración preexistentes en la base de datos**. No se crean bases de datos alternas ni se resiembran registros.  
-**Protección de Datos de Menores:** Todos los registros corresponden a datos sintéticos de demostración preexistentes en el entorno de pruebas. La presentación ante autoridades gubernamentales no expone datos personales reales de menores de edad, en cumplimiento de la Ley 1581 de 2012 y el principio del interés superior de los niños, niñas y adolescentes (Ley 1098 de 2006).
+**Protección de Datos de Menores:** Todos los registros corresponden a datos de demostración del entorno de pruebas, no correspondientes a un entorno productivo. La presentación ante autoridades gubernamentales no expone datos personales reales de menores de edad, en cumplimiento de la Ley 1581 de 2012 y el principio del interés superior de los niños, niñas y adolescentes (Ley 1098 de 2006).
 
 ---
 
 ## 1. Inventario de Entidades y Datos de Demostración Preexistentes
 
-La demostración se sustenta en los registros sintéticos de demostración preexistentes en el sistema:
+La demostración se sustenta en los datos de demostración del entorno de pruebas, no correspondientes a un entorno productivo:
 
 | Tipo de Entidad | Registro en Entorno de Demostración | Identificador / Detalle Institucional |
 | :--- | :--- | :--- |
@@ -54,7 +54,7 @@ La demostración se sustenta en los registros sintéticos de demostración preex
 - **Acción:** Visualizar las sedes (*campuses*) y la vinculación con el código DANE oficial de la institución (`311001088461`).
 - **Pantalla y Resultado Esperado:** Tarjeta informativa del colegio de prueba con su dirección, código DANE de 12 dígitos, municipio y listado de sedes activas.
 - **Qué Debe Observar el Evaluador:** Correspondencia exacta con la nomenclatura oficial del Directorio Único de Establecimientos Educativos.
-- **Por Qué Importa:** Garantiza interoperabilidad con los censos del Ministerio de Educación Nacional.
+- **Por Qué Importa:** Facilita la compatibilidad con la estructura del Directorio Único de Establecimientos (DUE) del Ministerio de Educación Nacional.
 - **Fuente de Evidencia:** `docs/phase-reports/PHASE_3C_OFFICIAL_DANE_INSTITUTION_RESOLUTION.md`.
 - **Tiempo Estimado:** 1 minuto.
 
@@ -281,14 +281,14 @@ La demostración se sustenta en los registros sintéticos de demostración preex
 
 ---
 
-### Hito 20: Firma de Acuse de Recibo Electrónico
+### Hito 20: Acuse de Recibo Electrónico de Circular
 - **Rol:** Acudiente.
 - **Cuenta de Demostración:** `[CUENTA DEMO ACUDIENTE]` / `[USE EXISTING DEMO CREDENTIAL]`.
 - **Ruta de Navegación:** `/guardian` $\rightarrow$ Detalle de la circular.
-- **Acción:** Pulsar el botón **"Confirmar Lectura / Firmar Acuse de Recibo"**.
+- **Acción:** Pulsar el botón **"Confirmar lectura obligatoria"**.
 - **Pantalla y Resultado Esperado:** El botón se inhabilita y se estampa la confirmación: *"Acuse de recibo confirmado el [Fecha UTC] por [ACUDIENTE DEMO]"*.
-- **Qué Debe Observar el Evaluador:** Se registra en la base de datos la estampa de tiempo UTC, identificador de usuario y dirección IP del firmante.
-- **Por Qué Importa:** Evidencia fehaciente de enteramiento de directrices escolares.
+- **Qué Debe Observar el Evaluador:** Se registra en la base de datos la estampa de tiempo UTC, identificador de usuario y dirección IP del usuario que confirma la lectura.
+- **Por Qué Importa:** Evidencia electrónica auditable de la confirmación de lectura de directrices escolares.
 - **Fuente de Evidencia:** `backend/app/models/communication.py` (`CommunicationReceipt`).
 - **Tiempo Estimado:** 1 minuto.
 
@@ -336,5 +336,5 @@ La demostración se sustenta en los registros sintéticos de demostración preex
 ## 3. Resumen de Tiempos del Runbook
 
 - **Recorrido Completo (23 Hitos):** ~32 a 38 minutos.
-- **Recorrido Sintético (Hitos Clave 1, 3, 5, 6, 7, 12, 13, 16, 17, 18, 20):** ~15 a 18 minutos.
+- **Recorrido Abreviado (Hitos Clave 1, 3, 5, 6, 7, 12, 13, 16, 17, 18, 20):** ~15 a 18 minutos.
 - **Recorrido Técnico Especializado (Hitos 1, 8, 16, 21, 22, 23):** ~12 a 15 minutos.

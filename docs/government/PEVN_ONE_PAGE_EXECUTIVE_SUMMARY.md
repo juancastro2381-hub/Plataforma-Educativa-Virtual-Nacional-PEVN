@@ -6,7 +6,7 @@
 ---
 
 ### 1. ¿Qué es PEVN?
-La **Plataforma Educativa Virtual Nacional (PEVN)** es un sistema de información web modular y multi-inquilino, diseñado bajo un enfoque de soberanía tecnológica para el sector oficial colombiano. Unifica la gestión territorial de sedes (DANE/DUE), matrícula, asignaciones docentes, evaluación formativa (**Decreto 1290/2009**), observador de convivencia (**Ley 1620/2013**), comunicaciones oficiales con firma digital y soporte para aulas virtuales sincrónicas.
+La **Plataforma Educativa Virtual Nacional (PEVN)** es un sistema de información web modular y multi-inquilino, diseñado bajo un enfoque de soberanía tecnológica para el sector oficial colombiano. Unifica la gestión territorial de sedes (DANE/DUE), matrícula, asignaciones docentes, evaluación formativa (**Decreto 1290/2009**), observador de convivencia (**Ley 1620/2013**), comunicaciones institucionales con acuse electrónico y soporte para aulas virtuales sincrónicas.
 
 ### 2. ¿Qué problema aborda?
 Mitiga la fragmentación tecnológica en las instituciones educativas oficiales, donde coexisten planillas manuales, herramientas de propósito general y canales informales no auditables. PEVN reduce la sobrecarga operativa de los docentes, fortalece el acompañamiento formativo de las familias y asegura la custodia institucional de los datos educativos bajo estándares soberanos.
@@ -29,7 +29,7 @@ Mitiga la fragmentación tecnológica en las instituciones educativas oficiales,
 - **Validación y Acuerdos:** Pruebas de carga empíricas para determinar la capacidad a escala nacional, formalización de la política de datos (Ley 1581) y acuerdos técnicos de interoperabilidad con SIMAT. No reemplaza los sistemas oficiales del MEN ni DANE.
 
 ### 6. ¿Qué se propone al Estado colombiano?
-Una **propuesta técnica de donación y transferencia tecnológica** bajo licencia de código abierto **Apache 2.0**. El Estado adquiere el código fuente completo, esquemas de base de datos relacional y documentación sin costos de licenciamiento ($0 COP en software), sujeta a revisión jurídica y a los instrumentos que determine la entidad competente.
+Una **propuesta técnica de donación y transferencia tecnológica** bajo licencia de código abierto **Apache 2.0**. La propuesta contempla poner a disposición del Estado el código fuente completo, esquemas de base de datos relacional y documentación sin costos de licenciamiento ($0 COP en software), sujeta a revisión jurídica y a los instrumentos que determine la entidad competente.
 
 ### 7. ¿Cuál es el próximo paso?
 Realizar una demostración técnica en vivo ante los comités evaluadores del MEN, MinTIC y Secretarías de Educación, acordando las bases para una **Fase Piloto en 5 a 10 colegios oficiales** durante un período académico escolar.

@@ -43,7 +43,7 @@ El sistema educativo oficial de Colombia ha enfrentado históricamente una profu
 
 La plataforma articula armónicamente a todos los estamentos de la comunidad escolar colombiana:
 - **Estudiantes Oficiales:** Acceso a sus materias, tareas, horarios, clases virtuales en vivo, calificaciones parciales, observador personal y boletines.
-- **Padres de Familia y Acudientes:** Acompañamiento parental, seguimiento formativo de notas y asistencia, firma de circulares oficiales y observador de convivencia.
+- **Padres de Familia y Acudientes:** Acompañamiento parental, seguimiento formativo de notas y asistencia, acuse electrónico de circulares oficiales y observador de convivencia.
 - **Docentes de Aula:** Gestión de carga académica asignada, creación de actividades, calificación ágil, control de asistencia diaria, planeación curricular y clases sincrónicas.
 - **Coordinadores Académicos y de Convivencia:** Supervisión pedagógica, asignación de cargas, atención de situaciones escolares (Ley 1620) y consolidación de períodos.
 - **Rectores y Directores Rurales:** Soberanía institucional, gestión de sedes, apertura de calendarios, cierre y sellado de períodos, actas de promoción y estructuras de matrícula compatibles con el modelo oficial.
@@ -77,7 +77,7 @@ Cada colegio opera como una entidad soberana e independiente en sus datos, garan
 2. **Padrón SIMAT e Identidad Desacoplada:** Separación técnica entre la ficha civil del estudiante/acudiente y la cuenta de acceso digital.
 3. **Portal Docente Integrado:** Actividades académicas, recepción de evidencias digitales, control de asistencia diaria y planeación curricular.
 4. **Sistema SIEE (Decreto 1290 de 2009):** Políticas institucionales configurables, consolidación híbrida de calificaciones, justificación obligatoria de notas ajustadas, nivelaciones formativas con tope y promoción anual.
-5. **Comunicaciones con Firma Digital:** Circulares segmentadas y acuses de recibo con estampa de tiempo UTC y dirección IP.
+5. **Comunicaciones Institucionales y Acuses Electrónicos:** Circulares segmentadas y acuses de recibo con estampa de tiempo UTC y dirección IP.
 6. **Convivencia Escolar (Ley 1620 de 2013):** Observador del estudiante Tipos I, II y III con descargos y compromisos restaurativos.
 7. **Periódico Escolar y Divulgación:** Noticias pedagógicas, científicas, culturales y deportivas.
 8. **Aulas Virtuales Sincrónicas:** Capa de software lista para integración con BigBlueButton con telemetría de conexión y control de grabaciones.
@@ -177,7 +177,7 @@ El subsistema de evaluación de PEVN es uno de los componentes más maduros del 
 ## 16. Comunicaciones Institucionales y Periódico Escolar
 
 - Emisión de circulares y directrices oficiales con segmentación de audiencia por sede, grado, grupo o rol.
-- **Acuse de Recibo Electrónico:** Mecanismo de confirmación de lectura con estampa de tiempo UTC y dirección IP registrada, generando evidencia digital no repudiable de notificación a padres y docentes.
+- **Acuse de Recibo Electrónico:** Mecanismo de confirmación de lectura con estampa de tiempo UTC y dirección IP registrada, generando evidencia electrónica auditable de la confirmación de lectura, con registro de fecha/hora UTC y dirección IP.
 - Periódico escolar digital clasificado por categorías temáticas (académica, cultural, deportiva, científica).
 
 ---
@@ -301,7 +301,7 @@ Se sugiere a las autoridades interesadas seguir un proceso estructurado de cuatr
 - **Modelo de Licenciamiento Propuesto:** Se propone la entrega de los activos tecnológicos bajo la licencia de código abierto **Apache 2.0**.
 - **Cero Costos de Licencia:** La plataforma no genera regalías, cobros por estudiante matriculado ni ataduras comerciales para el Ministerio ni las Secretarías de Educación ($0 COP en licenciamiento de software).
 - **Soberanía y Código Fuente:** El Estado recibiría el código fuente completo, las migraciones de base de datos, la documentación de arquitectura, los manuales de despliegue y las suites de pruebas automatizadas.
-- **Independencia Operativa:** La entidad pública adquiere plena autonomía para alojar el sistema en sus propios centros de datos, contratar soporte técnico o asumir el mantenimiento mediante sus propios equipos de ingeniería.
+- **Independencia Operativa:** La entidad pública dispondría de plena autonomía para alojar el sistema en sus propios centros de datos, contratar soporte técnico o asumir el mantenimiento mediante sus propios equipos de ingeniería.
 
 ---
 
