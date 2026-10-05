@@ -9,6 +9,9 @@ export interface AuthContextValue {
   user: User | null
   isAuthenticated: boolean
   isLoading: boolean
+  activeInstitutionId: string | null
+  activeInstitutionName: string | null
+  setActiveInstitutionContext: (id: string | null, name?: string | null) => void
   login: (credentials: LoginRequest) => Promise<void>
   logout: () => Promise<void>
   changePassword: (data: ChangePasswordRequest) => Promise<void>
@@ -19,3 +22,4 @@ export interface AuthContextValue {
 }
 
 export const AuthContext = createContext<AuthContextValue | undefined>(undefined)
+

@@ -100,7 +100,10 @@ const router = createBrowserRouter([
       {
         path: 'academic',
         element: (
-          <RequireAuth>
+          <RequireAuth
+            roles={['rector', 'institution_admin', 'coordinator', 'academic_coordinator', 'superadmin', 'national_admin']}
+            requireInstitutionContext
+          >
             <AcademicHub />
           </RequireAuth>
         ),
@@ -148,7 +151,7 @@ const router = createBrowserRouter([
       {
         path: 'virtual-classrooms',
         element: (
-          <RequireAuth permissions={['virtual_classrooms:read']}>
+          <RequireAuth permissions={['virtual_classrooms:read']} requireInstitutionContext>
             <VirtualClassroomsView />
           </RequireAuth>
         ),
@@ -156,7 +159,7 @@ const router = createBrowserRouter([
       {
         path: 'analytics/territorial',
         element: (
-          <RequireAuth permissions={['institutions:read']}>
+          <RequireAuth roles={['superadmin', 'national_admin', 'department_admin', 'municipality_admin']}>
             <TerritorialAnalyticsView />
           </RequireAuth>
         ),

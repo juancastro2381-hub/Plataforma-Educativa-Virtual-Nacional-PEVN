@@ -79,6 +79,7 @@ async def provisioning_fixture(
         ("institutions", "read"),
         ("institutions", "update"),
         ("users", "create"),
+        ("users", "create_rector"),
         ("users", "read"),
         ("academic_years", "read"),
         ("academic_years", "create"),

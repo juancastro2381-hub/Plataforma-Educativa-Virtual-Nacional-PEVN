@@ -26,8 +26,6 @@ DIRECTIVE_ROLES: frozenset[SystemRole] = frozenset(
     {
         SystemRole.SUPERADMIN,
         SystemRole.NATIONAL_ADMIN,
-        SystemRole.DEPARTMENT_ADMIN,
-        SystemRole.MUNICIPALITY_ADMIN,
         SystemRole.INSTITUTION_ADMIN,
         SystemRole.RECTOR,
         SystemRole.COORDINATOR,

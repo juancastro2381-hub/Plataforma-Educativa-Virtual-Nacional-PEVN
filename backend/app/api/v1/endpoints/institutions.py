@@ -670,14 +670,14 @@ async def update_institution_status(
     response_model=RectorInvitationResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Generar invitación de onboarding para Rector",
-    description="Pre-registra la cuenta del Rector y genera un token criptográfico de un solo uso.",
+    description="Pre-registra la cuenta del Rector y genera un token criptográfico de un solo uso. Proceso de plataforma, no acto administrativo gubernamental.",
 )
 async def invite_rector_endpoint(
     institution_id: uuid.UUID,
     payload: RectorInvitationCreateRequest,
     current_user: CurrentUserDep,
     auth: Annotated[
-        AuthContextDep, Depends(require_permission("users", "create"))
+        AuthContextDep, Depends(require_permission("users", "create_rector"))
     ],
     db: SessionDep,
     request: Request,
@@ -726,7 +726,7 @@ async def revoke_rector_endpoint(
     payload: RectorRevocationRequest,
     current_user: CurrentUserDep,
     auth: Annotated[
-        AuthContextDep, Depends(require_permission("users", "create"))
+        AuthContextDep, Depends(require_permission("users", "create_rector"))
     ],
     db: SessionDep,
     request: Request,

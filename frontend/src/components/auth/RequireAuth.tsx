@@ -14,14 +14,16 @@ export interface RequireAuthProps {
   children: React.ReactNode
   roles?: string | string[]
   permissions?: string | string[]
+  requireInstitutionContext?: boolean
 }
 
 export const RequireAuth: React.FC<RequireAuthProps> = ({
   children,
   roles,
   permissions,
+  requireInstitutionContext = false,
 }) => {
-  const { isAuthenticated, isLoading, hasRole, hasPermission } = useAuth()
+  const { isAuthenticated, isLoading, hasRole, hasPermission, user, activeInstitutionId } = useAuth()
   const location = useLocation()
 
   if (isLoading) {
@@ -50,6 +52,13 @@ export const RequireAuth: React.FC<RequireAuthProps> = ({
 
   if (permissions && !hasPermission(permissions)) {
     return <Navigate to="/dashboard" replace />
+  }
+
+  if (requireInstitutionContext) {
+    const hasContext = Boolean(user?.scope?.institution_id || activeInstitutionId)
+    if (!hasContext) {
+      return <Navigate to="/dashboard" replace />
+    }
   }
 
   return <>{children}</>

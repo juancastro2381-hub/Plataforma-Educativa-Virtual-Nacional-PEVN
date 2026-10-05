@@ -235,7 +235,7 @@ async def join_virtual_classroom(
         institution_id=inst_id,
     )
     is_host = current_user.id == classroom.host_user_id
-    is_admin = any(r in ("rector", "academic_coordinator", "coordinator", "superadmin", "national_admin") for r in roles)
+    is_admin = any(r in ("rector", "institution_admin", "academic_coordinator", "coordinator") for r in roles)
     resolved_role = (
         MeetingParticipantRole.MODERATOR
         if (is_host or is_admin)

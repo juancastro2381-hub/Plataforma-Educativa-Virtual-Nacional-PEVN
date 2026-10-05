@@ -12,7 +12,16 @@ import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 
 export const Dashboard: React.FC = () => {
-  const { user, logout, changePassword, hasPermission } = useAuth()
+  const {
+    user,
+    logout,
+    changePassword,
+    hasPermission,
+    hasRole,
+    activeInstitutionId,
+    activeInstitutionName,
+    setActiveInstitutionContext,
+  } = useAuth()
 
   // Change password modal / state
   const [showPasswordModal, setShowPasswordModal] = useState(
@@ -214,6 +223,47 @@ export const Dashboard: React.FC = () => {
                 </code>
               </div>
             )}
+            {activeInstitutionId && (
+              <div
+                style={{
+                  marginTop: '0.5rem',
+                  padding: '0.625rem',
+                  backgroundColor: '#FEF9C3',
+                  borderRadius: '6px',
+                  border: '1px solid #FDE047',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '0.5rem',
+                }}
+              >
+                <div>
+                  <div style={{ color: '#854D0E', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase' }}>
+                    🏛️ Contexto Activo Seleccionado
+                  </div>
+                  <div style={{ color: '#713F12', fontWeight: 600, fontSize: '0.8125rem' }}>
+                    {activeInstitutionName || activeInstitutionId}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveInstitutionContext(null)}
+                  style={{
+                    backgroundColor: '#FFFFFF',
+                    border: '1px solid #CA8A04',
+                    color: '#854D0E',
+                    borderRadius: '4px',
+                    padding: '0.25rem 0.5rem',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                  title="Desactivar contexto institucional"
+                >
+                  Quitar
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -331,11 +381,70 @@ export const Dashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Academic Management Module Access Card (Directive Roles Only) */}
+      {/* Territorial Administration & Supervision Access Card */}
+      {hasRole(['superadmin', 'national_admin', 'department_admin', 'municipality_admin']) && (
+        <div
+          style={{
+            marginTop: '2rem',
+            backgroundColor: '#1E1B4B',
+            color: '#FFFFFF',
+            borderRadius: '16px',
+            border: '1px solid #312E81',
+            padding: '2rem',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+            <div>
+              <div
+                style={{
+                  display: 'inline-block',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  backgroundColor: 'rgba(167, 139, 250, 0.2)',
+                  color: '#A78BFA',
+                  padding: '0.25rem 0.75rem',
+                  borderRadius: '9999px',
+                  marginBottom: '0.5rem',
+                }}
+              >
+                Supervisión Territorial • Secretaría de Educación
+              </div>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#FFFFFF', margin: '0 0 0.25rem 0' }}>
+                Analítica Territorial e Inspección de Cobertura
+              </h2>
+              <p style={{ fontSize: '0.875rem', color: '#C4B5FD', margin: 0 }}>
+                Supervisión agregada de matrículas SIMAT, sedes activas y deserción escolar por jurisdicción departamental o municipal.
+              </p>
+            </div>
+            <Link to="/analytics/territorial" style={{ textDecoration: 'none' }}>
+              <Button
+                variant="primary"
+                style={{
+                  backgroundColor: '#7C3AED',
+                  fontWeight: 700,
+                }}
+              >
+                Ver Analítica Territorial →
+              </Button>
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {/* Academic Management Module Access Card (Institutional Directive Roles Only or Platform Admin with Active Context) */}
       {(() => {
-        const isDirective = user.roles.some((r) =>
-          ['rector', 'superadmin', 'national_admin', 'coordinator', 'academic_coordinator', 'institution_admin', 'department_admin', 'municipality_admin'].includes(r)
-        )
+        const isInstitutionalDirective = hasRole([
+          'rector',
+          'institution_admin',
+          'coordinator',
+          'academic_coordinator',
+        ])
+        const isPlatformAdminWithContext =
+          hasRole(['superadmin', 'national_admin']) && Boolean(activeInstitutionId)
+        const isDirective = isInstitutionalDirective || isPlatformAdminWithContext
 
         if (!isDirective) {
           return null

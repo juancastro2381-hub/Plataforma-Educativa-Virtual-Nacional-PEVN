@@ -13,7 +13,37 @@ import { useAuth } from '@/hooks/useAuth'
 import config from '@config/index'
 
 export function RootLayout() {
-  const { user, isAuthenticated, logout, hasPermission } = useAuth()
+  const {
+    user,
+    isAuthenticated,
+    logout,
+    hasPermission,
+    hasRole,
+    activeInstitutionId,
+    activeInstitutionName,
+    setActiveInstitutionContext,
+  } = useAuth()
+
+  const isInstitutionalDirective = hasRole([
+    'rector',
+    'institution_admin',
+    'coordinator',
+    'academic_coordinator',
+  ])
+  const isPlatformAdminWithContext =
+    hasRole(['superadmin', 'national_admin']) && Boolean(activeInstitutionId)
+  const canAccessAcademic = isInstitutionalDirective || isPlatformAdminWithContext
+  const canAccessVirtualClassrooms =
+    hasPermission('virtual_classrooms:read') &&
+    Boolean(user?.scope.institution_id || activeInstitutionId)
+  const canAccessTerritorial = hasRole([
+    'superadmin',
+    'national_admin',
+    'department_admin',
+    'municipality_admin',
+  ])
+  const canAccessInstitutions =
+    hasRole(['superadmin', 'national_admin']) || Boolean(user?.scope.is_national)
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: '#F8FAFC' }}>
@@ -85,8 +115,8 @@ export function RootLayout() {
           {/* Navigation */}
           <nav aria-label="Navegación principal">
             {isAuthenticated && user ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                {(user.roles.includes('rector') || user.roles.includes('institution_admin') || user.roles.includes('superadmin') || user.roles.includes('coordinator') || user.roles.includes('academic_coordinator')) && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                {canAccessAcademic && (
                   <Link
                     to="/academic"
                     style={{
@@ -99,7 +129,7 @@ export function RootLayout() {
                     Gestión Académica
                   </Link>
                 )}
-                {user.roles.includes('teacher') && (
+                {hasRole('teacher') && (
                   <Link
                     to="/teacher"
                     style={{
@@ -112,7 +142,7 @@ export function RootLayout() {
                     Portal Docente
                   </Link>
                 )}
-                {user.roles.includes('student') && (
+                {hasRole('student') && (
                   <Link
                     to="/student"
                     style={{
@@ -125,7 +155,7 @@ export function RootLayout() {
                     Portal Estudiante
                   </Link>
                 )}
-                {user.roles.includes('guardian') && (
+                {hasRole('guardian') && (
                   <Link
                     to="/guardian"
                     style={{
@@ -138,7 +168,7 @@ export function RootLayout() {
                     Portal Acudiente
                   </Link>
                 )}
-                {(user.scope.is_national || user.roles.includes('national_admin') || user.roles.includes('superadmin')) && (
+                {canAccessInstitutions && (
                   <Link
                     to="/admin/institutions"
                     style={{
@@ -151,7 +181,7 @@ export function RootLayout() {
                     Instituciones
                   </Link>
                 )}
-                {hasPermission('institutions:read') && (
+                {canAccessTerritorial && (
                   <Link
                     to="/analytics/territorial"
                     style={{
@@ -164,7 +194,7 @@ export function RootLayout() {
                     Analítica Territorial
                   </Link>
                 )}
-                {hasPermission('virtual_classrooms:read') && (
+                {canAccessVirtualClassrooms && (
                   <Link
                     to="/virtual-classrooms"
                     style={{
@@ -177,6 +207,45 @@ export function RootLayout() {
                     Aulas Virtuales
                   </Link>
                 )}
+
+                {/* Active Context Indicator for National/SuperAdmin */}
+                {activeInstitutionId && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.4rem',
+                      backgroundColor: 'rgba(252, 209, 22, 0.15)',
+                      border: '1px solid rgba(252, 209, 22, 0.4)',
+                      color: '#FCD116',
+                      borderRadius: '6px',
+                      padding: '0.2rem 0.5rem',
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                    }}
+                    title={`Contexto institucional activo: ${activeInstitutionName || activeInstitutionId}`}
+                  >
+                    <span>🏛️ {activeInstitutionName ? (activeInstitutionName.length > 20 ? activeInstitutionName.slice(0, 18) + '...' : activeInstitutionName) : 'Sede Activa'}</span>
+                    <button
+                      type="button"
+                      onClick={() => setActiveInstitutionContext(null)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#FCA5A5',
+                        cursor: 'pointer',
+                        fontWeight: 'bold',
+                        fontSize: '0.8rem',
+                        padding: '0 2px',
+                        lineHeight: 1,
+                      }}
+                      title="Salir del contexto institucional"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                )}
+
                 <Link
                   to="/dashboard"
                   style={{

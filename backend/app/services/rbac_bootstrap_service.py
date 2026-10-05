@@ -228,64 +228,31 @@ CANONICAL_PERMISSIONS: list[tuple[str, str, str]] = [
 ROLE_PERMISSIONS_CONFIG: dict[str, list[str]] = {
     SystemRole.SUPERADMIN.value: ["*:*"],
     SystemRole.NATIONAL_ADMIN.value: [
+        # Institutional Catalog & Provisioning (National Governance)
         "institutions:read",
         "institutions:create",
         "institutions:update",
-        "institutions:delete",
+        # National Identity & Rector Onboarding Platform Invitation
         "users:read",
-        "users:create",
         "users:create_rector",
         "users:update",
-        "users:delete",
-        "academic_years:read",
-        "academic_years:create",
-        "academic_years:update",
-        "academic_years:close",
-        "academic_years:delete",
-        "academic_periods:read",
-        "academic_periods:create",
-        "academic_periods:update",
-        "academic_periods:close",
+        # Curricular Grades Catalog
         "grades:read",
-        "grades:write",
         "grades:manage",
+        # Read-Only Institutional Inspection (Context-Required)
+        "academic_years:read",
+        "academic_periods:read",
         "subjects:read",
-        "subjects:create",
-        "subjects:update",
-        "subjects:delete",
         "groups:read",
-        "groups:create",
-        "groups:update",
-        "groups:delete",
-        "groups:assign_director",
         "teachers:read",
-        "teachers:create",
-        "teachers:update",
-        "teachers:delete",
         "students:read",
-        "students:create",
-        "students:update",
-        "students:delete",
         "guardians:read",
-        "guardians:create",
-        "guardians:update",
-        "guardians:link_student",
         "enrollments:read",
-        "enrollments:create",
-        "enrollments:transfer",
-        "enrollments:withdraw",
-        "enrollments:delete",
         "academic_assignments:read",
-        "academic_assignments:create",
-        "academic_assignments:update",
-        "academic_assignments:delete",
+        # Virtual Classrooms Telemetry & Audit
         "virtual_classrooms:read",
-        "virtual_classrooms:create",
-        "virtual_classrooms:join",
-        "virtual_classrooms:manage",
         "recordings:read",
-        "recordings:manage",
-        "recordings:delete",
+        # National Communications & Community News Desks
         "communications:read",
         "communications:create",
         "communications:update",
@@ -296,10 +263,8 @@ ROLE_PERMISSIONS_CONFIG: dict[str, list[str]] = {
         "news:update",
         "news:publish",
         "news:delete",
+        # Coexistence Macro Oversight
         "incidents:read",
-        "incidents:create",
-        "incidents:update",
-        "incidents:close",
     ],
     SystemRole.DEPARTMENT_ADMIN.value: [
         "institutions:read",
@@ -840,18 +805,20 @@ class RbacBootstrapService:
                 role_map[r_name] = role
                 created_roles += 1
 
-        # 3. Seed Role Permissions
+        # 3. Seed Role Permissions (Sync canonical role links)
         existing_rp_stmt = select(RolePermission)
         existing_rps = (await self._session.execute(existing_rp_stmt)).scalars().all()
-        existing_rp_set: set[tuple[uuid.UUID, uuid.UUID]] = {
-            (rp.role_id, rp.permission_id) for rp in existing_rps
+        existing_rp_map: dict[tuple[uuid.UUID, uuid.UUID], RolePermission] = {
+            (rp.role_id, rp.permission_id): rp for rp in existing_rps
         }
 
+        pruned_links = 0
         for r_name, perm_keys in ROLE_PERMISSIONS_CONFIG.items():
             role_entity = role_map.get(r_name)
             if not role_entity:
                 continue
 
+            target_perm_ids: set[uuid.UUID] = set()
             for p_key in perm_keys:
                 if p_key == "*:*":
                     p_entity = perm_map.get("*:*")
@@ -859,27 +826,37 @@ class RbacBootstrapService:
                     p_entity = perm_map.get(p_key)
 
                 if p_entity:
+                    target_perm_ids.add(p_entity.id)
                     link_key = (role_entity.id, p_entity.id)
-                    if link_key not in existing_rp_set:
+                    if link_key not in existing_rp_map:
                         rp = RolePermission(
                             role_id=role_entity.id,
                             permission_id=p_entity.id,
                         )
                         self._session.add(rp)
-                        existing_rp_set.add(link_key)
+                        existing_rp_map[link_key] = rp
                         created_links += 1
 
-        if created_roles > 0 or created_perms > 0 or created_links > 0:
+            # Prune obsolete links for this canonical role
+            for (r_id, p_id), rp_obj in list(existing_rp_map.items()):
+                if r_id == role_entity.id and p_id not in target_perm_ids:
+                    await self._session.delete(rp_obj)
+                    del existing_rp_map[(r_id, p_id)]
+                    pruned_links += 1
+
+        if created_roles > 0 or created_perms > 0 or created_links > 0 or pruned_links > 0:
             await self._session.flush()
             _logger.info(
                 "RBAC Bootstrap completed",
                 created_roles=created_roles,
                 created_permissions=created_perms,
                 created_links=created_links,
+                pruned_links=pruned_links,
             )
 
         return {
             "created_roles": created_roles,
             "created_permissions": created_perms,
             "created_links": created_links,
+            "pruned_links": pruned_links,
         }

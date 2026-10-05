@@ -31,7 +31,7 @@ import type {
 } from '@/types'
 
 export const InstitutionsView: React.FC = () => {
-  const { user, hasRole } = useAuth()
+  const { user, hasRole, activeInstitutionId, setActiveInstitutionContext } = useAuth()
 
   // Master List State
   const [institutions, setInstitutions] = useState<InstitutionResponse[]>([])
@@ -635,7 +635,35 @@ export const InstitutionsView: React.FC = () => {
                         </Badge>
                       </td>
                       <td style={{ padding: '1rem', textAlign: 'right' }}>
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', alignItems: 'center' }}>
+                          {isNationalAdmin && inst.is_active && (
+                            activeInstitutionId === inst.id ? (
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => {
+                                  setActiveInstitutionContext(null)
+                                  setSuccessMsg(`Contexto institucional removido.`)
+                                }}
+                                title="Desmarcar contexto institucional"
+                                style={{ backgroundColor: '#FEF08A', color: '#854D0E', borderColor: '#FACC15', fontWeight: 600 }}
+                              >
+                                ✓ Activo
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setActiveInstitutionContext(inst.id, inst.name)
+                                  setSuccessMsg(`Contexto institucional establecido en "${inst.name}". Ahora puede acceder a Gestión Académica y Aulas Virtuales para esta institución.`)
+                                }}
+                                title="Seleccionar esta institución como contexto de trabajo para inspección"
+                              >
+                                🏛️ Contexto
+                              </Button>
+                            )
+                          )}
                           {isNationalAdmin && inst.is_active && (
                             <Button
                               variant="ghost"

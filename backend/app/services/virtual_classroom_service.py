@@ -277,7 +277,7 @@ class VirtualClassroomService:
         # Determine Role & Authority
         is_host = user.id == classroom.host_user_id
         is_admin = any(
-            r in ("rector", "academic_coordinator", "superadmin") for r in user_roles
+            r in ("rector", "institution_admin", "academic_coordinator", "coordinator") for r in user_roles
         )
 
         if is_host or is_admin:

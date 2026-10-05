@@ -89,8 +89,29 @@ class CentralizedAuthorizationService(IAuthorizationService):
         Returns:
             True if authorized, False otherwise.
         """
-        # Superadmin has global platform access
+        # Superadmin has global platform access; audit sensitive educational resource accesses
         if SystemRole.SUPERADMIN in context.roles:
+            if required_permission.resource in {"incidents", "evaluations", "report_cards"}:
+                await audit_service.record(
+                    AuditEvent(
+                        event_type=AuditEventType.SUSPICIOUS_ACTIVITY_DETECTED,
+                        actor_id=context.user_id,
+                        actor_ip="0.0.0.0",  # noqa: S104
+                        target_id=(
+                            str(target_scope.institution_id) if target_scope else None
+                        ),
+                        target_type=required_permission.resource,
+                        institution_id=context.scope.institution_id,
+                        success=True,
+                        metadata={
+                            "action": f"superadmin_technical_access:{required_permission}",
+                            "role": "superadmin",
+                            "resource": required_permission.resource,
+                            "permission": str(required_permission),
+                            "note": "Acceso técnico/diagnóstico auditado por SuperAdmin.",
+                        },
+                    )
+                )
             return True
 
         # 1. Verify Granular Permission

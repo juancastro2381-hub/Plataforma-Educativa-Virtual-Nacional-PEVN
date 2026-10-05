@@ -28,16 +28,51 @@ export interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(true)
+  const [activeInstitutionId, setActiveInstitutionIdState] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem('pevn_active_institution_id') || null
+    } catch {
+      return null
+    }
+  })
+  const [activeInstitutionName, setActiveInstitutionNameState] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem('pevn_active_institution_name') || null
+    } catch {
+      return null
+    }
+  })
+
+  const setActiveInstitutionContext = useCallback((id: string | null, name?: string | null) => {
+    try {
+      if (id) {
+        localStorage.setItem('pevn_active_institution_id', id)
+        if (name) {
+          localStorage.setItem('pevn_active_institution_name', name)
+        } else {
+          localStorage.removeItem('pevn_active_institution_name')
+        }
+      } else {
+        localStorage.removeItem('pevn_active_institution_id')
+        localStorage.removeItem('pevn_active_institution_name')
+      }
+    } catch {
+      // Non-blocking localStorage access error (e.g. incognito)
+    }
+    setActiveInstitutionIdState(id)
+    setActiveInstitutionNameState(name || null)
+  }, [])
 
   // Register callback for when token refresh fails in API interceptor
   useEffect(() => {
     setOnAuthFailure(() => {
       setUser(null)
+      setActiveInstitutionContext(null)
     })
     return () => {
       setOnAuthFailure(null)
     }
-  }, [])
+  }, [setActiveInstitutionContext])
 
   // Silent session restore on app load (Single-Flight refresh + Canonical Profile)
   useEffect(() => {
@@ -84,9 +119,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       await authApi.logout()
     } finally {
       setUser(null)
+      setActiveInstitutionContext(null)
       setIsLoading(false)
     }
-  }, [])
+  }, [setActiveInstitutionContext])
 
   const changePassword = useCallback(
     async (data: ChangePasswordRequest) => {
@@ -110,11 +146,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const hasRole = useCallback(
     (roles: string | string[]): boolean => {
       if (!user) return false
-      // SuperAdmin bypasses all role checks
-      if (user.roles.includes('superadmin')) return true
 
       const checkList = Array.isArray(roles) ? roles : [roles]
-      return checkList.some((r) => user.roles.includes(r.toLowerCase()))
+      const userRoles = user.roles.map((r) => r.toLowerCase())
+
+      // Canonical role equivalence mapping:
+      // rector <-> institution_admin
+      // coordinator <-> academic_coordinator
+      const effectiveUserRoles = new Set<string>(userRoles)
+      if (userRoles.includes('rector') || userRoles.includes('institution_admin')) {
+        effectiveUserRoles.add('rector')
+        effectiveUserRoles.add('institution_admin')
+      }
+      if (userRoles.includes('coordinator') || userRoles.includes('academic_coordinator')) {
+        effectiveUserRoles.add('coordinator')
+        effectiveUserRoles.add('academic_coordinator')
+      }
+
+      return checkList.some((r) => effectiveUserRoles.has(r.toLowerCase()))
     },
     [user]
   )
@@ -122,7 +171,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const hasPermission = useCallback(
     (permissions: string | string[]): boolean => {
       if (!user) return false
-      // SuperAdmin bypasses all permission checks
+      // SuperAdmin or explicit wildcard bypasses permission checks
       if (user.roles.includes('superadmin') || user.permissions.includes('*')) {
         return true
       }
@@ -144,12 +193,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     (targetInstitutionId?: string | null): boolean => {
       if (!user) return false
       if (user.roles.includes('superadmin') || user.scope.is_national) {
+        // If an explicit active institution context is selected, verify against it when requested
+        if (targetInstitutionId && activeInstitutionId) {
+          return targetInstitutionId === activeInstitutionId
+        }
         return true
       }
       if (!targetInstitutionId) return true
-      return user.scope.institution_id === targetInstitutionId
+      return (user.scope.institution_id || activeInstitutionId) === targetInstitutionId
     },
-    [user]
+    [user, activeInstitutionId]
   )
 
   const value = useMemo<AuthContextValue>(
@@ -157,6 +210,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       user,
       isAuthenticated: Boolean(user),
       isLoading,
+      activeInstitutionId,
+      activeInstitutionName,
+      setActiveInstitutionContext,
       login,
       logout,
       changePassword,
@@ -168,6 +224,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     [
       user,
       isLoading,
+      activeInstitutionId,
+      activeInstitutionName,
+      setActiveInstitutionContext,
       login,
       logout,
       changePassword,
