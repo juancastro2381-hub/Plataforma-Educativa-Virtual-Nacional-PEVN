@@ -95,7 +95,13 @@ async def test_auth_service_successful_login(db_session: AsyncSession) -> None:
 async def test_auth_service_failed_login_and_lockout(
     db_session: AsyncSession,
 ) -> None:
-    """Test that 5 consecutive failed attempts trigger account lockout."""
+    """
+    NTA-05: Test that consecutive failed attempts increment failed counters,
+    do NOT lock out legitimate passwords (Lockout DoS Immunity), and that
+    administratively locked accounts reject authentication with uniform error.
+    """
+    from datetime import UTC, datetime, timedelta
+
     user = await _create_test_user(db_session, password="RealPassword123!")
 
     # 4 failed attempts: increment failed counter
@@ -112,7 +118,7 @@ async def test_auth_service_failed_login_and_lockout(
     assert user.failed_login_attempts == 4
     assert user.is_locked is False
 
-    # 5th failed attempt: triggers lockout
+    # 5th failed attempt: increments counter to 5, but DOES NOT set locked_until
     with pytest.raises(AuthenticationError, match="Credenciales inválidas"):
         await auth_service.authenticate_user(
             db=db_session,
@@ -123,15 +129,28 @@ async def test_auth_service_failed_login_and_lockout(
 
     await db_session.refresh(user)
     assert user.failed_login_attempts == 5
-    assert user.is_locked is True
-    assert user.locked_until is not None
+    assert user.locked_until is None
+    assert user.is_locked is False
 
-    # Subsequent login attempt is blocked by lockout
-    with pytest.raises(AuthenticationError, match="temporalmente bloqueada"):
+    # Legitimate user CAN still authenticate with correct password (Lockout DoS Immunity)
+    auth_user, _, _ = await auth_service.authenticate_user(
+        db=db_session,
+        username_or_email=user.email,
+        password="RealPassword123!",
+        client_ip="192.168.1.100",
+    )
+    assert auth_user.id == user.id
+    await db_session.refresh(user)
+    assert user.failed_login_attempts == 0
+
+    # Administrative lock: when locked_until is set, uniform error is raised
+    user.locked_until = datetime.now(UTC) + timedelta(minutes=15)
+    await db_session.commit()
+    with pytest.raises(AuthenticationError, match="Credenciales inválidas"):
         await auth_service.authenticate_user(
             db=db_session,
             username_or_email=user.email,
-            password="RealPassword123!",  # Even with correct password
+            password="RealPassword123!",
             client_ip="192.168.1.100",
         )
 

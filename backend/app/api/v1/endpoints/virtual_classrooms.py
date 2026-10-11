@@ -19,6 +19,7 @@ from app.api.deps import (
     CurrentUserDep,
     SessionDep,
     require_permission,
+    resolve_institution_id,
 )
 from app.core.logging import correlation_id_ctx
 from app.core.security.interfaces import SystemRole
@@ -42,21 +43,19 @@ from app.services.virtual_classroom_service import VirtualClassroomService
 router = APIRouter(prefix="/virtual-classrooms", tags=["Virtual Classrooms"])
 
 
-def _resolve_institution_id(
+async def _resolve_institution_id(
+    db: SessionDep,
     auth: AuthContextDep,
     current_user: CurrentUserDep,
     institution_id_override: uuid.UUID | None = None,
 ) -> uuid.UUID:
     """Resolve active institution context adhering to tenant isolation."""
-    if (
-        SystemRole.SUPERADMIN in auth.roles
-        or SystemRole.NATIONAL_ADMIN in auth.roles
-        or auth.scope.is_national()
-    ) and institution_id_override:
-        return institution_id_override
-    if current_user.institution_id:
-        return current_user.institution_id
-    raise AuthorizationError("Contexto institucional no disponible.")
+    return await resolve_institution_id(
+        db=db,
+        auth=auth,
+        current_user=current_user,
+        institution_id_override=institution_id_override,
+    )
 
 
 @router.post(
@@ -79,7 +78,7 @@ async def create_virtual_classroom(
     institution_id: Annotated[uuid.UUID | None, Query()] = None,
 ) -> VirtualClassroomResponse:
     """Create a virtual classroom session within tenant boundaries."""
-    inst_id = _resolve_institution_id(auth, current_user, institution_id)
+    inst_id = await _resolve_institution_id(db, auth, current_user, institution_id)
     service = VirtualClassroomService(session=db)
 
     classroom = await service.create_virtual_classroom(
@@ -122,7 +121,7 @@ async def list_virtual_classrooms(
     institution_id: Annotated[uuid.UUID | None, Query()] = None,
 ) -> VirtualClassroomListResponse:
     """List virtual classrooms within tenant scope."""
-    inst_id = _resolve_institution_id(auth, current_user, institution_id)
+    inst_id = await _resolve_institution_id(db, auth, current_user, institution_id)
     service = VirtualClassroomService(session=db)
 
     items, total = await service.list_virtual_classrooms(
@@ -155,7 +154,7 @@ async def get_virtual_classroom(
     institution_id: Annotated[uuid.UUID | None, Query()] = None,
 ) -> VirtualClassroomResponse:
     """Retrieve virtual classroom by ID with tenant isolation."""
-    inst_id = _resolve_institution_id(auth, current_user, institution_id)
+    inst_id = await _resolve_institution_id(db, auth, current_user, institution_id)
     service = VirtualClassroomService(session=db)
 
     classroom = await service.get_virtual_classroom(
@@ -181,7 +180,7 @@ async def launch_virtual_classroom(
     institution_id: Annotated[uuid.UUID | None, Query()] = None,
 ) -> VirtualClassroomResponse:
     """Launch scheduled virtual classroom session."""
-    inst_id = _resolve_institution_id(auth, current_user, institution_id)
+    inst_id = await _resolve_institution_id(db, auth, current_user, institution_id)
     service = VirtualClassroomService(session=db)
 
     classroom = await service.launch_virtual_classroom(
@@ -215,7 +214,7 @@ async def join_virtual_classroom(
     institution_id: Annotated[uuid.UUID | None, Query()] = None,
 ) -> JoinMeetingResponse:
     """Generate signed join URL for authenticated user based on role and enrollment."""
-    inst_id = _resolve_institution_id(auth, current_user, institution_id)
+    inst_id = await _resolve_institution_id(db, auth, current_user, institution_id)
     service = VirtualClassroomService(session=db)
 
     roles = [r.value for r in auth.roles]
@@ -266,7 +265,7 @@ async def end_virtual_classroom(
     institution_id: Annotated[uuid.UUID | None, Query()] = None,
 ) -> VirtualClassroomResponse:
     """Terminate active virtual classroom session."""
-    inst_id = _resolve_institution_id(auth, current_user, institution_id)
+    inst_id = await _resolve_institution_id(db, auth, current_user, institution_id)
     service = VirtualClassroomService(session=db)
 
     roles = [r.value for r in auth.roles]
@@ -299,7 +298,7 @@ async def list_classroom_attendances(
     institution_id: Annotated[uuid.UUID | None, Query()] = None,
 ) -> MeetingAttendanceListResponse:
     """List attendance telemetry for a virtual classroom session."""
-    inst_id = _resolve_institution_id(auth, current_user, institution_id)
+    inst_id = await _resolve_institution_id(db, auth, current_user, institution_id)
     att_service = AttendanceService(session=db)
 
     items, total = await att_service.list_classroom_attendances(

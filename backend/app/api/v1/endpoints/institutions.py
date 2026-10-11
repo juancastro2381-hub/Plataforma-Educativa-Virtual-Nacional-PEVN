@@ -21,6 +21,7 @@ from app.api.deps import (
     SessionDep,
     require_permission,
 )
+from app.core.config import get_settings
 from app.core.security.authorization import authorization_service
 from app.core.security.interfaces import (
     OrganizationalScope,
@@ -29,11 +30,16 @@ from app.core.security.interfaces import (
 )
 from app.exceptions.errors import AuthorizationError, NotFoundError
 from app.models.institution import Institution
+from app.models.territory import Department, Municipality
 from app.schemas.institution import (
+    CoordinatorDelegationSettingResponse,
+    CoordinatorDelegationSettingUpdateRequest,
     InstitutionCreate,
     InstitutionListResponse,
     InstitutionResponse,
     InstitutionStatusUpdateRequest,
+    OfficialCatalogListResponse,
+    ProvisionCatalogInstitutionRequest,
 )
 from app.schemas.invitation import (
     RectorInvitationCreateRequest,
@@ -41,6 +47,7 @@ from app.schemas.invitation import (
     RectorRevocationRequest,
     RectorRevocationResponse,
 )
+from app.services.email_service import EmailDeliveryStatus
 from app.schemas.official_catalog import (
     OfficialCatalogSyncRequest,
     OfficialCatalogSyncResponse,
@@ -517,17 +524,43 @@ async def list_institutions(
     page: int = Query(1, ge=1, description="Número de página"),
     page_size: int = Query(20, ge=1, le=100, description="Tamaño de página"),
 ) -> InstitutionListResponse:
-    # Security: Require national scope or superadmin
-    if not (auth.scope.is_national() or SystemRole.SUPERADMIN in auth.roles or SystemRole.NATIONAL_ADMIN in auth.roles):
+    effective_department_id = department_id
+    effective_municipality_id = municipality_id
+
+    # Territorial isolation enforcement
+    if auth.scope.is_municipality():
+        actor_muni_uuid = uuid.UUID(auth.scope.municipality_id)
+        actor_dept_uuid = uuid.UUID(auth.scope.department_id) if auth.scope.department_id else None
+        if municipality_id is not None and municipality_id != actor_muni_uuid:
+            raise AuthorizationError(
+                "No está autorizado para consultar instituciones fuera de su jurisdicción municipal.",
+                code="PERMISSION_DENIED",
+            )
+        if department_id is not None and actor_dept_uuid and department_id != actor_dept_uuid:
+            raise AuthorizationError(
+                "No está autorizado para consultar instituciones fuera de su jurisdicción departamental.",
+                code="PERMISSION_DENIED",
+            )
+        effective_municipality_id = actor_muni_uuid
+        effective_department_id = actor_dept_uuid
+    elif auth.scope.is_department():
+        actor_dept_uuid = uuid.UUID(auth.scope.department_id)
+        if department_id is not None and department_id != actor_dept_uuid:
+            raise AuthorizationError(
+                "No está autorizado para consultar instituciones fuera de su jurisdicción departamental.",
+                code="PERMISSION_DENIED",
+            )
+        effective_department_id = actor_dept_uuid
+    elif not (auth.scope.is_national() or SystemRole.SUPERADMIN in auth.roles or SystemRole.NATIONAL_ADMIN in auth.roles):
         raise AuthorizationError(
-            "Se requiere alcance nacional para consultar el catálogo general de instituciones.",
+            "Se requiere alcance territorial o nacional para consultar el catálogo general de instituciones.",
             code="PERMISSION_DENIED",
         )
 
     service = InstitutionService(session=db)
     items, total = await service.list_institutions(
-        department_id=department_id,
-        municipality_id=municipality_id,
+        department_id=effective_department_id,
+        municipality_id=effective_municipality_id,
         is_active=is_active,
         search=search,
         page=page,
@@ -539,6 +572,121 @@ async def list_institutions(
         page=page,
         page_size=page_size,
     )
+
+
+@router.get(
+    "/catalog-explorer",
+    response_model=OfficialCatalogListResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Explorador del catálogo oficial ministerial con estado de aprovisionamiento en tiempo real",
+    description="Permite a los administradores territoriales y nacionales descubrir los establecimientos educativos oficiales de su jurisdicción con sus sedes y estado PEVN.",
+)
+async def list_catalog_explorer(
+    auth: Annotated[
+        AuthContextDep, Depends(require_permission("institutions", "read"))
+    ],
+    db: SessionDep,
+    department_code: str | None = Query(None, description="Filtrar por código DANE departamental"),
+    municipality_code: str | None = Query(None, description="Filtrar por código DANE municipal"),
+    search: str | None = Query(None, description="Búsqueda por nombre o código DANE"),
+    status_filter: str | None = Query(None, description="Filtrar por estado del ciclo de vida"),
+    page: int = Query(1, ge=1, description="Número de página"),
+    page_size: int = Query(20, ge=1, le=100, description="Tamaño de página"),
+) -> OfficialCatalogListResponse:
+    effective_dept_code = department_code
+    effective_muni_code = municipality_code
+
+    # Territorial isolation enforcement
+    if auth.scope.is_municipality():
+        actor_muni_uuid = uuid.UUID(auth.scope.municipality_id)
+        muni_obj = (await db.execute(select(Municipality).where(Municipality.id == actor_muni_uuid))).scalar_one_or_none()
+        if not muni_obj:
+            raise AuthorizationError("Jurisdicción municipal no encontrada.", code="PERMISSION_DENIED")
+        if municipality_code is not None and municipality_code != muni_obj.code:
+            raise AuthorizationError(
+                "No está autorizado para consultar el catálogo fuera de su jurisdicción municipal.",
+                code="PERMISSION_DENIED",
+            )
+        effective_muni_code = muni_obj.code
+        if department_code is not None:
+            dept_obj = (await db.execute(select(Department).where(Department.id == muni_obj.department_id))).scalar_one_or_none()
+            if dept_obj and department_code != dept_obj.code:
+                raise AuthorizationError(
+                    "No está autorizado para consultar el catálogo fuera de su departamento.",
+                    code="PERMISSION_DENIED",
+                )
+    elif auth.scope.is_department():
+        actor_dept_uuid = uuid.UUID(auth.scope.department_id)
+        dept_obj = (await db.execute(select(Department).where(Department.id == actor_dept_uuid))).scalar_one_or_none()
+        if not dept_obj:
+            raise AuthorizationError("Jurisdicción departamental no encontrada.", code="PERMISSION_DENIED")
+        if department_code is not None and department_code != dept_obj.code:
+            raise AuthorizationError(
+                "No está autorizado para consultar el catálogo fuera de su jurisdicción departamental.",
+                code="PERMISSION_DENIED",
+            )
+        effective_dept_code = dept_obj.code
+    elif not (auth.scope.is_national() or SystemRole.SUPERADMIN in auth.roles or SystemRole.NATIONAL_ADMIN in auth.roles):
+        raise AuthorizationError(
+            "Se requiere alcance territorial o nacional para consultar el catálogo de instituciones.",
+            code="PERMISSION_DENIED",
+        )
+
+    service = InstitutionService(session=db)
+    return await service.list_official_catalog_with_status(
+        department_code=effective_dept_code,
+        municipality_code=effective_muni_code,
+        search=search,
+        status_filter=status_filter,
+        page=page,
+        page_size=page_size,
+    )
+
+
+@router.post(
+    "/provision-catalog",
+    response_model=InstitutionResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Aprovisionar establecimiento educativo oficial desde el catálogo gubernamental",
+    description="Convierte un establecimiento oficial validado del DANE/MEN en un tenant operacional PEVN con sus sedes registradas.",
+)
+async def provision_institution_from_catalog(
+    payload: ProvisionCatalogInstitutionRequest,
+    current_user: CurrentUserDep,
+    auth: Annotated[
+        AuthContextDep, Depends(require_permission("institutions", "read"))
+    ],
+    db: SessionDep,
+    request: Request,
+) -> InstitutionResponse:
+    # Security: Only authorized administrative roles may provision
+    allowed_roles = {
+        SystemRole.SUPERADMIN,
+        SystemRole.NATIONAL_ADMIN,
+        SystemRole.DEPARTMENT_ADMIN,
+        SystemRole.MUNICIPALITY_ADMIN,
+    }
+    if not any(r in allowed_roles for r in auth.roles):
+        raise AuthorizationError(
+            "No posee facultades para aprovisionar instituciones educativas.",
+            code="PERMISSION_DENIED",
+        )
+
+    service = InstitutionService(session=db)
+    actor_ip = request.client.host if request.client else "0.0.0.0"
+    correlation_id = getattr(request.state, "correlation_id", None)
+
+    institution = await service.provision_from_catalog(
+        dane_code=payload.dane_code,
+        auth_context=auth,
+        actor_id=current_user.id,
+        actor_ip=actor_ip,
+        correlation_id=correlation_id,
+        contact_email=payload.contact_email,
+        contact_phone=payload.contact_phone,
+    )
+    await db.commit()
+    return InstitutionResponse.model_validate(institution)
 
 
 @router.get(
@@ -584,21 +732,21 @@ async def resolve_dane_institution(
 )
 async def get_my_institution(
     current_user: CurrentUserDep,
+    auth: AuthContextDep,
     db: SessionDep,
 ) -> InstitutionResponse:
-    if not current_user.institution_id:
+    effective_inst_id = current_user.institution_id
+    if not effective_inst_id and auth.scope.institution_id:
+        try:
+            effective_inst_id = uuid.UUID(auth.scope.institution_id)
+        except (ValueError, TypeError):
+            pass
+
+    if not effective_inst_id:
         raise NotFoundError("El usuario no tiene una institución educativa asociada.")
 
-    query = (
-        select(Institution)
-        .where(Institution.id == current_user.institution_id)
-        .options(selectinload(Institution.campuses), selectinload(Institution.municipality))
-    )
-    result = await db.execute(query)
-    institution = result.scalar_one_or_none()
-
-    if not institution:
-        raise NotFoundError("Institución educativa no encontrada.")
+    service = InstitutionService(session=db)
+    institution = await service.get_institution_by_id(institution_id=effective_inst_id)
 
     return InstitutionResponse.model_validate(institution)
 
@@ -617,16 +765,26 @@ async def get_institution_by_id(
         AuthContextDep, Depends(require_permission("institutions", "read"))
     ],
 ) -> InstitutionResponse:
+    service = InstitutionService(session=db)
+    institution = await service.get_institution_by_id(institution_id=institution_id)
+
     # Validate organizational scope barrier (prevent cross-tenant access)
-    target_scope = OrganizationalScope(institution_id=str(institution_id))
+    target_dept_id = None
+    if institution.municipality and institution.municipality.department_id:
+        target_dept_id = str(institution.municipality.department_id)
+
+    target_scope = OrganizationalScope(
+        country_code="CO",
+        department_id=target_dept_id,
+        municipality_id=str(institution.municipality_id) if institution.municipality_id else None,
+        institution_id=str(institution.id),
+    )
     await authorization_service.require(
         auth,
         required_permission=SecurityPermission(resource="institutions", action="read"),
         target_scope=target_scope,
     )
 
-    service = InstitutionService(session=db)
-    institution = await service.get_institution_by_id(institution_id=institution_id)
     return InstitutionResponse.model_validate(institution)
 
 
@@ -665,6 +823,60 @@ async def update_institution_status(
     return InstitutionResponse.model_validate(institution)
 
 
+async def _assert_rector_management_authority(
+    db: SessionDep,
+    auth: AuthContextDep,
+    institution_id: uuid.UUID,
+    action_label: str = "gestionar la titularidad de Rectores",
+) -> tuple[Institution, str]:
+    """Enforces strict territorial jurisdiction for Rector invitation and revocation, classifying authority level."""
+    inst_stmt = (
+        select(Institution)
+        .where(Institution.id == institution_id)
+        .options(selectinload(Institution.municipality))
+    )
+    inst = (await db.execute(inst_stmt)).scalar_one_or_none()
+    if not inst:
+        raise NotFoundError(
+            f"Institución educativa {institution_id} no encontrada.",
+            code="INSTITUTION_NOT_FOUND",
+        )
+
+    # 1. Exceptional Platform Infrastructure / Emergency Override
+    if SystemRole.SUPERADMIN in auth.roles:
+        return inst, "superadmin_emergency"
+
+    # 2. National Supervisory Escalation
+    if SystemRole.NATIONAL_ADMIN in auth.roles or auth.scope.is_national():
+        return inst, "national_supervisory"
+
+    # 3. Department Supervisory Escalation
+    if SystemRole.DEPARTMENT_ADMIN in auth.roles or auth.scope.is_department():
+        dept_uuid = uuid.UUID(auth.scope.department_id) if auth.scope.department_id else None
+        inst_dept_id = inst.municipality.department_id if inst.municipality else None
+        if not dept_uuid or inst_dept_id != dept_uuid:
+            raise AuthorizationError(
+                f"No está autorizado para {action_label} fuera de su jurisdicción departamental.",
+                code="PERMISSION_DENIED",
+            )
+        return inst, "department_supervisory"
+
+    # 4. Normal Municipal Business Path
+    if SystemRole.MUNICIPALITY_ADMIN in auth.roles or auth.scope.is_municipality():
+        muni_uuid = uuid.UUID(auth.scope.municipality_id) if auth.scope.municipality_id else None
+        if not muni_uuid or inst.municipality_id != muni_uuid:
+            raise AuthorizationError(
+                f"No está autorizado para {action_label} fuera de su jurisdicción municipal.",
+                code="PERMISSION_DENIED",
+            )
+        return inst, "normal_municipal"
+
+    raise AuthorizationError(
+        f"No posee facultades administrativas territoriales para {action_label}.",
+        code="PERMISSION_DENIED",
+    )
+
+
 @router.post(
     "/{institution_id}/rector-invitation",
     response_model=RectorInvitationResponse,
@@ -682,14 +894,15 @@ async def invite_rector_endpoint(
     db: SessionDep,
     request: Request,
 ) -> RectorInvitationResponse:
-    if not (auth.scope.is_national() or SystemRole.SUPERADMIN in auth.roles or SystemRole.NATIONAL_ADMIN in auth.roles):
-        raise AuthorizationError(
-            "Solo administradores nacionales pueden emitir invitaciones para Rectores.",
-            code="PERMISSION_DENIED",
-        )
+    inst, authority_level = await _assert_rector_management_authority(
+        db=db,
+        auth=auth,
+        institution_id=institution_id,
+        action_label="emitir invitaciones para Rectores",
+    )
 
     onboarding_service = RectorOnboardingService(session=db)
-    invitation, raw_token = await onboarding_service.invite_rector(
+    result = await onboarding_service.invite_rector(
         institution_id=institution_id,
         first_name=payload.first_name,
         last_name=payload.last_name,
@@ -700,8 +913,15 @@ async def invite_rector_endpoint(
         invited_by_id=current_user.id,
         invited_by_ip=request.client.host if request.client else "0.0.0.0",
         correlation_id=request.headers.get("X-Correlation-ID"),
+        authority_level=authority_level,
     )
+    invitation, raw_token = result
     await db.commit()
+
+    settings = get_settings()
+    raw_token_out = raw_token if settings.is_development else None
+    activation_url = getattr(result, "activation_url", None) or settings.build_invitation_url(raw_token)
+    invitation_url_out = activation_url if settings.is_development else None
 
     return RectorInvitationResponse(
         invitation_id=invitation.id,
@@ -710,7 +930,65 @@ async def invite_rector_endpoint(
         email=payload.email,
         expires_at=invitation.expires_at,
         is_used=invitation.is_used,
-        raw_invitation_token=raw_token,
+        raw_invitation_token=raw_token_out,
+        email_delivery_status=getattr(result, "delivery_status", EmailDeliveryStatus.EMAIL_NOT_CONFIGURED),
+        invitation_url=invitation_url_out,
+    )
+
+
+@router.post(
+    "/{institution_id}/rector-invitation/resend",
+    response_model=RectorInvitationResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Reenviar invitación de onboarding para Rector",
+    description="Invalida invitaciones pendientes anteriores y genera un nuevo enlace de activación de un solo uso para el Rector pendiente de la institución.",
+)
+async def resend_rector_invitation_endpoint(
+    institution_id: uuid.UUID,
+    current_user: CurrentUserDep,
+    auth: Annotated[
+        AuthContextDep, Depends(require_permission("users", "create_rector"))
+    ],
+    db: SessionDep,
+    request: Request,
+) -> RectorInvitationResponse:
+    inst, authority_level = await _assert_rector_management_authority(
+        db=db,
+        auth=auth,
+        institution_id=institution_id,
+        action_label="reenviar invitaciones para Rectores",
+    )
+
+    onboarding_service = RectorOnboardingService(session=db)
+    result = await onboarding_service.resend_invitation(
+        institution_id=institution_id,
+        actor_id=current_user.id,
+        actor_ip=request.client.host if request.client else "0.0.0.0",
+        correlation_id=request.headers.get("X-Correlation-ID"),
+        authority_level=authority_level,
+    )
+    invitation, raw_token = result
+    await db.commit()
+
+    settings = get_settings()
+    raw_token_out = raw_token if settings.is_development else None
+    activation_url = getattr(result, "activation_url", None) or settings.build_invitation_url(raw_token)
+    invitation_url_out = activation_url if settings.is_development else None
+
+    from app.models.user import User
+    target_user = await db.get(User, invitation.user_id)
+    user_email = target_user.email if target_user else ""
+
+    return RectorInvitationResponse(
+        invitation_id=invitation.id,
+        institution_id=invitation.institution_id,
+        user_id=invitation.user_id,
+        email=user_email,
+        expires_at=invitation.expires_at,
+        is_used=invitation.is_used,
+        raw_invitation_token=raw_token_out,
+        email_delivery_status=getattr(result, "delivery_status", EmailDeliveryStatus.EMAIL_NOT_CONFIGURED),
+        invitation_url=invitation_url_out,
     )
 
 
@@ -731,15 +1009,12 @@ async def revoke_rector_endpoint(
     db: SessionDep,
     request: Request,
 ) -> RectorRevocationResponse:
-    if not (
-        auth.scope.is_national()
-        or SystemRole.SUPERADMIN in auth.roles
-        or SystemRole.NATIONAL_ADMIN in auth.roles
-    ):
-        raise AuthorizationError(
-            "Solo administradores nacionales pueden revocar la titularidad de un Rector.",
-            code="PERMISSION_DENIED",
-        )
+    inst, authority_level = await _assert_rector_management_authority(
+        db=db,
+        auth=auth,
+        institution_id=institution_id,
+        action_label="revocar la titularidad de un Rector",
+    )
 
     onboarding_service = RectorOnboardingService(session=db)
     revoked_user, reason = await onboarding_service.revoke_rector(
@@ -749,6 +1024,7 @@ async def revoke_rector_endpoint(
         revoked_by_id=current_user.id,
         revoked_by_ip=request.client.host if request.client else "0.0.0.0",
         correlation_id=request.headers.get("X-Correlation-ID"),
+        authority_level=authority_level,
     )
     await db.commit()
 
@@ -761,3 +1037,108 @@ async def revoke_rector_endpoint(
         revoked_at=datetime.now(UTC),
         message=f"Titularidad de Rector para {revoked_user.first_name} {revoked_user.last_name} revocada exitosamente. La institución se encuentra disponible para nueva designación.",
     )
+
+
+# --------------------------------------------------------------------------
+# Rector-Controlled Coordinator Operational Delegation Setting Endpoints
+# --------------------------------------------------------------------------
+
+
+@router.get(
+    "/{institution_id}/settings/coordinator-delegation",
+    response_model=CoordinatorDelegationSettingResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Consultar estado de delegación operativa a coordinadores",
+    description="Devuelve el estado de la bandera de delegación institucional para coordinadores.",
+)
+async def get_coordinator_delegation_setting_endpoint(
+    institution_id: uuid.UUID,
+    current_user: CurrentUserDep,
+    auth: AuthContextDep,
+    db: SessionDep,
+) -> CoordinatorDelegationSettingResponse:
+    role_names = {r.value if isinstance(r, SystemRole) else str(r).lower() for r in auth.roles}
+    is_superadmin = "superadmin" in role_names
+    is_rector = "rector" in role_names
+
+    if not is_superadmin:
+        if is_rector:
+            if not current_user.institution_id or current_user.institution_id != institution_id:
+                raise AuthorizationError(
+                    "No está autorizado para consultar la configuración de otra institución educativa.",
+                    code="PERMISSION_DENIED",
+                )
+        else:
+            raise AuthorizationError(
+                "Solo el Rector de la institución educativa o SuperAdmin puede consultar la configuración de delegación operativa.",
+                code="PERMISSION_DENIED",
+            )
+
+    service = InstitutionService(session=db)
+    inst = await service.get_institution_by_id(institution_id=institution_id)
+
+    return CoordinatorDelegationSettingResponse(
+        institution_id=inst.id,
+        coordinator_delegation_enabled=inst.coordinator_delegation_enabled,
+        updated_at=inst.updated_at or datetime.now(UTC),
+    )
+
+
+@router.patch(
+    "/{institution_id}/settings/coordinator-delegation",
+    response_model=CoordinatorDelegationSettingResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Actualizar delegación operativa a coordinadores (Exclusivo Rector)",
+    description="Permite al Rector habilitar o inhabilitar la facultad de creación/gestión de Docentes, Estudiantes y Acudientes a los Coordinadores de su institución.",
+)
+async def update_coordinator_delegation_setting_endpoint(
+    institution_id: uuid.UUID,
+    payload: CoordinatorDelegationSettingUpdateRequest,
+    current_user: CurrentUserDep,
+    auth: AuthContextDep,
+    db: SessionDep,
+    request: Request,
+) -> CoordinatorDelegationSettingResponse:
+    # 1. Authority Check: Only authenticated RECTOR of this institution or SUPERADMIN
+    role_names = {r.value if isinstance(r, SystemRole) else str(r).lower() for r in auth.roles}
+    is_superadmin = "superadmin" in role_names
+    is_rector = "rector" in role_names
+
+    if not (is_superadmin or is_rector):
+        raise AuthorizationError(
+            "Solo el Rector de la institución educativa o SuperAdmin puede modificar la delegación operativa para coordinadores.",
+            code="PERMISSION_DENIED",
+        )
+
+    # 2. Strict Tenant Isolation: Rector can ONLY modify their own institution
+    if not is_superadmin:
+        if not current_user.institution_id:
+            raise AuthorizationError(
+                "El usuario Rector no tiene una institución educativa asignada.",
+                code="PERMISSION_DENIED",
+            )
+        if institution_id != current_user.institution_id:
+            raise AuthorizationError(
+                "No está autorizado para modificar la configuración de otra institución educativa.",
+                code="PERMISSION_DENIED",
+            )
+        effective_institution_id = current_user.institution_id
+    else:
+        effective_institution_id = institution_id
+
+    service = InstitutionService(session=db)
+    inst = await service.update_coordinator_delegation_setting(
+        institution_id=effective_institution_id,
+        enabled=payload.coordinator_delegation_enabled,
+        actor_id=current_user.id,
+        actor_ip=request.client.host if request.client else "0.0.0.0",
+        correlation_id=request.headers.get("X-Correlation-ID"),
+    )
+    await db.commit()
+
+    return CoordinatorDelegationSettingResponse(
+        institution_id=inst.id,
+        coordinator_delegation_enabled=inst.coordinator_delegation_enabled,
+        updated_at=inst.updated_at or datetime.now(UTC),
+    )
+

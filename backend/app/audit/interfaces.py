@@ -75,6 +75,7 @@ class AuditEventType(StrEnum):
 
     # Authentication & Token events
     USER_LOGIN_SUCCESS = "user.login.success"
+    USER_LOGIN_SUCCESS_UNDER_ATTACK = "user.login.success.under_attack"
     USER_LOGIN_FAILURE = "user.login.failure"
     USER_LOGOUT = "user.logout"
     TOKEN_REFRESH_SUCCESS = "token.refresh.success"  # noqa: S105
@@ -94,6 +95,29 @@ class AuditEventType(StrEnum):
     USER_ROLE_REVOKED = "user.role.revoked"
     TEACHER_ACCOUNT_PROVISIONED = "teacher.account.provisioned"
 
+    # Department Administrator Lifecycle
+    DEPARTMENT_ADMIN_CREATED = "department_admin.created"
+    DEPARTMENT_ADMIN_UPDATED = "department_admin.updated"
+    DEPARTMENT_ADMIN_DEPARTMENT_CHANGED = "department_admin.department_changed"
+    DEPARTMENT_ADMIN_ACTIVATED = "department_admin.activated"
+    DEPARTMENT_ADMIN_DEACTIVATED = "department_admin.deactivated"
+    DEPARTMENT_ADMIN_INVITED = "department_admin.invited"
+    DEPARTMENT_ADMIN_INVITATION_SENT = "department_admin.invitation_sent"
+    DEPARTMENT_ADMIN_ONBOARDING_COMPLETED = "department_admin.onboarding.completed"
+    DEPARTMENT_ADMIN_INVITATION_RESENT = "department_admin.invitation_resent"
+
+    # Municipality Administrator Lifecycle
+    MUNICIPALITY_ADMIN_CREATED = "municipality_admin.created"
+    MUNICIPALITY_ADMIN_UPDATED = "municipality_admin.updated"
+    MUNICIPALITY_ADMIN_MUNICIPALITY_CHANGED = "municipality_admin.municipality_changed"
+    MUNICIPALITY_ADMIN_ACTIVATED = "municipality_admin.activated"
+    MUNICIPALITY_ADMIN_DEACTIVATED = "municipality_admin.deactivated"
+    MUNICIPALITY_ADMIN_INVITED = "municipality_admin.invited"
+    MUNICIPALITY_ADMIN_INVITATION_SENT = "municipality_admin.invitation_sent"
+    MUNICIPALITY_ADMIN_ONBOARDING_COMPLETED = "municipality_admin.onboarding.completed"
+    MUNICIPALITY_ADMIN_INVITATION_RESENT = "municipality_admin.invitation_resent"
+    MUNICIPALITY_ADMIN_REMEDIATED = "municipality_admin.remediated"
+
     # Institution & Rector management
     INSTITUTION_CREATED = "institution.created"
     INSTITUTION_UPDATED = "institution.updated"
@@ -101,14 +125,36 @@ class AuditEventType(StrEnum):
     OFFICIAL_DANE_RESOLVED = "official_dane.resolved"
     INSTITUTION_PROVISIONED_FROM_CATALOG = "institution.provisioned_from_catalog"
     RECTOR_INVITED = "rector.invited"
+    RECTOR_INVITATION_SENT = "rector.invitation_sent"
     RECTOR_ONBOARDING_COMPLETED = "rector.onboarding.completed"
+    RECTOR_INVITATION_RESENT = "rector.invitation_resent"
     RECTOR_REVOKED = "rector.revoked"
+    COORDINATOR_INVITED = "coordinator.invited"
+    COORDINATOR_INVITATION_SENT = "coordinator.invitation_sent"
+    COORDINATOR_ONBOARDING_COMPLETED = "coordinator.onboarding.completed"
+    COORDINATOR_INVITATION_RESENT = "coordinator.invitation_resent"
+    COORDINATOR_DELEGATION_SETTING_UPDATED = "institution.coordinator_delegation.updated"
+    SUPERADMIN_EMERGENCY_ROLE_PROVISIONING = "superadmin.emergency_role_provisioning"
+
+    # National Provisioning & Onboarding Workflow (Phase NTA-04)
+    ONBOARDING_REQUEST_CREATED = "onboarding.request.created"
+    ONBOARDING_REQUEST_SUBMITTED = "onboarding.request.submitted"
+    ONBOARDING_REQUEST_REVIEW_STARTED = "onboarding.request.review_started"
+    ONBOARDING_REQUEST_APPROVED = "onboarding.request.approved"
+    ONBOARDING_REQUEST_REJECTED = "onboarding.request.rejected"
+    ONBOARDING_REQUEST_CANCELLED = "onboarding.request.cancelled"
+    INSTITUTION_PROVISIONED_FROM_ONBOARDING = "institution.provisioned_from_onboarding"
 
     # Academic Management (Phase 3)
     ACADEMIC_YEAR_CREATED = "academic_year.created"
     ACADEMIC_YEAR_UPDATED = "academic_year.updated"
     ACADEMIC_YEAR_ACTIVATED = "academic_year.activated"
     ACADEMIC_YEAR_CLOSED = "academic_year.closed"
+    ACADEMIC_PERIOD_CREATED = "academic_period.created"
+    ACADEMIC_PERIODS_TEMPLATE_PROVISIONED = "academic_periods.template.provisioned"
+    ACADEMIC_PERIODS_ACTIVATED = "academic_periods.activated"
+    SIEE_COMPLIANCE_CONFIRMED = "siee.compliance.confirmed"
+    SUBJECT_CREATED = "subject.created"
     GROUP_CREATED = "group.created"
     GROUP_UPDATED = "group.updated"
     GROUP_DIRECTOR_ASSIGNED = "group.director.assigned"
@@ -196,9 +242,16 @@ class AuditEventType(StrEnum):
     RATE_LIMIT_EXCEEDED = "security.rate_limit_exceeded"
     SUSPICIOUS_ACTIVITY_DETECTED = "security.suspicious_activity"
     PERMISSION_DENIED = "security.permission_denied"
+    SECURITY_SUSPICIOUS_VELOCITY_DETECTED = "security.suspicious_velocity_detected"
+    SECURITY_HIGH_RISK_ACCOUNT_ALERT = "security.high_risk_account_alert"
+    SECURITY_REDIS_CLUSTER_OFFLINE = "security.redis_cluster_offline"
+    SECURITY_RATE_LIMIT_DISABLED = "security.rate_limit_disabled"
 
     # Configuration / administrative
     CONFIG_CHANGED = "admin.config_changed"
+
+    # Territorial Control Center (Phase NTA-05)
+    TERRITORIAL_CONTROL_CENTER_ACCESSED = "territorial_control_center.accessed"
 
 
 @dataclass

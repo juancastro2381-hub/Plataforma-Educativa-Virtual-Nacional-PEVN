@@ -12,6 +12,8 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, status
 
+from sqlalchemy import select
+
 from app.api.deps import (
     AuthContextDep,
     CurrentUserDep,
@@ -20,6 +22,8 @@ from app.api.deps import (
 )
 from app.core.security.interfaces import SystemRole
 from app.exceptions.errors import AuthorizationError
+from app.models.institution import Institution
+from app.models.territory import Municipality
 from app.schemas.user import UserListResponse, UserResponse
 from app.services.user_service import UserService
 
@@ -72,11 +76,57 @@ async def list_users(
     page: Annotated[int, Query(ge=1, description="Página actual")] = 1,
     page_size: Annotated[int, Query(ge=1, le=100, description="Registros por página")] = 20,
 ) -> UserListResponse:
-    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    target_institution_id: uuid.UUID | None = None
+    target_department_id: uuid.UUID | None = None
+    target_municipality_id: uuid.UUID | None = None
+
+    if auth.scope.is_national() or SystemRole.SUPERADMIN in auth.roles or SystemRole.NATIONAL_ADMIN in auth.roles:
+        target_institution_id = institution_id
+    elif auth.scope.is_municipality():
+        muni_uuid = uuid.UUID(auth.scope.municipality_id)
+        if institution_id is not None:
+            # Verify institution is in this municipality
+            inst_query = (
+                select(Institution.id)
+                .where(Institution.id == institution_id, Institution.municipality_id == muni_uuid)
+            )
+            inst_found = (await db.execute(inst_query)).scalar_one_or_none()
+            if not inst_found:
+                raise AuthorizationError(
+                    "No está autorizado para consultar usuarios de una institución fuera de su jurisdicción municipal.",
+                    code="PERMISSION_DENIED",
+                )
+            target_institution_id = institution_id
+        else:
+            target_municipality_id = muni_uuid
+    elif auth.scope.is_department():
+        dept_uuid = uuid.UUID(auth.scope.department_id)
+        if institution_id is not None:
+            # Verify institution is in this department
+            inst_query = (
+                select(Institution.id)
+                .join(Municipality, Institution.municipality_id == Municipality.id)
+                .where(Institution.id == institution_id, Municipality.department_id == dept_uuid)
+            )
+            inst_found = (await db.execute(inst_query)).scalar_one_or_none()
+            if not inst_found:
+                raise AuthorizationError(
+                    "No está autorizado para consultar usuarios de una institución fuera de su jurisdicción departamental.",
+                    code="PERMISSION_DENIED",
+                )
+            target_institution_id = institution_id
+        else:
+            target_department_id = dept_uuid
+    elif current_user.institution_id:
+        target_institution_id = current_user.institution_id
+    else:
+        raise AuthorizationError("Contexto institucional no disponible.")
 
     service = UserService(session=db)
     users, total = await service.list_users(
         institution_id=target_institution_id,
+        department_id=target_department_id,
+        municipality_id=target_municipality_id,
         search=search,
         is_active=is_active,
         page=page,
@@ -109,12 +159,27 @@ async def get_user_by_id(
         Query(description="Override de institución (solo Superadmin / Administrador Nacional)"),
     ] = None,
 ) -> UserResponse:
-    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    target_institution_id: uuid.UUID | None = None
+    target_department_id: uuid.UUID | None = None
+    target_municipality_id: uuid.UUID | None = None
+
+    if auth.scope.is_national() or SystemRole.SUPERADMIN in auth.roles or SystemRole.NATIONAL_ADMIN in auth.roles:
+        target_institution_id = institution_id
+    elif auth.scope.is_municipality():
+        target_municipality_id = uuid.UUID(auth.scope.municipality_id)
+    elif auth.scope.is_department():
+        target_department_id = uuid.UUID(auth.scope.department_id)
+    elif current_user.institution_id:
+        target_institution_id = current_user.institution_id
+    else:
+        raise AuthorizationError("Contexto institucional no disponible.")
 
     service = UserService(session=db)
     user = await service.get_user_by_id(
         user_id=user_id,
         institution_id=target_institution_id,
+        department_id=target_department_id,
+        municipality_id=target_municipality_id,
     )
 
     return UserResponse.model_validate(user)

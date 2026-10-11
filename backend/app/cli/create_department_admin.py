@@ -17,7 +17,7 @@ Usage:
   Environment variables (automated / testing):
     DEPARTMENT_ADMIN_EMAIL="department_admin@pevn.edu.co" \
     DEPARTMENT_ADMIN_USERNAME="department_admin" \
-    DEPARTMENT_ADMIN_PASSWORD="PevnDepartment2026!*" \
+    DEPARTMENT_ADMIN_PASSWORD="<SECURE_ENV_PASSWORD>" \
     python -m app.cli.create_department_admin
 """
 
@@ -29,6 +29,7 @@ import os
 import sys
 
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from app.audit.interfaces import AuditEvent, AuditEventType
 from app.audit.service import audit_service
@@ -81,17 +82,17 @@ async def async_create_department_admin() -> int:
 
     session_maker = get_session_factory()
     async with session_maker() as db:
-        # Check collision on username or email
-        query = select(User).where((User.email == email) | (User.username == username))
-        result = await db.execute(query)
-        existing_user = result.scalar_one_or_none()
-        if existing_user:
+        # Validate that department code exists in territory catalog
+        dept_query = select(Department).where(Department.code == department_code)
+        dept_res = await db.execute(dept_query)
+        dept = dept_res.scalar_one_or_none()
+        if not dept:
             print(
-                f"ERROR: Ya existe un usuario con correo {email!r} "
-                f"o usuario {username!r}.",
+                f"ERROR: Código de departamento {department_code!r} no encontrado.",
                 file=sys.stderr,
             )
             return 1
+        dept_name = dept.name
 
         # Resolve department_admin role (must exist as a canonical role)
         role_query = select(Role).where(Role.name == SystemRole.DEPARTMENT_ADMIN.value)
@@ -106,15 +107,73 @@ async def async_create_department_admin() -> int:
             )
             return 1
 
-        # Validate that department code exists in territory catalog
-        dept_query = select(Department).where(Department.code == department_code)
-        dept_res = await db.execute(dept_query)
-        dept = dept_res.scalar_one_or_none()
-        dept_name = dept.name if dept else "CAPITAL BOGOTA, D.C."
-
-        # Hash password with Argon2id
         hashed_password = password_hasher.hash(password)
 
+        # Check collision or existing account on username or email
+        query = (
+            select(User)
+            .where((User.email == email) | (User.username == username))
+            .options(selectinload(User.user_roles))
+        )
+        result = await db.execute(query)
+        existing_user = result.scalar_one_or_none()
+
+        if existing_user:
+            # Idempotent update: ensure user is active, password updated, and department_id is bound
+            existing_user.hashed_password = hashed_password
+            existing_user.is_active = True
+            existing_user.is_verified = True
+            existing_user.institution_id = None
+
+            found_role = False
+            for ur in existing_user.user_roles:
+                if ur.role_id == department_admin_role.id:
+                    ur.department_id = dept.id
+                    ur.institution_id = None
+                    ur.campus_id = None
+                    ur.is_active = True
+                    found_role = True
+                    break
+
+            if not found_role:
+                new_ur = UserRole(
+                    user_id=existing_user.id,
+                    role_id=department_admin_role.id,
+                    institution_id=None,
+                    campus_id=None,
+                    department_id=dept.id,
+                    is_active=True,
+                )
+                db.add(new_ur)
+
+            await audit_service.record(
+                AuditEvent(
+                    event_type=AuditEventType.USER_UPDATED,
+                    actor_id=str(existing_user.id),
+                    actor_ip="127.0.0.1",
+                    target_id=str(existing_user.id),
+                    target_type="user",
+                    institution_id=None,
+                    success=True,
+                    metadata={
+                        "role": SystemRole.DEPARTMENT_ADMIN.value,
+                        "department_code": department_code,
+                        "department_id": str(dept.id),
+                        "department_name": dept_name,
+                        "source": "cli_idempotent",
+                    },
+                ),
+                session=db,
+            )
+
+            await db.commit()
+            print(
+                f"ÉXITO: Department Admin {username!r} ({email!r}) actualizado satisfactoriamente "
+                f"con alcance departamental {department_code} ({dept_name}) y department_id={dept.id}."
+            )
+            return 0
+
+        # Create new user
         new_user = User(
             email=email,
             username=username,
@@ -131,12 +190,13 @@ async def async_create_department_admin() -> int:
         db.add(new_user)
         await db.flush()
 
-        # Assign Department Admin role
+        # Assign Department Admin role with territorial department_id
         user_role = UserRole(
             user_id=new_user.id,
             role_id=department_admin_role.id,
             institution_id=None,
             campus_id=None,
+            department_id=dept.id,
             is_active=True,
         )
         db.add(user_role)
@@ -154,6 +214,7 @@ async def async_create_department_admin() -> int:
                 metadata={
                     "role": SystemRole.DEPARTMENT_ADMIN.value,
                     "department_code": department_code,
+                    "department_id": str(dept.id),
                     "department_name": dept_name,
                     "source": "cli",
                 },
@@ -164,7 +225,7 @@ async def async_create_department_admin() -> int:
         await db.commit()
         print(
             f"ÉXITO: Department Admin {username!r} ({email!r}) creado satisfactoriamente "
-            f"para departamento {department_code} ({dept_name})."
+            f"para departamento {department_code} ({dept_name}) con department_id={dept.id}."
         )
         return 0
 

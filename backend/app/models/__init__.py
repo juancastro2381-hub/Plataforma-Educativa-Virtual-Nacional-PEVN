@@ -68,7 +68,12 @@ from app.models.guardian import (
     StudentGuardian,
 )
 from app.models.institution import Campus, Institution
-from app.models.invitation import GuardianInvitation, RectorInvitation
+from app.models.invitation import (
+    DepartmentAdminInvitation,
+    GuardianInvitation,
+    MunicipalityAdminInvitation,
+    RectorInvitation,
+)
 from app.models.news import (
     InstitutionalNews,
     NewsCategory,
@@ -78,6 +83,10 @@ from app.models.official_catalog import (
     OfficialCatalogSyncBatch,
     OfficialCatalogSyncChunk,
     OfficialInstitutionCatalog,
+)
+from app.models.onboarding import (
+    InstitutionOnboardingRequest,
+    OnboardingRequestStatus,
 )
 from app.models.role import Permission, Role, RolePermission, UserRole
 from app.models.student import Student, StudentGender
@@ -121,6 +130,7 @@ __all__ = [
     "CommunicationReceipt",
     "DailyAttendance",
     "Department",
+    "DepartmentAdminInvitation",
     "DocumentType",
     "EducationalLevel",
     "Enrollment",
@@ -134,6 +144,7 @@ __all__ = [
     "IncidentFollowUp",
     "IncidentStatus",
     "Institution",
+    "InstitutionOnboardingRequest",
     "InstitutionalCommunication",
     "InstitutionalNews",
     "KnowledgeArea",
@@ -141,11 +152,13 @@ __all__ = [
     "MeetingParticipantRole",
     "MeetingRecording",
     "Municipality",
+    "MunicipalityAdminInvitation",
     "NewsCategory",
     "OfficialCampusCatalog",
     "OfficialCatalogSyncBatch",
     "OfficialCatalogSyncChunk",
     "OfficialInstitutionCatalog",
+    "OnboardingRequestStatus",
     "PasswordResetToken",
     "PerformanceLevelEnum",
     "PeriodSubjectGrade",

@@ -42,6 +42,8 @@ class UserService:
         self,
         *,
         institution_id: uuid.UUID | None = None,
+        department_id: uuid.UUID | None = None,
+        municipality_id: uuid.UUID | None = None,
         search: str | None = None,
         is_active: bool | None = None,
         page: int = 1,
@@ -51,8 +53,11 @@ class UserService:
         Search and list users strictly constrained by organizational tenant boundary.
 
         If `institution_id` is provided, only users belonging to that institution
-        are returned (cross-tenant isolation). If `institution_id` is None, this
-        is only permissible for national administrators / superadmins.
+        are returned (cross-tenant isolation). If `municipality_id` is provided,
+        only users belonging to institutions within that municipality are returned.
+        If `department_id` is provided, only users belonging to institutions within
+        that department are returned. If all are None, this is only permissible for
+        national administrators / superadmins.
         """
         stmt = select(User).options(
             selectinload(User.user_roles),
@@ -64,6 +69,35 @@ class UserService:
         if institution_id is not None:
             stmt = stmt.where(User.institution_id == institution_id)
             count_stmt = count_stmt.where(User.institution_id == institution_id)
+        elif municipality_id is not None:
+            from app.models.institution import Institution
+            inst_subq = select(Institution.id).where(Institution.municipality_id == municipality_id)
+            ur_stmt = select(UserRole.user_id).where(UserRole.municipality_id == municipality_id)
+            if is_active is not None:
+                ur_stmt = ur_stmt.where(UserRole.is_active == is_active)
+            muni_cond = or_(User.institution_id.in_(inst_subq), User.id.in_(ur_stmt))
+            stmt = stmt.where(muni_cond)
+            count_stmt = count_stmt.where(muni_cond)
+        elif department_id is not None:
+            from app.models.institution import Institution
+            from app.models.territory import Municipality
+            inst_subq = (
+                select(Institution.id)
+                .join(Municipality, Institution.municipality_id == Municipality.id)
+                .where(Municipality.department_id == department_id)
+            )
+            muni_subq = select(Municipality.id).where(Municipality.department_id == department_id)
+            ur_stmt = select(UserRole.user_id).where(
+                or_(
+                    UserRole.department_id == department_id,
+                    UserRole.municipality_id.in_(muni_subq),
+                )
+            )
+            if is_active is not None:
+                ur_stmt = ur_stmt.where(UserRole.is_active == is_active)
+            dept_cond = or_(User.institution_id.in_(inst_subq), User.id.in_(ur_stmt))
+            stmt = stmt.where(dept_cond)
+            count_stmt = count_stmt.where(dept_cond)
 
         # Active filter
         if is_active is not None:
@@ -104,9 +138,11 @@ class UserService:
         *,
         user_id: uuid.UUID,
         institution_id: uuid.UUID | None = None,
+        department_id: uuid.UUID | None = None,
+        municipality_id: uuid.UUID | None = None,
     ) -> User:
         """
-        Retrieve user by ID ensuring institutional tenant containment.
+        Retrieve user by ID ensuring institutional/territorial tenant containment.
         """
         stmt = select(User).where(User.id == user_id).options(
             selectinload(User.user_roles),
@@ -114,6 +150,27 @@ class UserService:
         )
         if institution_id is not None:
             stmt = stmt.where(User.institution_id == institution_id)
+        elif municipality_id is not None:
+            from app.models.institution import Institution
+            inst_subq = select(Institution.id).where(Institution.municipality_id == municipality_id)
+            ur_subq = select(UserRole.user_id).where(UserRole.municipality_id == municipality_id)
+            stmt = stmt.where(or_(User.institution_id.in_(inst_subq), User.id.in_(ur_subq)))
+        elif department_id is not None:
+            from app.models.institution import Institution
+            from app.models.territory import Municipality
+            inst_subq = (
+                select(Institution.id)
+                .join(Municipality, Institution.municipality_id == Municipality.id)
+                .where(Municipality.department_id == department_id)
+            )
+            muni_subq = select(Municipality.id).where(Municipality.department_id == department_id)
+            ur_subq = select(UserRole.user_id).where(
+                or_(
+                    UserRole.department_id == department_id,
+                    UserRole.municipality_id.in_(muni_subq),
+                )
+            )
+            stmt = stmt.where(or_(User.institution_id.in_(inst_subq), User.id.in_(ur_subq)))
 
         user = (await self._session.execute(stmt)).scalar_one_or_none()
         if not user:

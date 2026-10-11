@@ -22,7 +22,7 @@ import secrets
 from enum import StrEnum
 from functools import lru_cache
 from typing import Any
-from urllib.parse import urlparse, urlunparse
+from urllib.parse import urlencode, urlparse, urlunparse
 
 from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -55,7 +55,7 @@ class Settings(BaseSettings):
     """
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=(".env", "backend/.env"),
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",  # Silently ignore unknown env vars
@@ -107,9 +107,25 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = "INFO"
     LOG_FORMAT: LogFormat = LogFormat.CONSOLE
 
-    # ---- Rate Limiting -----------------------------------------------------
-    RATE_LIMIT_BACKEND: str = "memory://"
+    # ---- Rate Limiting & NTA-05 Authentication Hardening -------------------
+    RATE_LIMIT_ENABLED: bool = True
+    RATE_LIMIT_BACKEND: str = "redis://localhost:6379/0"
     RATE_LIMIT_DEFAULT: str = "100/minute"
+    RATE_LIMIT_TIER1_IP_CAPACITY: int = 180  # req / 60s
+    RATE_LIMIT_TIER2_IP_FAILURES: int = 25  # fail / 60s
+    RATE_LIMIT_TIER3_PAIRWISE_FAILURES: int = 5  # fail / 300s (allowed 1-5, 6th 429)
+    TRUSTED_PROXIES: list[str] | str = ["127.0.0.1", "::1"]
+    REDIS_FAILURE_POLICY: str = "fail_secure"  # "local_memory" | "fail_secure"
+    REDIS_OUTAGE_MAX_DURATION_SECONDS: int = 120
+    REDIS_CIRCUIT_BREAKER_MAX_FAILURES: int = 3
+    ACCOUNT_VELOCITY_SUSPICIOUS_THRESHOLD: int = 5
+    ACCOUNT_VELOCITY_HIGH_RISK_THRESHOLD: int = 15
+    ACCOUNT_VELOCITY_WINDOW_SECONDS: int = 900
+    TARPIT_DELAY_SUSPICIOUS_SECONDS: float = 2.0
+    TARPIT_DELAY_HIGH_RISK_SECONDS: float = 4.0
+    TIMING_ATTACK_MITIGATION_ENABLED: bool = True
+    MAX_FAILED_LOGIN_ATTEMPTS: int = 5
+    LOCKOUT_DURATION_MINUTES: int = 15
 
     # ---- Virtual Classroom / BigBlueButton Provider ------------------------
     MEETING_PROVIDER_TYPE: str = "mock"  # "mock" or "bbb"
@@ -135,7 +151,19 @@ class Settings(BaseSettings):
         ".zip",
     ]
 
-    # ---- Validators --------------------------------------------------------
+    # ---- Email / SMTP Configuration -----------------------------------------
+    SMTP_HOST: str | None = None
+    SMTP_PORT: int = 587
+    SMTP_USER: str | None = None
+    SMTP_PASSWORD: str | None = None
+    SMTP_TLS: bool = True
+    EMAILS_FROM_EMAIL: str = "noreply@pevn.edu.co"
+    EMAILS_FROM_NAME: str = "PEVN - Plataforma Educativa Virtual Nacional"
+    EMAIL_DELIVERY_ENABLED: bool = False
+    FRONTEND_URL: str = "http://localhost:3000"
+    FRONTEND_PUBLIC_URL: str | None = None
+    # ---- NTA-05 Password Recovery Development Fallback ----------------------
+    AUTH_PASSWORD_RESET_DEV_LINK: bool = False
 
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
@@ -179,6 +207,28 @@ class Settings(BaseSettings):
             return [str(host).strip() for host in v if str(host).strip()]
         return [str(v)] if v else []
 
+    @field_validator("TRUSTED_PROXIES", mode="before")
+    @classmethod
+    def parse_trusted_proxies(cls, v: Any) -> list[str]:
+        """Support comma-separated string, JSON string, or list format from env."""
+        if isinstance(v, str):
+            v_stripped = v.strip()
+            if v_stripped.startswith("[") and v_stripped.endswith("]"):
+                try:
+                    parsed = json.loads(v_stripped)
+                    if isinstance(parsed, list):
+                        return [
+                            str(proxy).strip()
+                            for proxy in parsed
+                            if str(proxy).strip()
+                        ]
+                except (json.JSONDecodeError, ValueError):
+                    pass
+            return [proxy.strip() for proxy in v.split(",") if proxy.strip()]
+        if isinstance(v, (list, tuple, set)):
+            return [str(proxy).strip() for proxy in v if str(proxy).strip()]
+        return [str(v)] if v else []
+
     @field_validator("SECRET_KEY", mode="before")
     @classmethod
     def ensure_secret_key(cls, v: str) -> str:
@@ -213,6 +263,12 @@ class Settings(BaseSettings):
             self.OPENAPI_URL = None
             self.DOCS_URL = None
             self.REDOC_URL = None
+            # NTA-05 Invariant: Recovery fallback is forbidden in prod
+            if self.AUTH_PASSWORD_RESET_DEV_LINK:
+                raise ValueError(
+                    "SECURITY: AUTH_PASSWORD_RESET_DEV_LINK must be False in "
+                    "production."
+                )
 
         return self
 
@@ -233,6 +289,71 @@ class Settings(BaseSettings):
         """Returns True if running in staging mode."""
         return self.ENVIRONMENT == Environment.STAGING
 
+    @property
+    def public_frontend_url(self) -> str:
+        """
+        Returns the authoritative public frontend origin without trailing slashes.
+        Never derives the public origin from untrusted Host headers or arbitrary inputs.
+        Priority: FRONTEND_PUBLIC_URL > FRONTEND_URL > 'http://localhost:3000'.
+        """
+        raw = self.FRONTEND_PUBLIC_URL or self.FRONTEND_URL or "http://localhost:3000"
+        return raw.strip().rstrip("/")
+
+    def build_invitation_url(self, token: str, route: str = "/auth/accept-invitation") -> str:
+        """
+        Construct a normalized, canonical absolute invitation URL with proper
+        URL parsing, scheme validation, and query-parameter encoding.
+        Guarantees exactly one origin, correct route path, and safe token parameter encoding.
+        """
+        if not token or not str(token).strip():
+            raise ValueError("Invitation token must be non-empty.")
+
+        base = self.public_frontend_url
+        parsed_base = urlparse(base)
+        if not parsed_base.scheme or not parsed_base.netloc:
+            raise ValueError(
+                f"Configured frontend URL '{base}' is invalid: must include valid scheme (http/https) and host."
+            )
+
+        if parsed_base.scheme not in ("http", "https"):
+            raise ValueError(
+                f"Configured frontend URL scheme '{parsed_base.scheme}' is unsupported. Only http and https are allowed."
+            )
+
+        if self.ENVIRONMENT in (Environment.PRODUCTION, Environment.STAGING) and parsed_base.scheme != "https":
+            raise ValueError(
+                f"In {self.ENVIRONMENT.value} environment, invitation URLs must use HTTPS. Received: {base}"
+            )
+
+        if self.ENVIRONMENT == Environment.PRODUCTION and "localhost" in parsed_base.netloc.lower():
+            raise ValueError(
+                "SECURITY: In production environment, invitation URLs cannot use localhost. "
+                "Configure FRONTEND_PUBLIC_URL with a valid production HTTPS origin."
+            )
+
+        clean_route = route.strip()
+        if not clean_route.startswith("/"):
+            clean_route = f"/{clean_route}"
+
+        parsed_route = urlparse(clean_route)
+        route_path = parsed_route.path or "/auth/accept-invitation"
+
+        # Combine base path if base has a path prefix
+        base_path = parsed_base.path.rstrip("/")
+        full_path = f"{base_path}{route_path}" if base_path else route_path
+
+        # Preserve query parameter token with standard URL encoding
+        query_str = urlencode({"token": str(token).strip()})
+
+        return urlunparse((
+            parsed_base.scheme,
+            parsed_base.netloc,
+            full_path,
+            "",
+            query_str,
+            "",
+        ))
+
     def get_safe_database_url(self) -> str:
         """
         Returns the database URL with password masked.
@@ -252,6 +373,7 @@ class Settings(BaseSettings):
         # Ensure DB_ECHO is never True in production
         if self.ENVIRONMENT == Environment.PRODUCTION:
             object.__setattr__(self, "DB_ECHO", False)
+            object.__setattr__(self, "AUTH_PASSWORD_RESET_DEV_LINK", False)
 
 
 @lru_cache(maxsize=1)

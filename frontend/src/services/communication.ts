@@ -10,6 +10,8 @@
 import apiClient from '@/services/api/client'
 import type {
   CoexistenceSituationType,
+  CommunicationCategory,
+  CommunicationPriority,
   IncidentFollowUpItem,
   IncidentFollowUpPayload,
   IncidentStatus,
@@ -18,6 +20,7 @@ import type {
   InstitutionalCommunicationListResponse,
   InstitutionalNewsItem,
   InstitutionalNewsListResponse,
+  PublishingStatus,
   StudentIncidentCreateRequest,
   StudentIncidentItem,
   StudentIncidentListResponse,
@@ -168,6 +171,22 @@ export const communicationApi = {
    */
   listNews: async (params?: { category?: string }): Promise<InstitutionalNewsListResponse> => {
     const res = await apiClient.get<InstitutionalNewsListResponse>('/api/v1/news', {
+      params,
+    })
+    return res.data
+  },
+
+  /**
+   * List institutional communications from master endpoint.
+   */
+  listCommunications: async (params?: {
+    category?: CommunicationCategory
+    priority?: CommunicationPriority
+    status?: PublishingStatus
+    include_expired?: boolean
+    institution_id?: string
+  }): Promise<InstitutionalCommunicationListResponse> => {
+    const res = await apiClient.get<InstitutionalCommunicationListResponse>('/api/v1/communications', {
       params,
     })
     return res.data

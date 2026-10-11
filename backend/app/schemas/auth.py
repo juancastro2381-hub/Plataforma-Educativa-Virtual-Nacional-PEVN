@@ -62,7 +62,11 @@ class ScopeResponse(BaseModel):
     institution_id: str | None = None
     campus_id: str | None = None
     is_national: bool
+    is_department: bool = False
+    is_municipality: bool = False
     is_institution: bool
+    jurisdiction_name: str | None = None
+    municipality_code: str | None = None
 
 
 class UserMeResponse(BaseModel):
@@ -124,6 +128,14 @@ class PasswordResetRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     email: EmailStr = Field(..., description="Registered email address")
+
+
+class PasswordResetInitiateResponse(BaseModel):
+    """Password reset initiation response payload."""
+
+    message: str
+    development_recovery_url: str | None = None
+    development_recovery_link: str | None = None
 
 
 class PasswordResetConfirmRequest(BaseModel):

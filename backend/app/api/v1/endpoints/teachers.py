@@ -19,7 +19,9 @@ from app.api.deps import (
     ClientIpDep,
     CurrentUserDep,
     SessionDep,
+    assert_coordinator_delegation_allowed,
     require_permission,
+    resolve_institution_id,
 )
 from app.core.logging import correlation_id_ctx
 from app.core.security.interfaces import SystemRole
@@ -42,21 +44,19 @@ from app.services.user_service import UserService
 router = APIRouter(prefix="/teachers", tags=["Teachers"])
 
 
-def _resolve_institution_id(
+async def _resolve_institution_id(
+    db: SessionDep,
     auth: AuthContextDep,
     current_user: CurrentUserDep,
     institution_id_override: uuid.UUID | None = None,
 ) -> uuid.UUID:
     """Resolve active institution context adhering to tenant isolation."""
-    if (
-        SystemRole.SUPERADMIN in auth.roles
-        or SystemRole.NATIONAL_ADMIN in auth.roles
-        or auth.scope.is_national()
-    ) and institution_id_override:
-        return institution_id_override
-    if current_user.institution_id:
-        return current_user.institution_id
-    raise AuthorizationError("Contexto institucional no disponible.")
+    return await resolve_institution_id(
+        db=db,
+        auth=auth,
+        current_user=current_user,
+        institution_id_override=institution_id_override,
+    )
 
 
 @router.post(
@@ -78,7 +78,8 @@ async def create_teacher(
         Query(description="Override for SuperAdmin only"),
     ] = None,
 ) -> TeacherResponse:
-    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    target_institution_id = await _resolve_institution_id(db, auth, current_user, institution_id)
+    await assert_coordinator_delegation_allowed(db, auth, target_institution_id)
     correlation_id = correlation_id_ctx.get()
 
     resolved_user_id: uuid.UUID
@@ -130,6 +131,30 @@ async def create_teacher(
             institution_id=target_institution_id,
         )
 
+    if SystemRole.SUPERADMIN in auth.roles:
+        from app.audit.interfaces import AuditEvent, AuditEventType
+        from app.audit.service import audit_service
+
+        await audit_service.record(
+            AuditEvent(
+                event_type=AuditEventType.SUPERADMIN_EMERGENCY_ROLE_PROVISIONING,
+                actor_id=str(current_user.id),
+                actor_ip=client_ip,
+                target_id=str(teacher.id),
+                target_type="Teacher",
+                institution_id=str(target_institution_id),
+                correlation_id=correlation_id,
+                metadata={
+                    "action": "create_teacher",
+                    "target_role": "teacher",
+                    "institution_id": str(target_institution_id),
+                    "user_id": str(resolved_user_id),
+                    "authority_level": "superadmin_emergency",
+                },
+            ),
+            session=db,
+        )
+
     await db.commit()
     return service.build_teacher_response(refreshed_teacher, reset_token=reset_token)
 
@@ -152,7 +177,7 @@ async def get_teacher(
         Query(description="Override for SuperAdmin only"),
     ] = None,
 ) -> TeacherResponse:
-    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    target_institution_id = await _resolve_institution_id(db, auth, current_user, institution_id)
     service = TeacherService(session=db)
     teacher = await service.get_teacher_by_id(
         teacher_id=teacher_id,
@@ -182,7 +207,7 @@ async def list_teachers(
         Query(description="Override for SuperAdmin only"),
     ] = None,
 ) -> TeacherListResponse:
-    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    target_institution_id = await _resolve_institution_id(db, auth, current_user, institution_id)
     service = TeacherService(session=db)
 
     query = (
@@ -225,7 +250,7 @@ async def validate_teacher_eligibility(
         Query(description="Override for SuperAdmin only"),
     ] = None,
 ) -> TeacherEligibilityResponse:
-    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    target_institution_id = await _resolve_institution_id(db, auth, current_user, institution_id)
     service = TeacherService(session=db)
     is_eligible = await service.validate_teacher_eligibility(
         teacher_id=teacher_id,
@@ -263,7 +288,8 @@ async def provision_teacher_account(
         Query(description="Override for SuperAdmin only"),
     ] = None,
 ) -> TeacherAccountActionResponse:
-    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    target_institution_id = await _resolve_institution_id(db, auth, current_user, institution_id)
+    await assert_coordinator_delegation_allowed(db, auth, target_institution_id)
     correlation_id = correlation_id_ctx.get()
     service = TeacherService(session=db)
 
@@ -306,7 +332,8 @@ async def update_teacher_account_status(
         Query(description="Override for SuperAdmin only"),
     ] = None,
 ) -> TeacherAccountActionResponse:
-    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    target_institution_id = await _resolve_institution_id(db, auth, current_user, institution_id)
+    await assert_coordinator_delegation_allowed(db, auth, target_institution_id)
     correlation_id = correlation_id_ctx.get()
     service = TeacherService(session=db)
 
@@ -347,7 +374,8 @@ async def reset_teacher_password(
         Query(description="Override for SuperAdmin only"),
     ] = None,
 ) -> TeacherAccountActionResponse:
-    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    target_institution_id = await _resolve_institution_id(db, auth, current_user, institution_id)
+    await assert_coordinator_delegation_allowed(db, auth, target_institution_id)
     correlation_id = correlation_id_ctx.get()
     service = TeacherService(session=db)
 

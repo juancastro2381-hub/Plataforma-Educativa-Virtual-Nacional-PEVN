@@ -35,6 +35,7 @@ from app.db.session import close_engine, get_engine
 from app.exceptions.handlers import register_exception_handlers
 from app.middleware.correlation import CorrelationIDMiddleware
 from app.middleware.logging_middleware import RequestLoggingMiddleware
+from app.middleware.rate_limit_middleware import RateLimitMiddleware
 from app.middleware.security import SecurityHeadersMiddleware
 
 
@@ -155,6 +156,9 @@ def create_application() -> FastAPI:
 
     # Correlation ID (must be set before logging middleware sees the request)
     application.add_middleware(CorrelationIDMiddleware)
+
+    # NTA-05: Multi-tier adaptive rate limiting & brute-force defense
+    application.add_middleware(RateLimitMiddleware)
 
     # Security headers (applied to all responses)
     application.add_middleware(SecurityHeadersMiddleware)

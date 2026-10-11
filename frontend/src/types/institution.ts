@@ -33,9 +33,24 @@ export interface InstitutionResponse {
   phone: string | null
   address: string | null
   is_active: boolean
+  coordinator_delegation_enabled?: boolean
   campuses: CampusResponse[]
+  has_active_rector?: boolean
+  active_rector_name?: string | null
+  active_rector_email?: string | null
+  has_pending_invitation?: boolean
   created_at: string
   updated_at: string
+}
+
+export interface CoordinatorDelegationSettingResponse {
+  institution_id: string
+  coordinator_delegation_enabled: boolean
+  updated_at: string
+}
+
+export interface CoordinatorDelegationSettingUpdateRequest {
+  coordinator_delegation_enabled: boolean
 }
 
 export interface InstitutionListResponse {
@@ -62,6 +77,7 @@ export interface RectorInvitationResponse {
   expires_at: string
   raw_invitation_token: string | null
   invitation_url: string | null
+  email_delivery_status?: 'EMAIL_SENT' | 'EMAIL_NOT_CONFIGURED' | 'EMAIL_SEND_FAILED'
 }
 
 export interface VerifyInvitationRequest {
@@ -70,8 +86,15 @@ export interface VerifyInvitationRequest {
 
 export interface VerifyInvitationResponse {
   valid: boolean
-  institution_name: string
+  institution_name?: string
+  campus_name?: string
+  department_name?: string
+  department_code?: string
+  municipality_name?: string
+  municipality_code?: string
+  role_name?: string
   first_name: string
+  last_name?: string
   email: string
   expires_at: string
 }
@@ -381,6 +404,57 @@ export interface PromotionAuditEvent {
   created_at: string
 }
 
+export type OfficialCatalogLifecycleStatus =
+  | 'DISPONIBLE_PARA_APROVISIONAR'
+  | 'APROVISIONADA_SIN_RECTOR'
+  | 'INVITACION_RECTOR_PENDIENTE'
+  | 'RECTOR_ACTIVO'
+  | 'INACTIVA'
 
+export interface OfficialCatalogItem {
+  id: string
+  dane_code: string
+  name: string
+  department_code: string
+  department_name: string
+  municipality_code: string
+  municipality_name: string
+  official_address?: string | null
+  official_phone?: string | null
+  official_email?: string | null
+  sector?: string | null
+  zone?: string | null
+  campus_count: number
+  is_active: boolean
+  is_provisioned: boolean
+  institution_id?: string | null
+  lifecycle_status: OfficialCatalogLifecycleStatus
+  has_active_rector: boolean
+  active_rector_name?: string | null
+  active_rector_email?: string | null
+  has_pending_invitation: boolean
+}
 
+export interface OfficialCatalogSummary {
+  total_catalog: number
+  available: number
+  provisioned: number
+  sin_rector: number
+  pending_invite: number
+  active_rector: number
+  inactiva: number
+}
 
+export interface OfficialCatalogListResponse {
+  items: OfficialCatalogItem[]
+  total: number
+  page: number
+  page_size: number
+  summary: OfficialCatalogSummary
+}
+
+export interface ProvisionCatalogInstitutionRequest {
+  dane_code: string
+  contact_email?: string | null
+  contact_phone?: string | null
+}

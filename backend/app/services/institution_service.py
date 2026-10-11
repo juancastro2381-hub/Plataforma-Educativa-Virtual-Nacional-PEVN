@@ -20,16 +20,23 @@ from app.audit.interfaces import AuditEvent, AuditEventType
 from app.audit.service import audit_service
 from app.core.logging import get_logger
 from app.exceptions.errors import (
+    AuthorizationError,
     ConflictError,
     NotFoundError,
     UnprocessableEntityError,
 )
+from app.core.security.interfaces import AuthorizationContext, SystemRole
 from app.models.institution import Campus, Institution
 from app.models.official_catalog import (
     OfficialCampusCatalog,
     OfficialInstitutionCatalog,
 )
 from app.models.territory import Department, Municipality
+from app.schemas.institution import (
+    OfficialCatalogItemResponse,
+    OfficialCatalogListResponse,
+    OfficialCatalogSummary,
+)
 from app.schemas.official_catalog import (
     OfficialCampusResponse,
     OfficialInstitutionResolutionResponse,
@@ -280,6 +287,7 @@ class InstitutionService:
             phone=phone.strip() if phone else None,
             address=address.strip() if address else None,
             is_active=True,
+            catalog_institution_id=catalog_record.id if catalog_record else None,
         )
         self._session.add(institution)
         await self._session.flush()
@@ -372,6 +380,7 @@ class InstitutionService:
                 "La institución especificada no existe.",
                 code="INSTITUTION_NOT_FOUND",
             )
+        await self._enrich_rector_status([result])
         return result
 
     async def get_institution_by_dane(
@@ -394,7 +403,63 @@ class InstitutionService:
                 f"No se encontró una institución con el código DANE {cleaned_dane}.",
                 code="INSTITUTION_NOT_FOUND",
             )
+        await self._enrich_rector_status([result])
         return result
+
+    async def _enrich_rector_status(self, institutions: Sequence[Institution]) -> None:
+        """Enrich institution domain objects with active rector and pending invitation states."""
+        if not institutions:
+            return
+
+        inst_ids = [inst.id for inst in institutions]
+        from app.models.role import Role, UserRole
+        from app.models.user import User
+        from app.models.invitation import RectorInvitation
+
+        rector_role_stmt = select(Role.id).where(Role.name == "rector")
+        rector_role_id = (await self._session.execute(rector_role_stmt)).scalar_one_or_none()
+
+        rector_map: dict[uuid.UUID, User] = {}
+        if rector_role_id:
+            rector_stmt = (
+                select(UserRole.institution_id, User)
+                .join(User, UserRole.user_id == User.id)
+                .where(
+                    UserRole.institution_id.in_(inst_ids),
+                    UserRole.role_id == rector_role_id,
+                    UserRole.is_active == True,
+                    User.is_active == True,
+                )
+            )
+            rector_rows = (await self._session.execute(rector_stmt)).all()
+            for inst_id, u in rector_rows:
+                if inst_id:
+                    rector_map[inst_id] = u
+
+        inv_stmt = (
+            select(RectorInvitation.institution_id)
+            .where(
+                RectorInvitation.institution_id.in_(inst_ids),
+                RectorInvitation.is_used == False,
+                RectorInvitation.is_revoked == False,
+                RectorInvitation.expires_at > func.now(),
+            )
+        )
+        pending_inv_rows = (await self._session.execute(inv_stmt)).scalars().all()
+        pending_set = set(pending_inv_rows)
+
+        for inst in institutions:
+            active_u = rector_map.get(inst.id)
+            if active_u:
+                setattr(inst, "has_active_rector", True)
+                setattr(inst, "active_rector_name", f"{active_u.first_name} {active_u.last_name}".strip())
+                setattr(inst, "active_rector_email", active_u.email)
+                setattr(inst, "has_pending_invitation", False)
+            else:
+                setattr(inst, "has_active_rector", False)
+                setattr(inst, "active_rector_name", None)
+                setattr(inst, "active_rector_email", None)
+                setattr(inst, "has_pending_invitation", inst.id in pending_set)
 
     async def list_institutions(
         self,
@@ -441,6 +506,7 @@ class InstitutionService:
         offset = (page - 1) * page_size
         query = query.order_by(Institution.name.asc()).offset(offset).limit(page_size)
         institutions = (await self._session.execute(query)).scalars().all()
+        await self._enrich_rector_status(institutions)
 
         return institutions, total
 
@@ -490,3 +556,317 @@ class InstitutionService:
             .options(selectinload(Institution.campuses), selectinload(Institution.municipality))
         )
         return result.scalar_one()
+
+    async def update_coordinator_delegation_setting(
+        self,
+        *,
+        institution_id: uuid.UUID,
+        enabled: bool,
+        actor_id: uuid.UUID | str | None = None,
+        actor_ip: str = "0.0.0.0",  # noqa: S104
+        correlation_id: str | None = None,
+    ) -> Institution:
+        """
+        Update the Coordinator operational delegation setting for an institution.
+        Enforces persistence and records full audit trail with previous and new values.
+        """
+        institution = await self.get_institution_by_id(institution_id=institution_id)
+        previous_value = institution.coordinator_delegation_enabled
+        institution.coordinator_delegation_enabled = enabled
+        await self._session.flush()
+
+        await self._audit.record(
+            AuditEvent(
+                event_type=AuditEventType.COORDINATOR_DELEGATION_SETTING_UPDATED,
+                actor_id=str(actor_id) if actor_id else None,
+                actor_ip=actor_ip,
+                target_id=str(institution.id),
+                target_type="Institution",
+                institution_id=str(institution.id),
+                correlation_id=correlation_id,
+                metadata={
+                    "dane_code": institution.dane_code,
+                    "previous_value": previous_value,
+                    "new_value": enabled,
+                    "outcome": "success",
+                },
+            ),
+            session=self._session,
+        )
+
+        result = await self._session.execute(
+            select(Institution)
+            .where(Institution.id == institution.id)
+            .options(selectinload(Institution.campuses), selectinload(Institution.municipality))
+        )
+        return result.scalar_one()
+
+    async def list_official_catalog_with_status(
+        self,
+        *,
+        department_code: str | None = None,
+        municipality_code: str | None = None,
+        search: str | None = None,
+        status_filter: str | None = None,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> OfficialCatalogListResponse:
+        """
+        List official catalog establishments enriched with real-time PEVN tenant and Rector status.
+        Supports discovery within authorized territorial scopes (e.g. municipal, departmental, national).
+        """
+        await self.seed_official_catalog_if_empty()
+
+        cat_query = select(OfficialInstitutionCatalog).options(
+            selectinload(OfficialInstitutionCatalog.campuses)
+        )
+        if department_code:
+            cat_query = cat_query.where(OfficialInstitutionCatalog.department_code == department_code)
+        if municipality_code:
+            cat_query = cat_query.where(OfficialInstitutionCatalog.municipality_code == municipality_code)
+        if search:
+            search_term = f"%{search.strip()}%"
+            cat_query = cat_query.where(
+                (OfficialInstitutionCatalog.name.ilike(search_term))
+                | (OfficialInstitutionCatalog.dane_code.ilike(search_term))
+            )
+
+        cat_records = (
+            await self._session.execute(cat_query.order_by(OfficialInstitutionCatalog.name.asc()))
+        ).scalars().all()
+
+        # Query all operational institutions in this territorial scope
+        inst_query = select(Institution).options(
+            selectinload(Institution.campuses),
+            selectinload(Institution.municipality),
+        )
+        if municipality_code:
+            inst_query = inst_query.join(Municipality).where(Municipality.code == municipality_code)
+        elif department_code:
+            inst_query = inst_query.join(Municipality).join(Department).where(Department.code == department_code)
+
+        inst_rows = (await self._session.execute(inst_query)).scalars().all()
+        if inst_rows:
+            await self._enrich_rector_status(inst_rows)
+
+        tenants_by_dane = {i.dane_code: i for i in inst_rows}
+        tenants_by_cat_id = {i.catalog_institution_id: i for i in inst_rows if i.catalog_institution_id}
+
+        items: list[OfficialCatalogItemResponse] = []
+        summary = OfficialCatalogSummary(
+            total_catalog=len(cat_records),
+            available=0,
+            provisioned=0,
+            sin_rector=0,
+            pending_invite=0,
+            active_rector=0,
+            inactiva=0,
+        )
+
+        for cat in cat_records:
+            tenant = tenants_by_cat_id.get(cat.id) or tenants_by_dane.get(cat.dane_code)
+            if not tenant:
+                is_prov = False
+                tenant_id = None
+                has_rector = False
+                rector_name = None
+                rector_email = None
+                has_pending = False
+                if not cat.is_active or cat.status != "ACTIVO":
+                    lifecycle_status = "INACTIVA"
+                    summary.inactiva += 1
+                else:
+                    lifecycle_status = "DISPONIBLE_PARA_APROVISIONAR"
+                    summary.available += 1
+            else:
+                is_prov = True
+                tenant_id = tenant.id
+                summary.provisioned += 1
+                has_rector = getattr(tenant, "has_active_rector", False)
+                rector_name = getattr(tenant, "active_rector_name", None)
+                rector_email = getattr(tenant, "active_rector_email", None)
+                has_pending = getattr(tenant, "has_pending_invitation", False)
+
+                if not tenant.is_active:
+                    lifecycle_status = "INACTIVA"
+                    summary.inactiva += 1
+                elif has_rector:
+                    lifecycle_status = "RECTOR_ACTIVO"
+                    summary.active_rector += 1
+                elif has_pending:
+                    lifecycle_status = "INVITACION_RECTOR_PENDIENTE"
+                    summary.pending_invite += 1
+                else:
+                    lifecycle_status = "APROVISIONADA_SIN_RECTOR"
+                    summary.sin_rector += 1
+
+            if status_filter:
+                norm_sf = status_filter.upper().strip()
+                if norm_sf in {"DISPONIBLE", "AVAILABLE", "DISPONIBLE_PARA_APROVISIONAR"} and lifecycle_status != "DISPONIBLE_PARA_APROVISIONAR":
+                    continue
+                if norm_sf in {"APROVISIONADA", "PROVISIONED"} and not is_prov:
+                    continue
+                if norm_sf in {"SIN_RECTOR", "APROVISIONADA_SIN_RECTOR"} and lifecycle_status != "APROVISIONADA_SIN_RECTOR":
+                    continue
+                if norm_sf in {"PENDIENTE", "PENDING", "INVITACION_RECTOR_PENDIENTE"} and lifecycle_status != "INVITACION_RECTOR_PENDIENTE":
+                    continue
+                if norm_sf in {"ACTIVO", "ACTIVE", "RECTOR_ACTIVO"} and lifecycle_status != "RECTOR_ACTIVO":
+                    continue
+                if norm_sf in {"INACTIVA", "INACTIVE"} and lifecycle_status != "INACTIVA":
+                    continue
+
+            items.append(
+                OfficialCatalogItemResponse(
+                    id=cat.id,
+                    dane_code=cat.dane_code,
+                    name=cat.name,
+                    department_code=cat.department_code,
+                    department_name=cat.department_name,
+                    municipality_code=cat.municipality_code,
+                    municipality_name=cat.municipality_name,
+                    official_address=cat.official_address,
+                    official_phone=cat.official_phone,
+                    official_email=cat.official_email,
+                    sector=cat.sector,
+                    zone=cat.zone,
+                    campus_count=len(cat.campuses) if cat.campuses else 1,
+                    is_active=cat.is_active,
+                    is_provisioned=is_prov,
+                    institution_id=tenant_id,
+                    lifecycle_status=lifecycle_status,
+                    has_active_rector=has_rector,
+                    active_rector_name=rector_name,
+                    active_rector_email=rector_email,
+                    has_pending_invitation=has_pending,
+                )
+            )
+
+        total_filtered = len(items)
+        offset = (page - 1) * page_size
+        paginated_items = items[offset : offset + page_size]
+
+        return OfficialCatalogListResponse(
+            items=paginated_items,
+            total=total_filtered,
+            page=page,
+            page_size=page_size,
+            summary=summary,
+        )
+
+    async def provision_from_catalog(
+        self,
+        *,
+        dane_code: str,
+        auth_context: AuthorizationContext,
+        actor_id: uuid.UUID | str | None = None,
+        actor_ip: str = "0.0.0.0",
+        correlation_id: str | None = None,
+        contact_email: str | None = None,
+        contact_phone: str | None = None,
+    ) -> Institution:
+        """
+        Provision an official educational establishment from the government catalog into PEVN.
+        Enforces strict territorial boundaries for Municipal and Department Administrators.
+        """
+        cleaned_dane = dane_code.strip()
+        if not (cleaned_dane.isdigit() and len(cleaned_dane) == 12):
+            raise UnprocessableEntityError(
+                "El código DANE institucional debe contener exactamente 12 dígitos numéricos.",
+                code="INVALID_DANE_CODE",
+            )
+
+        await self.seed_official_catalog_if_empty()
+        cat_stmt = (
+            select(OfficialInstitutionCatalog)
+            .where(OfficialInstitutionCatalog.dane_code == cleaned_dane)
+            .options(selectinload(OfficialInstitutionCatalog.campuses))
+        )
+        cat_record = (await self._session.execute(cat_stmt)).scalar_one_or_none()
+        if not cat_record:
+            raise NotFoundError(
+                f"No se encontró el registro oficial {cleaned_dane} en el catálogo nacional.",
+                code="OFFICIAL_DANE_RECORD_NOT_FOUND",
+            )
+
+        if not cat_record.is_active or cat_record.status != "ACTIVO":
+            raise UnprocessableEntityError(
+                f"El establecimiento oficial {cleaned_dane} ({cat_record.name}) no se encuentra activo para aprovisionamiento.",
+                code="OFFICIAL_RECORD_INACTIVE",
+            )
+
+        # Territorial authorization boundary checks
+        if auth_context.scope.is_municipality():
+            actor_muni_uuid = uuid.UUID(auth_context.scope.municipality_id)
+            muni_obj = (
+                await self._session.execute(select(Municipality).where(Municipality.id == actor_muni_uuid))
+            ).scalar_one_or_none()
+            if not muni_obj or muni_obj.code != cat_record.municipality_code:
+                raise AuthorizationError(
+                    "No está autorizado para aprovisionar establecimientos educativos fuera de su jurisdicción municipal.",
+                    code="PERMISSION_DENIED",
+                )
+        elif auth_context.scope.is_department():
+            actor_dept_uuid = uuid.UUID(auth_context.scope.department_id)
+            dept_obj = (
+                await self._session.execute(select(Department).where(Department.id == actor_dept_uuid))
+            ).scalar_one_or_none()
+            if not dept_obj or dept_obj.code != cat_record.department_code:
+                raise AuthorizationError(
+                    "No está autorizado para aprovisionar establecimientos educativos fuera de su jurisdicción departamental.",
+                    code="PERMISSION_DENIED",
+                )
+        elif not (
+            auth_context.scope.is_national()
+            or SystemRole.SUPERADMIN in auth_context.roles
+            or SystemRole.NATIONAL_ADMIN in auth_context.roles
+        ):
+            raise AuthorizationError(
+                "No posee facultades administrativas territoriales para aprovisionar establecimientos.",
+                code="PERMISSION_DENIED",
+            )
+
+        # Anti-duplication check
+        dup_stmt = select(Institution).where(
+            (Institution.dane_code == cleaned_dane) | (Institution.catalog_institution_id == cat_record.id)
+        )
+        existing = (await self._session.execute(dup_stmt)).scalar_one_or_none()
+        if existing:
+            raise ConflictError(
+                f"El establecimiento educativo con código DANE {cleaned_dane} ya se encuentra aprovisionado en PEVN.",
+                code="DUPLICATE_DANE_CODE",
+            )
+
+        # Resolve or create municipality
+        muni_stmt = select(Municipality).where(Municipality.code == cat_record.municipality_code)
+        target_muni = (await self._session.execute(muni_stmt)).scalar_one_or_none()
+        if not target_muni:
+            dept_stmt = select(Department).where(Department.code == cat_record.department_code)
+            target_dept = (await self._session.execute(dept_stmt)).scalar_one_or_none()
+            if not target_dept:
+                target_dept = Department(code=cat_record.department_code, name=cat_record.department_name)
+                self._session.add(target_dept)
+                await self._session.flush()
+            target_muni = Municipality(
+                department_id=target_dept.id,
+                code=cat_record.municipality_code,
+                name=cat_record.municipality_name,
+            )
+            self._session.add(target_muni)
+            await self._session.flush()
+
+        email = (contact_email or cat_record.official_email or f"contacto.{cleaned_dane}@colegio.edu.co").strip().lower()
+        phone = contact_phone or cat_record.official_phone
+        address = cat_record.official_address
+
+        return await self.provision_institution(
+            dane_code=cleaned_dane,
+            name=cat_record.name,
+            email=email,
+            municipality_id=target_muni.id,
+            phone=phone,
+            address=address,
+            actor_id=actor_id,
+            actor_ip=actor_ip,
+            correlation_id=correlation_id,
+        )
+

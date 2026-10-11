@@ -20,6 +20,8 @@ SECURITY:
 
 from __future__ import annotations
 
+import contextlib
+
 from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHashError, VerificationError, VerifyMismatchError
 
@@ -99,6 +101,27 @@ class Argon2PasswordHasher(IPasswordHasher):
         except (InvalidHashError, VerificationError):
             return True
 
+    def verify_dummy(self, plain_password: str) -> bool:
+        """
+        Execute timing-safe verification against static pre-computed dummy hash.
+        Used to eliminate timing side-channels when authenticating non-existent,
+        inactive, or locked accounts.
+        Always returns False.
+        """
+        if not plain_password:
+            plain_password = "dummy_timing_probe"  # noqa: S105
+        with contextlib.suppress(
+            VerifyMismatchError, VerificationError, InvalidHashError
+        ):
+            self._hasher.verify(DUMMY_ARGON2ID_HASH, plain_password)
+        return False
+
+
+# Pre-computed valid Argon2id hash for constant-time dummy verification
+# Algorithm: argon2id, v=19, m=65536, t=3, p=4
+DUMMY_ARGON2ID_HASH: str = (
+    "$argon2id$v=19$m=65536,t=3,p=4$yFEkG9FYi0Vm9FD40L2dgg$GSWKpHP3eVAQrmeOqUz+V3NuvMVJTiR7WiDgOINTnJU"
+)
 
 # Default singleton instance
 password_hasher: IPasswordHasher = Argon2PasswordHasher()

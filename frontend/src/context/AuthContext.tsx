@@ -13,6 +13,7 @@ import React, {
   useState,
 } from 'react'
 import authApi from '@/services/auth'
+import { institutionApi } from '@/services/institution'
 import { setOnAuthFailure } from '@/services/api/client'
 import { AuthContext, type AuthContextValue } from '@/context/authContextDef'
 import type {
@@ -63,6 +64,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setActiveInstitutionNameState(name || null)
   }, [])
 
+  const syncInstitutionalContext = useCallback(async (u: User) => {
+    const instId = u.institution_id || u.scope?.institution_id
+    if (instId) {
+      let instName = ''
+      try {
+        instName = localStorage.getItem('pevn_active_institution_name') || ''
+      } catch {
+        instName = ''
+      }
+      setActiveInstitutionContext(instId, instName || undefined)
+      if (!instName) {
+        try {
+          const instData = await institutionApi.getMyInstitution()
+          if (instData?.name) {
+            setActiveInstitutionContext(instId, instData.name)
+          }
+        } catch {
+          // Non-blocking fallback
+        }
+      }
+    }
+  }, [setActiveInstitutionContext])
+
   // Register callback for when token refresh fails in API interceptor
   useEffect(() => {
     setOnAuthFailure(() => {
@@ -84,6 +108,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const userProfile = await authApi.getMyProfile()
         if (isMounted) {
           setUser(userProfile)
+          void syncInstitutionalContext(userProfile)
         }
       } catch {
         if (isMounted) {
@@ -101,17 +126,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return () => {
       isMounted = false
     }
-  }, [])
+  }, [syncInstitutionalContext])
 
   const login = useCallback(async (credentials: LoginRequest) => {
     setIsLoading(true)
     try {
       const data = await authApi.login(credentials)
       setUser(data.user)
+      void syncInstitutionalContext(data.user)
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [syncInstitutionalContext])
 
   const logout = useCallback(async () => {
     setIsLoading(true)
@@ -138,10 +164,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const profile = await authApi.getMyProfile()
       setUser(profile)
+      void syncInstitutionalContext(profile)
     } catch {
       setUser(null)
     }
-  }, [])
+  }, [syncInstitutionalContext])
 
   const hasRole = useCallback(
     (roles: string | string[]): boolean => {
@@ -153,6 +180,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Canonical role equivalence mapping:
       // rector <-> institution_admin
       // coordinator <-> academic_coordinator
+      // superadmin <-> super_admin
       const effectiveUserRoles = new Set<string>(userRoles)
       if (userRoles.includes('rector') || userRoles.includes('institution_admin')) {
         effectiveUserRoles.add('rector')
@@ -161,6 +189,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (userRoles.includes('coordinator') || userRoles.includes('academic_coordinator')) {
         effectiveUserRoles.add('coordinator')
         effectiveUserRoles.add('academic_coordinator')
+      }
+      if (userRoles.includes('superadmin') || userRoles.includes('super_admin')) {
+        effectiveUserRoles.add('superadmin')
+        effectiveUserRoles.add('super_admin')
       }
 
       return checkList.some((r) => effectiveUserRoles.has(r.toLowerCase()))
@@ -172,7 +204,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     (permissions: string | string[]): boolean => {
       if (!user) return false
       // SuperAdmin or explicit wildcard bypasses permission checks
-      if (user.roles.includes('superadmin') || user.permissions.includes('*')) {
+      if (
+        user.roles.includes('superadmin') ||
+        user.roles.includes('super_admin') ||
+        user.permissions.includes('*')
+      ) {
         return true
       }
 
@@ -192,7 +228,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const isInScope = useCallback(
     (targetInstitutionId?: string | null): boolean => {
       if (!user) return false
-      if (user.roles.includes('superadmin') || user.scope.is_national) {
+      if (
+        user.roles.includes('superadmin') ||
+        user.roles.includes('super_admin') ||
+        user.scope.is_national
+      ) {
         // If an explicit active institution context is selected, verify against it when requested
         if (targetInstitutionId && activeInstitutionId) {
           return targetInstitutionId === activeInstitutionId

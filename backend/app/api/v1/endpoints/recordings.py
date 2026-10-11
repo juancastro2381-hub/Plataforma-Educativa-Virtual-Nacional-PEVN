@@ -11,6 +11,7 @@ import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, status
+from sqlalchemy import select
 
 from app.api.deps import (
     AuthContextDep,
@@ -18,10 +19,12 @@ from app.api.deps import (
     CurrentUserDep,
     SessionDep,
     require_permission,
+    resolve_institution_id,
 )
 from app.core.logging import correlation_id_ctx
 from app.core.security.interfaces import SystemRole
 from app.exceptions.errors import AuthorizationError
+from app.models.virtual_classroom import MeetingRecording, VirtualClassroom
 from app.schemas.virtual_classroom import (
     MeetingRecordingListResponse,
     MeetingRecordingResponse,
@@ -32,21 +35,76 @@ from app.services.recording_service import RecordingService
 router = APIRouter(prefix="/recordings", tags=["Recordings"])
 
 
-def _resolve_institution_id(
+async def _resolve_institution_id(
+    db: SessionDep,
     auth: AuthContextDep,
     current_user: CurrentUserDep,
     institution_id_override: uuid.UUID | None = None,
 ) -> uuid.UUID:
     """Resolve active institution context adhering to tenant isolation."""
-    if (
-        SystemRole.SUPERADMIN in auth.roles
-        or SystemRole.NATIONAL_ADMIN in auth.roles
-        or auth.scope.is_national()
-    ) and institution_id_override:
-        return institution_id_override
-    if current_user.institution_id:
-        return current_user.institution_id
-    raise AuthorizationError("Contexto institucional no disponible.")
+    return await resolve_institution_id(
+        db=db,
+        auth=auth,
+        current_user=current_user,
+        institution_id_override=institution_id_override,
+    )
+
+
+@router.get(
+    "",
+    response_model=MeetingRecordingListResponse,
+    summary="Listar grabaciones institucionales",
+    description="Consulta las grabaciones de la institución respetando visibilidad.",
+    dependencies=[Depends(require_permission("recordings", "read"))],
+)
+async def list_institution_recordings(
+    auth: AuthContextDep,
+    current_user: CurrentUserDep,
+    db: SessionDep,
+    classroom_id: Annotated[uuid.UUID | None, Query()] = None,
+    skip: Annotated[int, Query(ge=0)] = 0,
+    limit: Annotated[int, Query(ge=1, le=100)] = 50,
+    institution_id: Annotated[uuid.UUID | None, Query()] = None,
+) -> MeetingRecordingListResponse:
+    """List recordings for institution adhering to publication rules."""
+    inst_id = await _resolve_institution_id(db, auth, current_user, institution_id)
+    service = RecordingService(session=db)
+    roles = [r.value for r in auth.roles]
+
+    if classroom_id:
+        items, total = await service.list_recordings(
+            classroom_id=classroom_id,
+            institution_id=inst_id,
+            user_roles=roles,
+            skip=skip,
+            limit=limit,
+        )
+    else:
+        query = (
+            select(MeetingRecording)
+            .where(MeetingRecording.institution_id == inst_id)
+        )
+        if SystemRole.STUDENT.value in roles and not any(
+            r in roles
+            for r in [
+                SystemRole.TEACHER.value,
+                SystemRole.RECTOR.value,
+                SystemRole.COORDINATOR.value,
+                SystemRole.DEPARTMENT_ADMIN.value,
+                SystemRole.NATIONAL_ADMIN.value,
+                SystemRole.SUPERADMIN.value,
+            ]
+        ):
+            query = query.where(MeetingRecording.is_published.is_(True))
+        query = query.order_by(MeetingRecording.created_at.desc())
+        all_recs = list((await db.execute(query)).scalars().all())
+        total = len(all_recs)
+        items = all_recs[skip : skip + limit]
+
+    return MeetingRecordingListResponse(
+        items=[MeetingRecordingResponse.model_validate(r) for r in items],
+        total=total,
+    )
 
 
 @router.get(
@@ -69,7 +127,7 @@ async def list_recordings(
     institution_id: Annotated[uuid.UUID | None, Query()] = None,
 ) -> MeetingRecordingListResponse:
     """List session recordings adhering to publication visibility rules."""
-    inst_id = _resolve_institution_id(auth, current_user, institution_id)
+    inst_id = await _resolve_institution_id(db, auth, current_user, institution_id)
     service = RecordingService(session=db)
 
     roles = [r.value for r in auth.roles]
@@ -102,7 +160,7 @@ async def sync_recordings(
     institution_id: Annotated[uuid.UUID | None, Query()] = None,
 ) -> MeetingRecordingListResponse:
     """Synchronize recording assets from meeting provider."""
-    inst_id = _resolve_institution_id(auth, current_user, institution_id)
+    inst_id = await _resolve_institution_id(db, auth, current_user, institution_id)
     service = RecordingService(session=db)
 
     synced = await service.sync_recordings_from_provider(
@@ -137,7 +195,7 @@ async def publish_recording(
     institution_id: Annotated[uuid.UUID | None, Query()] = None,
 ) -> MeetingRecordingResponse:
     """Toggle recording publication status."""
-    inst_id = _resolve_institution_id(auth, current_user, institution_id)
+    inst_id = await _resolve_institution_id(db, auth, current_user, institution_id)
     service = RecordingService(session=db)
 
     recording = await service.publish_recording(
@@ -169,7 +227,7 @@ async def delete_recording(
     institution_id: Annotated[uuid.UUID | None, Query()] = None,
 ) -> None:
     """Delete recording metadata."""
-    inst_id = _resolve_institution_id(auth, current_user, institution_id)
+    inst_id = await _resolve_institution_id(db, auth, current_user, institution_id)
     service = RecordingService(session=db)
 
     await service.delete_recording(

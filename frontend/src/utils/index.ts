@@ -136,3 +136,55 @@ export function getErrorMessage(error: unknown): string {
   if (typeof error === 'string') return error
   return 'Ha ocurrido un error inesperado'
 }
+
+// ---------------------------------------------------------------------------
+// Invitation URL resolution utilities
+// ---------------------------------------------------------------------------
+
+/**
+ * Resolves a complete, absolute invitation activation URL with exactly ONE origin.
+ *
+ * Guarantees:
+ * 1. If backend provides an already-absolute URL (starts with http:// or https://), use it directly.
+ * 2. If backend provides a relative path (e.g., /auth/accept-invitation?token=...), prepend current origin without duplicating slashes or origins.
+ * 3. If rawToken is provided without a URL, construct canonical path `/auth/accept-invitation?token=${encodeURIComponent(rawToken)}`.
+ * 4. Defensively detects and repairs accidental duplicated origins (e.g. http://originhttp://origin/...).
+ * 5. Preserves query parameter encoding and strips extraneous whitespace.
+ * 6. Returns null if neither URL nor token is available.
+ */
+export function resolveInvitationUrl(
+  invitationUrl?: string | null,
+  rawToken?: string | null
+): string | null {
+  if (invitationUrl && typeof invitationUrl === 'string') {
+    let trimmed = invitationUrl.trim()
+    if (!trimmed) return null
+
+    // Defensively repair any duplicated origins (e.g. http://localhost:3000http://localhost:3000/...)
+    const duplicateOriginMatch = /^(https?:\/\/[^\/]+)(https?:\/\/[^\/]+)(.*)$/i.exec(trimmed)
+    if (duplicateOriginMatch) {
+      trimmed = `${duplicateOriginMatch[2]}${duplicateOriginMatch[3]}`
+    }
+
+    if (/^https?:\/\//i.test(trimmed)) {
+      return trimmed
+    }
+
+    const origin = (typeof window !== 'undefined' && window.location?.origin)
+      ? window.location.origin.replace(/\/+$/, '')
+      : ''
+    const cleanPath = trimmed.startsWith('/') ? trimmed : `/${trimmed}`
+    return `${origin}${cleanPath}`
+  }
+
+  if (rawToken && typeof rawToken === 'string') {
+    const trimmedToken = rawToken.trim()
+    if (!trimmedToken) return null
+    const origin = (typeof window !== 'undefined' && window.location?.origin)
+      ? window.location.origin.replace(/\/+$/, '')
+      : ''
+    return `${origin}/auth/accept-invitation?token=${encodeURIComponent(trimmedToken)}`
+  }
+
+  return null
+}

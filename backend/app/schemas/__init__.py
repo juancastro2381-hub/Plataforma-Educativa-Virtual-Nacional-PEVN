@@ -63,6 +63,17 @@ from app.schemas.institution import (
     InstitutionResponse,
     InstitutionUpdate,
 )
+from app.schemas.onboarding import (
+    CatalogExplorerItemResponse,
+    CatalogExplorerListResponse,
+    OnboardingApprovalPayload,
+    OnboardingCancellationPayload,
+    OnboardingProvisionResultResponse,
+    OnboardingRejectionPayload,
+    OnboardingRequestCreatePayload,
+    OnboardingRequestDetailResponse,
+    OnboardingRequestListResponse,
+)
 from app.schemas.teacher_portal import (
     AcademicActivityCreateRequest,
     AcademicActivityListResponse,

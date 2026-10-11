@@ -140,6 +140,31 @@ apiClient.interceptors.request.use(
       requestConfig.headers.Authorization = `Bearer ${inMemoryAccessToken}`
     }
 
+    // Attach active institution context if user has one selected and param is not set
+    try {
+      const activeInstId = typeof window !== 'undefined' ? localStorage.getItem('pevn_active_institution_id') : null
+      if (activeInstId) {
+        requestConfig.headers['X-Institution-Context'] = activeInstId
+        const url = requestConfig.url || ''
+        const isExcluded =
+          url.includes('/api/v1/institutions') ||
+          url.includes('/api/v1/department-admins') ||
+          url.includes('/api/v1/auth') ||
+          url.includes('/api/v1/analytics/territorial')
+
+        if (!isExcluded) {
+          if (!requestConfig.params) {
+            requestConfig.params = {}
+          }
+          if (!requestConfig.params.institution_id) {
+            requestConfig.params.institution_id = activeInstId
+          }
+        }
+      }
+    } catch {
+      // Non-blocking localStorage access error (e.g. SSR or private browsing)
+    }
+
     return requestConfig
   },
   (error: unknown) => Promise.reject(normalizeError(error))
@@ -200,7 +225,17 @@ export function normalizeError(error: unknown): AppApiError {
       resData !== null &&
       'error' in resData
     ) {
-      return new AppApiError((resData as ApiErrorResponse).error)
+      const errPayload = (resData as ApiErrorResponse).error
+      if (errPayload.code === 'VALIDATION_ERROR' && errPayload.details && errPayload.details.length > 0) {
+        const detailsSummary = errPayload.details
+          .map((d) => `${d.field}: ${d.message}`)
+          .join(', ')
+        return new AppApiError({
+          ...errPayload,
+          message: `${errPayload.message || 'Error de validación en la solicitud.'} (${detailsSummary})`,
+        })
+      }
+      return new AppApiError(errPayload)
     }
 
     // FastAPI standard validation errors { detail: [{ loc, msg, type }] }

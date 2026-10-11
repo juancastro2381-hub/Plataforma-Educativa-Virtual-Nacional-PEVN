@@ -126,6 +126,10 @@ class OrganizationalScope:
         """True if the scope is limited to a specific department."""
         return self.department_id is not None and self.municipality_id is None
 
+    def is_municipality(self) -> bool:
+        """True if the scope is limited to a specific municipality."""
+        return self.municipality_id is not None and self.institution_id is None
+
     def is_institution(self) -> bool:
         """True if the scope is limited to a specific institution."""
         return self.institution_id is not None
@@ -202,6 +206,14 @@ class IPasswordHasher(ABC):
         the password should be rehashed on next successful login.
         """
         raise NotImplementedError
+
+    def verify_dummy(self, plain_password: str) -> bool:
+        """
+        Execute timing-safe verification of dummy hash to eliminate timing side-channels
+        when authenticating non-existent, inactive, or locked accounts.
+        Always returns False.
+        """
+        return False
 
 
 class ITokenService(ABC):

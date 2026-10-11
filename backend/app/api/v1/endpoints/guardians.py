@@ -18,7 +18,9 @@ from app.api.deps import (
     ClientIpDep,
     CurrentUserDep,
     SessionDep,
+    assert_coordinator_delegation_allowed,
     require_permission,
+    resolve_institution_id,
 )
 from app.core.logging import correlation_id_ctx
 from app.core.security.interfaces import SystemRole
@@ -38,21 +40,19 @@ from app.services.guardian_service import GuardianService
 router = APIRouter(prefix="/guardians", tags=["Guardians"])
 
 
-def _resolve_institution_id(
+async def _resolve_institution_id(
+    db: SessionDep,
     auth: AuthContextDep,
     current_user: CurrentUserDep,
     institution_id_override: uuid.UUID | None = None,
 ) -> uuid.UUID:
     """Resolve active institution context adhering to tenant isolation."""
-    if (
-        SystemRole.SUPERADMIN in auth.roles
-        or SystemRole.NATIONAL_ADMIN in auth.roles
-        or auth.scope.is_national()
-    ) and institution_id_override:
-        return institution_id_override
-    if current_user.institution_id:
-        return current_user.institution_id
-    raise AuthorizationError("Contexto institucional no disponible.")
+    return await resolve_institution_id(
+        db=db,
+        auth=auth,
+        current_user=current_user,
+        institution_id_override=institution_id_override,
+    )
 
 
 @router.post(
@@ -74,7 +74,8 @@ async def create_guardian(
         Query(description="Override for SuperAdmin only"),
     ] = None,
 ) -> GuardianResponse:
-    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    target_institution_id = await _resolve_institution_id(db, auth, current_user, institution_id)
+    await assert_coordinator_delegation_allowed(db, auth, target_institution_id)
     correlation_id = correlation_id_ctx.get()
 
     service = GuardianService(session=db)
@@ -95,6 +96,31 @@ async def create_guardian(
         actor_ip=client_ip,
         correlation_id=correlation_id,
     )
+    if SystemRole.SUPERADMIN in auth.roles:
+        from app.audit.interfaces import AuditEvent, AuditEventType
+        from app.audit.service import audit_service
+
+        await audit_service.record(
+            AuditEvent(
+                event_type=AuditEventType.SUPERADMIN_EMERGENCY_ROLE_PROVISIONING,
+                actor_id=str(current_user.id),
+                actor_ip=client_ip,
+                target_id=str(guardian.id),
+                target_type="Guardian",
+                institution_id=str(target_institution_id),
+                correlation_id=correlation_id,
+                metadata={
+                    "action": "create_guardian",
+                    "target_role": "guardian",
+                    "institution_id": str(target_institution_id),
+                    "guardian_id": str(guardian.id),
+                    "relationship_type": payload.relationship_type,
+                    "authority_level": "superadmin_emergency",
+                },
+            ),
+            session=db,
+        )
+
     await db.commit()
     return service.build_guardian_response(guardian)
 
@@ -117,7 +143,7 @@ async def get_guardian(
         Query(description="Override for SuperAdmin only"),
     ] = None,
 ) -> GuardianResponse:
-    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    target_institution_id = await _resolve_institution_id(db, auth, current_user, institution_id)
     service = GuardianService(session=db)
     guardian = await service.get_guardian_by_id(
         guardian_id=guardian_id,
@@ -147,7 +173,7 @@ async def list_guardians(
         Query(description="Override for SuperAdmin only"),
     ] = None,
 ) -> GuardianListResponse:
-    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    target_institution_id = await _resolve_institution_id(db, auth, current_user, institution_id)
     service = GuardianService(session=db)
     guardians = await service.list_guardians(
         institution_id=target_institution_id,
@@ -180,7 +206,8 @@ async def provision_guardian_account(
         Query(description="Override for SuperAdmin only"),
     ] = None,
 ) -> GuardianAccountActionResponse:
-    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    target_institution_id = await _resolve_institution_id(db, auth, current_user, institution_id)
+    await assert_coordinator_delegation_allowed(db, auth, target_institution_id)
     correlation_id = correlation_id_ctx.get()
 
     service = GuardianService(session=db)
@@ -222,7 +249,8 @@ async def update_guardian_account_status(
         Query(description="Override for SuperAdmin only"),
     ] = None,
 ) -> GuardianAccountActionResponse:
-    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    target_institution_id = await _resolve_institution_id(db, auth, current_user, institution_id)
+    await assert_coordinator_delegation_allowed(db, auth, target_institution_id)
     correlation_id = correlation_id_ctx.get()
 
     service = GuardianService(session=db)
@@ -262,7 +290,8 @@ async def reset_guardian_password(
         Query(description="Override for SuperAdmin only"),
     ] = None,
 ) -> GuardianAccountActionResponse:
-    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    target_institution_id = await _resolve_institution_id(db, auth, current_user, institution_id)
+    await assert_coordinator_delegation_allowed(db, auth, target_institution_id)
     correlation_id = correlation_id_ctx.get()
 
     service = GuardianService(session=db)
@@ -304,7 +333,8 @@ async def associate_guardian_to_student(
         Query(description="Override for SuperAdmin only"),
     ] = None,
 ) -> StudentGuardianResponse:
-    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    target_institution_id = await _resolve_institution_id(db, auth, current_user, institution_id)
+    await assert_coordinator_delegation_allowed(db, auth, target_institution_id)
     correlation_id = correlation_id_ctx.get()
 
     service = GuardianService(session=db)
@@ -343,7 +373,8 @@ async def dissociate_guardian_from_student(
         Query(description="Override for SuperAdmin only"),
     ] = None,
 ) -> None:
-    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    target_institution_id = await _resolve_institution_id(db, auth, current_user, institution_id)
+    await assert_coordinator_delegation_allowed(db, auth, target_institution_id)
     correlation_id = correlation_id_ctx.get()
 
     service = GuardianService(session=db)
@@ -376,7 +407,7 @@ async def get_guardian_students(
         Query(description="Override for SuperAdmin only"),
     ] = None,
 ) -> list[StudentGuardianResponse]:
-    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    target_institution_id = await _resolve_institution_id(db, auth, current_user, institution_id)
     service = GuardianService(session=db)
     associations = await service.get_guardian_students(
         guardian_id=guardian_id,

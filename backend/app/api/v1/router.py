@@ -16,6 +16,8 @@ from app.api.v1.endpoints import (
     analytics,
     auth,
     communications,
+    coordinators,
+    department_admins,
     enrollments,
     evaluation_grades,
     grades,
@@ -25,7 +27,9 @@ from app.api.v1.endpoints import (
     health,
     incidents,
     institutions,
+    municipality_admins,
     news,
+    onboarding,
     ready,
     recordings,
     siee_policies,
@@ -79,6 +83,10 @@ api_v1_router.include_router(
 )
 
 api_v1_router.include_router(
+    academic_years.periods_router,
+)
+
+api_v1_router.include_router(
     groups.router,
 )
 
@@ -108,6 +116,10 @@ api_v1_router.include_router(
 
 api_v1_router.include_router(
     subjects.router,
+)
+
+api_v1_router.include_router(
+    subjects.knowledge_areas_router,
 )
 
 # ---- Institutional Communications & Life (Phase 15) -----------------------
@@ -164,3 +176,43 @@ api_v1_router.include_router(
 api_v1_router.include_router(
     academic_promotions.router,
 )
+
+# ---- Department Administrators Lifecycle & Territorial Provisioning -------
+api_v1_router.include_router(
+    department_admins.router,
+    prefix="/department-admins",
+    tags=["Department Administrators"],
+)
+
+# ---- Canonical Territorial Departments Endpoint ---------------------------
+api_v1_router.add_api_route(
+    "/departments",
+    department_admins.list_canonical_departments,
+    methods=["GET"],
+    tags=["Territory"],
+    response_model=list[department_admins.DepartmentOptionResponse],
+    summary="Listar departamentos canónicos",
+)
+
+# ---- National Provisioning & Onboarding Workflow (Phase NTA-04) -----------
+api_v1_router.include_router(
+    onboarding.router,
+    prefix="/onboarding",
+    tags=["Institution Onboarding Workflow"],
+)
+
+# ---- Municipality Administrators Lifecycle & Territorial Provisioning (NTA-08) --
+api_v1_router.include_router(
+    municipality_admins.router,
+    prefix="/municipality-admins",
+    tags=["Municipality Administrators"],
+)
+
+# ---- Institutional Coordinators Lifecycle (NTA-08) -----------------------
+api_v1_router.include_router(
+    coordinators.router,
+    prefix="/coordinators",
+    tags=["Coordinators"],
+)
+
+

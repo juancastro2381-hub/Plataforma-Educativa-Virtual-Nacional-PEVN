@@ -52,17 +52,32 @@ def scope_contains(
     mismatches = (
         bool(
             actor_scope.department_id
-            and target_scope.department_id != actor_scope.department_id
+            and (
+                target_scope.department_id is None
+                or str(target_scope.department_id).lower() != str(actor_scope.department_id).lower()
+            )
         ),
         bool(
             actor_scope.municipality_id
-            and target_scope.municipality_id != actor_scope.municipality_id
+            and (
+                target_scope.municipality_id is None
+                or str(target_scope.municipality_id).lower() != str(actor_scope.municipality_id).lower()
+            )
         ),
         bool(
             actor_scope.institution_id
-            and target_scope.institution_id != actor_scope.institution_id
+            and (
+                target_scope.institution_id is None
+                or str(target_scope.institution_id).lower() != str(actor_scope.institution_id).lower()
+            )
         ),
-        bool(actor_scope.campus_id and target_scope.campus_id != actor_scope.campus_id),
+        bool(
+            actor_scope.campus_id
+            and (
+                target_scope.campus_id is None
+                or str(target_scope.campus_id).lower() != str(actor_scope.campus_id).lower()
+            )
+        ),
     )
     return not any(mismatches)
 

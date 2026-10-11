@@ -15,8 +15,10 @@ SECURITY POLICIES:
 
 from __future__ import annotations
 
+import asyncio
 import uuid
 from datetime import UTC, datetime, timedelta
+from typing import Any, NoReturn
 
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -34,9 +36,11 @@ from app.core.security.interfaces import (
     Permission as SecurityPermission,
 )
 from app.core.security.password import password_hasher
+from app.core.security.rate_limiter import rate_limiter
 from app.core.security.tokens import generate_raw_token, hash_token, token_service
 from app.exceptions.errors import AuthenticationError
 from app.models.role import Role, UserRole
+from app.models.territory import Municipality
 from app.models.token import PasswordResetToken, RefreshToken
 from app.models.user import User
 from app.schemas.auth import ScopeResponse, UserMeResponse
@@ -83,13 +87,57 @@ class AuthService:
             for r in active_roles
         )
 
-        scope = OrganizationalScope(
-            country_code="CO",
-            department_id=None,
-            municipality_id=None,
-            institution_id=None if is_national else institution_id_str,
-            campus_id=None,
-        )
+        # Resolve territorial scope from active user_roles
+        municipality_id_str: str | None = None
+        department_id_str: str | None = None
+        for ur in user.user_roles:
+            if not ur.is_active:
+                continue
+            if getattr(ur, "municipality_id", None) is not None:
+                municipality_id_str = str(ur.municipality_id)
+                if getattr(ur, "department_id", None) is not None:
+                    department_id_str = str(ur.department_id)
+                elif getattr(ur, "municipality", None) is not None and ur.municipality.department_id is not None:
+                    department_id_str = str(ur.municipality.department_id)
+                break
+            elif getattr(ur, "department_id", None) is not None:
+                department_id_str = str(ur.department_id)
+                break
+
+        # A role with municipality_id has municipal scope
+        # A role with department_id has departmental scope, NOT national scope
+        if is_national:
+            scope = OrganizationalScope(
+                country_code="CO",
+                department_id=None,
+                municipality_id=None,
+                institution_id=None,
+                campus_id=None,
+            )
+        elif municipality_id_str is not None:
+            scope = OrganizationalScope(
+                country_code="CO",
+                department_id=department_id_str,
+                municipality_id=municipality_id_str,
+                institution_id=None,
+                campus_id=None,
+            )
+        elif department_id_str is not None:
+            scope = OrganizationalScope(
+                country_code="CO",
+                department_id=department_id_str,
+                municipality_id=None,
+                institution_id=None,
+                campus_id=None,
+            )
+        else:
+            scope = OrganizationalScope(
+                country_code="CO",
+                department_id=None,
+                municipality_id=None,
+                institution_id=institution_id_str,
+                campus_id=None,
+            )
 
         return AuthorizationContext(
             user_id=str(user.id),
@@ -103,6 +151,21 @@ class AuthService:
         """
         Serialize a User entity into the UserMeResponse schema.
         """
+        jurisdiction_name = None
+        municipality_code = None
+        for ur in user.user_roles:
+            if not ur.is_active:
+                continue
+            muni = getattr(ur, "municipality", None)
+            if muni is not None:
+                jurisdiction_name = muni.name
+                municipality_code = muni.code
+                break
+            dept = getattr(ur, "department", None)
+            if dept is not None:
+                jurisdiction_name = dept.name
+                break
+
         context = AuthService.build_auth_context(user)
         return UserMeResponse(
             id=user.id,
@@ -126,7 +189,11 @@ class AuthService:
                 institution_id=context.scope.institution_id,
                 campus_id=context.scope.campus_id,
                 is_national=context.scope.is_national(),
+                is_department=context.scope.is_department(),
+                is_municipality=context.scope.is_municipality(),
                 is_institution=context.scope.is_institution(),
+                jurisdiction_name=jurisdiction_name,
+                municipality_code=municipality_code,
             ),
         )
 
@@ -142,144 +209,128 @@ class AuthService:
         """
         Authenticate a user by credentials.
 
+        NTA-05 Hardened Security Pipeline:
+          1. Velocity State Inspection & Progressive Tarpitting (2.0s / 4.0s)
+          2. Account Retrieval & Expiration Auto-Reset
+          3. Constant-Time Argon2id Verification (Dummy hash)
+          4. Anti-Enumeration: Uniform HTTP 401 across all rejections
+          5. Counter Isolation: Failed attempts NEVER lock database account
+          6. Velocity and Tier 3 State Settlement on Success
+
         Returns:
             Tuple of (User, access_token_jwt, raw_refresh_token).
         """
+        normalized_account = username_or_email.lower().strip()
+
+        # 1. Inspect Account Velocity & Apply Server-Side Tarpitting if targeted
+        velocity_state, tarpit_delay = await rate_limiter.get_account_velocity_state(
+            normalized_account
+        )
+        if tarpit_delay > 0.0:
+            await asyncio.sleep(tarpit_delay)
+
         query = (
             select(User)
             .where(
-                (User.email == username_or_email.lower().strip())
+                (User.email == normalized_account)
                 | (User.username == username_or_email.strip())
             )
             .options(
                 selectinload(User.user_roles)
                 .selectinload(UserRole.role)
                 .selectinload(Role.permissions),
+                selectinload(User.user_roles)
+                .selectinload(UserRole.department),
+                selectinload(User.user_roles)
+                .selectinload(UserRole.municipality)
+                .selectinload(Municipality.department),
                 selectinload(User.institution),
             )
         )
         result = await db.execute(query)
         user = result.scalar_one_or_none()
 
-        # 1. Unknown user
+        # 2. Expiration Auto-Reset for previously locked accounts
+        if user and user.locked_until is not None:
+            locked_until_dt = (
+                user.locked_until
+                if user.locked_until.tzinfo is not None
+                else user.locked_until.replace(tzinfo=UTC)
+            )
+            if locked_until_dt <= datetime.now(UTC):
+                user.locked_until = None
+                user.failed_login_attempts = 0
+                await db.commit()
+                await db.refresh(user)
+
+        # 3. Unknown user branch (Constant-time dummy hash + Anti-enumeration)
         if not user:
-            await audit_service.record(
-                AuditEvent(
-                    event_type=AuditEventType.USER_LOGIN_FAILURE,
-                    actor_ip=client_ip,
-                    correlation_id=correlation_id,
-                    success=False,
-                    metadata={
-                        "identifier": username_or_email,
-                        "reason": "user_not_found",
-                        "user_agent": user_agent,
-                    },
-                )
-            )
-            raise AuthenticationError("Credenciales inválidas.")
-
-        # 2. Account lockout check
-        if user.is_locked:
-            await audit_service.record(
-                AuditEvent(
-                    event_type=AuditEventType.USER_LOGIN_FAILURE,
-                    actor_id=str(user.id),
-                    actor_ip=client_ip,
-                    institution_id=(
-                        str(user.institution_id) if user.institution_id else None
-                    ),
-                    correlation_id=correlation_id,
-                    success=False,
-                    metadata={
-                        "reason": "account_locked",
-                        "locked_until": (
-                            user.locked_until.isoformat() if user.locked_until else None
-                        ),
-                        "user_agent": user_agent,
-                    },
-                )
-            )
-            raise AuthenticationError(
-                "La cuenta se encuentra temporalmente bloqueada por "
-                "múltiples intentos fallidos. Intente más tarde."
+            password_hasher.verify_dummy(password)
+            await self._handle_rejected_identity(
+                db=db,
+                user=None,
+                reason="user_not_found",
+                client_ip=client_ip,
+                normalized_account=normalized_account,
+                raw_identifier=username_or_email,
+                user_agent=user_agent,
+                correlation_id=correlation_id,
             )
 
-        # 3. Inactive account check
+        # 4. Inactive user branch (Constant-time dummy hash + Anti-enumeration)
         if not user.is_active:
-            await audit_service.record(
-                AuditEvent(
-                    event_type=AuditEventType.USER_LOGIN_FAILURE,
-                    actor_id=str(user.id),
-                    actor_ip=client_ip,
-                    institution_id=(
-                        str(user.institution_id) if user.institution_id else None
-                    ),
-                    correlation_id=correlation_id,
-                    success=False,
-                    metadata={"reason": "account_inactive", "user_agent": user_agent},
-                )
+            password_hasher.verify_dummy(password)
+            await self._handle_rejected_identity(
+                db=db,
+                user=user,
+                reason="account_inactive",
+                client_ip=client_ip,
+                normalized_account=normalized_account,
+                raw_identifier=username_or_email,
+                user_agent=user_agent,
+                correlation_id=correlation_id,
             )
-            raise AuthenticationError("Cuenta inactiva. Contacte al administrador.")
 
-        # 4. Verify password with Argon2id
+        # 5. Administratively locked branch (Dummy hash + Anti-enumeration)
+        if user.is_locked:
+            password_hasher.verify_dummy(password)
+            await self._handle_rejected_identity(
+                db=db,
+                user=user,
+                reason="account_locked",
+                client_ip=client_ip,
+                normalized_account=normalized_account,
+                raw_identifier=username_or_email,
+                user_agent=user_agent,
+                correlation_id=correlation_id,
+            )
+
+        # 6. Verify password with Argon2id
         is_password_valid = password_hasher.verify(password, user.hashed_password)
         if not is_password_valid:
-            user.failed_login_attempts += 1
-
-            if user.failed_login_attempts >= _MAX_FAILED_LOGIN_ATTEMPTS:
-                user.locked_until = datetime.now(UTC) + timedelta(
-                    minutes=_LOCKOUT_DURATION_MINUTES
-                )
-                await audit_service.record(
-                    AuditEvent(
-                        event_type=AuditEventType.USER_ACCOUNT_LOCKED,
-                        actor_id=str(user.id),
-                        actor_ip=client_ip,
-                        institution_id=(
-                            str(user.institution_id) if user.institution_id else None
-                        ),
-                        correlation_id=correlation_id,
-                        success=False,
-                        metadata={
-                            "failed_attempts": user.failed_login_attempts,
-                            "locked_until": user.locked_until.isoformat(),
-                            "user_agent": user_agent,
-                        },
-                    ),
-                    session=db,
-                )
-
-            await audit_service.record(
-                AuditEvent(
-                    event_type=AuditEventType.USER_LOGIN_FAILURE,
-                    actor_id=str(user.id),
-                    actor_ip=client_ip,
-                    institution_id=(
-                        str(user.institution_id) if user.institution_id else None
-                    ),
-                    correlation_id=correlation_id,
-                    success=False,
-                    metadata={
-                        "reason": "invalid_password",
-                        "failed_attempts": user.failed_login_attempts,
-                        "user_agent": user_agent,
-                    },
-                ),
-                session=db,
+            await self._handle_invalid_password(
+                db=db,
+                user=user,
+                client_ip=client_ip,
+                normalized_account=normalized_account,
+                user_agent=user_agent,
+                correlation_id=correlation_id,
             )
-            await db.commit()
-            raise AuthenticationError("Credenciales inválidas.")
 
-        # 5. Successful password verification: reset lockout counters
+        # 7. Successful password verification: reset counters & velocity
         user.failed_login_attempts = 0
         user.locked_until = None
         user.last_login_at = datetime.now(UTC)
+
+        # Clear Tier 3 pair quota and distributed velocity state in Redis
+        await rate_limiter.clear_tier3_pair(client_ip, normalized_account)
+        await rate_limiter.clear_account_velocity_state(normalized_account)
 
         # Transparent password hash upgrade if parameters changed
         if password_hasher.needs_rehash(user.hashed_password):
             user.hashed_password = password_hasher.hash(password)
 
-        # 6. Generate Tokens
+        # 8. Generate Tokens
         context = self.build_auth_context(user)
         access_token = await token_service.create_access_token(
             subject=str(user.id),
@@ -292,7 +343,7 @@ class AuthService:
             },
         )
 
-        # 7. Generate Rotating Refresh Token
+        # 9. Generate Rotating Refresh Token
         raw_refresh_token = generate_raw_token(48)
         refresh_token_hash = hash_token(raw_refresh_token)
         family_id = uuid.uuid4()
@@ -307,10 +358,16 @@ class AuthService:
         )
         db.add(db_refresh_token)
 
-        # 8. Record Login Audit Event
+        # 10. Record Login Audit Event (Differentiated if under velocity attack)
+        success_event_type = (
+            AuditEventType.USER_LOGIN_SUCCESS_UNDER_ATTACK
+            if velocity_state in ("SUSPICIOUS_VELOCITY", "HIGH_RISK")
+            else AuditEventType.USER_LOGIN_SUCCESS
+        )
+
         await audit_service.record(
             AuditEvent(
-                event_type=AuditEventType.USER_LOGIN_SUCCESS,
+                event_type=success_event_type,
                 actor_id=str(user.id),
                 actor_ip=client_ip,
                 institution_id=(
@@ -321,6 +378,7 @@ class AuthService:
                 metadata={
                     "roles": [r.value for r in context.roles],
                     "user_agent": user_agent,
+                    "velocity_state_at_login": velocity_state,
                 },
             ),
             session=db,
@@ -329,6 +387,115 @@ class AuthService:
         await db.commit()
 
         return user, access_token, raw_refresh_token
+
+    async def _handle_rejected_identity(
+        self,
+        db: AsyncSession,
+        user: User | None,
+        reason: str,
+        client_ip: str,
+        normalized_account: str,
+        raw_identifier: str,
+        user_agent: str | None,
+        correlation_id: str | None,
+    ) -> NoReturn:
+        await rate_limiter.record_account_failure(normalized_account, client_ip)
+        await rate_limiter.record_tier2_failure(client_ip)
+        await rate_limiter.record_tier3_failure(client_ip, normalized_account)
+        await rate_limiter.get_account_velocity_state(normalized_account)
+        meta: dict[str, Any] = {"reason": reason, "user_agent": user_agent}
+        if reason == "user_not_found":
+            meta["identifier"] = raw_identifier
+        elif reason == "account_locked" and user and user.locked_until:
+            meta["locked_until"] = user.locked_until.isoformat()
+
+        await audit_service.record(
+            AuditEvent(
+                event_type=AuditEventType.USER_LOGIN_FAILURE,
+                actor_id=str(user.id) if user else None,
+                actor_ip=client_ip,
+                institution_id=(
+                    str(user.institution_id) if user and user.institution_id else None
+                ),
+                correlation_id=correlation_id,
+                success=False,
+                metadata=meta,
+            ),
+            session=db,
+        )
+        await db.commit()
+        raise AuthenticationError("Credenciales inválidas.")
+
+    async def _handle_invalid_password(
+        self,
+        db: AsyncSession,
+        user: User,
+        client_ip: str,
+        normalized_account: str,
+        user_agent: str | None,
+        correlation_id: str | None,
+    ) -> NoReturn:
+        user.failed_login_attempts += 1
+        await rate_limiter.record_account_failure(normalized_account, client_ip)
+        await rate_limiter.record_tier2_failure(client_ip)
+        await rate_limiter.record_tier3_failure(client_ip, normalized_account)
+
+        new_velocity_state, _ = await rate_limiter.get_account_velocity_state(
+            normalized_account
+        )
+        if new_velocity_state == "HIGH_RISK":
+            await audit_service.record(
+                AuditEvent(
+                    event_type=AuditEventType.SECURITY_HIGH_RISK_ACCOUNT_ALERT,
+                    actor_ip=client_ip,
+                    target_id=str(user.id),
+                    target_type="user",
+                    correlation_id=correlation_id,
+                    success=False,
+                    metadata={
+                        "account": user.username,
+                        "failed_attempts": user.failed_login_attempts,
+                    },
+                ),
+                session=db,
+            )
+        elif new_velocity_state == "SUSPICIOUS_VELOCITY":
+            await audit_service.record(
+                AuditEvent(
+                    event_type=AuditEventType.SECURITY_SUSPICIOUS_VELOCITY_DETECTED,
+                    actor_ip=client_ip,
+                    target_id=str(user.id),
+                    target_type="user",
+                    correlation_id=correlation_id,
+                    success=False,
+                    metadata={
+                        "account": user.username,
+                        "failed_attempts": user.failed_login_attempts,
+                    },
+                ),
+                session=db,
+            )
+
+        await audit_service.record(
+            AuditEvent(
+                event_type=AuditEventType.USER_LOGIN_FAILURE,
+                actor_id=str(user.id),
+                actor_ip=client_ip,
+                institution_id=(
+                    str(user.institution_id) if user.institution_id else None
+                ),
+                correlation_id=correlation_id,
+                success=False,
+                metadata={
+                    "reason": "invalid_password",
+                    "failed_attempts": user.failed_login_attempts,
+                    "user_agent": user_agent,
+                },
+            ),
+            session=db,
+        )
+        await db.commit()
+        raise AuthenticationError("Credenciales inválidas.")
 
     async def rotate_refresh_token(
         self,

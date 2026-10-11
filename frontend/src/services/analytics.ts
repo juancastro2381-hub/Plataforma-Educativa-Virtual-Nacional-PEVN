@@ -8,8 +8,10 @@
 import apiClient from '@/services/api/client'
 import type {
   DepartmentAnalyticsResponse,
+  DepartmentDetailControlCenterResponse,
   InstitutionalKPIResponse,
   MunicipalityAnalyticsResponse,
+  TerritorialControlCenterResponse,
   TerritorialSummaryResponse,
 } from '@/types'
 
@@ -56,6 +58,28 @@ export const analyticsApi = {
   ): Promise<InstitutionalKPIResponse> {
     const response = await apiClient.get<InstitutionalKPIResponse>(
       `/api/v1/analytics/territorial/institutions/${institutionId}`
+    )
+    return response.data
+  },
+
+  /**
+   * NTA-05: Get Territorial Control Center comprehensive 4-Tier indicators and department matrix.
+   */
+  async getTerritorialControlCenter(): Promise<TerritorialControlCenterResponse> {
+    const response = await apiClient.get<TerritorialControlCenterResponse>(
+      '/api/v1/analytics/territorial/control-center'
+    )
+    return response.data
+  },
+
+  /**
+   * NTA-05: Get Territorial Control Center department detail breakdown with municipality matrix.
+   */
+  async getDepartmentControlCenterDetail(
+    departmentCode: string
+  ): Promise<DepartmentDetailControlCenterResponse> {
+    const response = await apiClient.get<DepartmentDetailControlCenterResponse>(
+      `/api/v1/analytics/territorial/control-center/departments/${departmentCode}`
     )
     return response.data
   },

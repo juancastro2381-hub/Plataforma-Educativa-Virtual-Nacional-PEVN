@@ -108,6 +108,14 @@ CANONICAL_PERMISSIONS: list[tuple[str, str, str]] = [
     ("users", "create_rector", "Emitir invitación criptográfica para nuevo Rector"),
     ("users", "update", "Modificar datos de usuarios"),
     ("users", "delete", "Desactivar o eliminar usuarios"),
+    # Department Administrators Lifecycle
+    ("department_admins", "read", "Consultar administradores departamentales"),
+    ("department_admins", "create", "Crear y aprovisionar administradores departamentales"),
+    ("department_admins", "update", "Modificar perfil, estado o departamento de administradores departamentales"),
+    # Municipality Administrators Lifecycle
+    ("municipality_admins", "read", "Consultar administradores municipales"),
+    ("municipality_admins", "create", "Crear y aprovisionar administradores municipales"),
+    ("municipality_admins", "update", "Modificar perfil, estado o municipio de administradores municipales"),
     # Academic Years
     ("academic_years", "read", "Consultar años lectivos"),
     ("academic_years", "create", "Crear nuevo año lectivo"),
@@ -139,6 +147,11 @@ CANONICAL_PERMISSIONS: list[tuple[str, str, str]] = [
     ("teachers", "create", "Vincular nuevo docente a la institución"),
     ("teachers", "update", "Modificar asignación o perfil de docente"),
     ("teachers", "delete", "Desvincular docente"),
+    # Coordinators (Academic & Institutional Directive)
+    ("coordinators", "read", "Consultar coordinadores institucionales"),
+    ("coordinators", "create", "Crear y aprovisionar nuevo coordinador institucional"),
+    ("coordinators", "update", "Modificar perfil o asignación de coordinador institucional"),
+    ("coordinators", "delete", "Desvincular o dar de baja coordinador institucional"),
     # Students
     ("students", "read", "Consultar estudiantes"),
     ("students", "create", "Registrar nuevo estudiante"),
@@ -236,6 +249,16 @@ ROLE_PERMISSIONS_CONFIG: dict[str, list[str]] = {
         "users:read",
         "users:create_rector",
         "users:update",
+        # Department Administrator Management
+        "department_admins:read",
+        "department_admins:create",
+        "department_admins:update",
+        # Municipality Administrator Management
+        "municipality_admins:read",
+        "municipality_admins:create",
+        "municipality_admins:update",
+        # Institutional Coordinators
+        "coordinators:read",
         # Curricular Grades Catalog
         "grades:read",
         "grades:manage",
@@ -269,6 +292,12 @@ ROLE_PERMISSIONS_CONFIG: dict[str, list[str]] = {
     SystemRole.DEPARTMENT_ADMIN.value: [
         "institutions:read",
         "users:read",
+        "users:create_rector",
+        "department_admins:read",
+        "municipality_admins:read",
+        "municipality_admins:create",
+        "municipality_admins:update",
+        "coordinators:read",
         "academic_years:read",
         "academic_periods:read",
         "grades:read",
@@ -288,6 +317,9 @@ ROLE_PERMISSIONS_CONFIG: dict[str, list[str]] = {
     SystemRole.MUNICIPALITY_ADMIN.value: [
         "institutions:read",
         "users:read",
+        "users:create_rector",
+        "municipality_admins:read",
+        "coordinators:read",
         "academic_years:read",
         "academic_periods:read",
         "grades:read",
@@ -327,6 +359,10 @@ ROLE_PERMISSIONS_CONFIG: dict[str, list[str]] = {
         "groups:update",
         "groups:delete",
         "groups:assign_director",
+        "coordinators:read",
+        "coordinators:create",
+        "coordinators:update",
+        "coordinators:delete",
         "teachers:read",
         "teachers:create",
         "teachers:update",
@@ -420,6 +456,10 @@ ROLE_PERMISSIONS_CONFIG: dict[str, list[str]] = {
         "groups:update",
         "groups:delete",
         "groups:assign_director",
+        "coordinators:read",
+        "coordinators:create",
+        "coordinators:update",
+        "coordinators:delete",
         "teachers:read",
         "teachers:create",
         "teachers:update",

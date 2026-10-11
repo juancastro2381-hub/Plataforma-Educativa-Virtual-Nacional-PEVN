@@ -16,7 +16,7 @@ Usage:
   Environment variables (automated deployment):
     SUPERADMIN_EMAIL="admin@pevn.edu.co" \
     SUPERADMIN_USERNAME="superadmin" \
-    SUPERADMIN_PASSWORD="StrongSecurePassword123!" \
+    SUPERADMIN_PASSWORD="<SECURE_ENV_PASSWORD>" \
     SUPERADMIN_FIRST_NAME="Administrador" \
     SUPERADMIN_LAST_NAME="Nacional" \
     SUPERADMIN_DOCUMENT_NUMBER="1234567890" \

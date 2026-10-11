@@ -38,10 +38,8 @@ export const TerritorialAnalyticsView: React.FC = () => {
       setSummary(summaryData)
 
       const isNationalOrDept =
-        summaryData.scope_level === 'NATIONAL' ||
-        summaryData.scope_level === 'DEPARTMENT' ||
-        user?.scope?.is_national ||
-        Boolean(user?.scope?.department_id)
+        (summaryData.scope_level === 'NATIONAL' || summaryData.scope_level === 'DEPARTMENT') &&
+        !user?.scope?.is_municipality
 
       if (isNationalOrDept) {
         try {
@@ -50,6 +48,15 @@ export const TerritorialAnalyticsView: React.FC = () => {
         } catch {
           // Gracefully handled if restricted
           setDepartments([])
+        }
+      } else if (summaryData.scope_level === 'MUNICIPALITY') {
+        setDepartments([])
+        try {
+          const munData = await analyticsApi.getMunicipalityDistribution()
+          setMunicipalities(munData.items || [])
+          setSelectedDeptCode(summaryData.jurisdiction_name || 'Municipal')
+        } catch {
+          setMunicipalities([])
         }
       } else {
         setDepartments([])
@@ -250,6 +257,32 @@ export const TerritorialAnalyticsView: React.FC = () => {
             </div>
             <div style={{ fontSize: '0.8125rem', color: '#64748B', marginTop: '0.25rem' }}>
               🌳 {summary.zone_breakdown.rural.toLocaleString()} Rural
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Municipal Scope Info Notice */}
+      {summary?.scope_level === 'MUNICIPALITY' && (
+        <div
+          style={{
+            backgroundColor: '#F0FDF4',
+            border: '1px solid #BBF7D0',
+            borderRadius: '14px',
+            padding: '1.25rem 1.5rem',
+            marginBottom: '2rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '1rem',
+          }}
+        >
+          <span style={{ fontSize: '1.5rem' }}>🏛️</span>
+          <div>
+            <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#166534' }}>
+              Alcance Territorial Municipal Delimitado
+            </div>
+            <div style={{ fontSize: '0.8125rem', color: '#15803D', marginTop: '0.15rem' }}>
+              Su sesión cuenta con supervisión territorial para el municipio de <strong>{summary.jurisdiction_name}</strong>. Los indicadores, establecimientos y sedes reflejan exclusivamente su jurisdicción oficial.
             </div>
           </div>
         </div>

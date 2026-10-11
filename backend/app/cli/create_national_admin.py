@@ -17,7 +17,7 @@ Usage:
   Environment variables (automated / testing):
     NATIONAL_ADMIN_EMAIL="national_admin@pevn.edu.co" \
     NATIONAL_ADMIN_USERNAME="national_admin" \
-    NATIONAL_ADMIN_PASSWORD="StrongSecurePassword123!" \
+    NATIONAL_ADMIN_PASSWORD="<SECURE_ENV_PASSWORD>" \
     python -m app.cli.create_national_admin
 """
 

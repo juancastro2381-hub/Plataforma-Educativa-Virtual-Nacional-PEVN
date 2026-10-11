@@ -11,6 +11,7 @@ from __future__ import annotations
 import uuid
 from datetime import date, datetime
 from enum import StrEnum
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
 
@@ -78,6 +79,24 @@ class SubjectListResponse(BaseModel):
     total: int
 
 
+class KnowledgeAreaResponse(BaseModel):
+    """Response representation of a curricular knowledge area."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    name: str
+    is_mandatory: bool
+    institution_id: uuid.UUID | None = None
+
+
+class KnowledgeAreaListResponse(BaseModel):
+    """List response for curricular knowledge areas."""
+
+    items: list[KnowledgeAreaResponse]
+    total: int
+
+
 class SubjectCreateRequest(BaseModel):
     """Payload for creating a custom curricular subject."""
 
@@ -113,6 +132,30 @@ class AcademicYearCreateRequest(BaseModel):
     )
 
 
+class AcademicPeriodCreateRequest(BaseModel):
+    """Payload for creating a new academic period within a school year."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    period_number: int = Field(
+        ..., ge=1, le=10, description="Sequential period index (1, 2, 3, 4)"
+    )
+    name: str = Field(
+        ..., min_length=2, max_length=100, description="Display name, e.g. 'Primer Período'"
+    )
+    weight_percentage: float = Field(
+        ..., gt=0, le=100, description="Evaluation weight percentage, e.g. 25.0"
+    )
+    start_date: date = Field(..., description="Term start date")
+    end_date: date = Field(..., description="Term end date")
+
+
+class AcademicPeriodDirectCreateRequest(AcademicPeriodCreateRequest):
+    """Payload for creating an academic period with optional academic_year_id."""
+
+    academic_year_id: uuid.UUID | None = None
+
+
 class AcademicPeriodResponse(BaseModel):
     """Response representation of an academic term period within a school year."""
 
@@ -135,6 +178,118 @@ class AcademicPeriodListResponse(BaseModel):
 
     items: list[AcademicPeriodResponse]
     total: int
+
+
+# ===========================================================================
+# 1.1. Academic Period Template & Provisioning Schemas (NTA-10-R7)
+# ===========================================================================
+
+
+class AcademicPeriodTemplateType(StrEnum):
+    """
+    Evaluation period operational templates aligned with institutional autonomy
+    and SIEE regulations (Decreto 1290 de 2009 / Ley 115 de 1994, Art. 77).
+    """
+
+    SEMESTRAL_2 = "SEMESTRAL_2"  # 2 Períodos (50%, 50%)
+    TRIMESTRAL_3 = "TRIMESTRAL_3"  # 3 Períodos (33.33%, 33.33%, 33.34%)
+    PERIODS_4 = "PERIODS_4"  # 4 Períodos (25% c/u) — Referencia institucional
+    PERIODS_5 = "PERIODS_5"  # 5 Períodos (20% c/u)
+    CUSTOM = "CUSTOM"  # Personalizado por la institución
+
+
+class DraftPeriodItem(BaseModel):
+    """Draft academic period proposal or existing period representation."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    period_number: int = Field(..., ge=1, le=10, description="Sequential period number (1 to 10)")
+    name: str = Field(..., min_length=2, max_length=100, description="Period name (e.g. 'Primer Período')")
+    weight_percentage: float = Field(..., gt=0, le=100, description="Grading weight percentage (e.g. 25.0)")
+    start_date: date = Field(..., description="Term start date")
+    end_date: date = Field(..., description="Term end date")
+    is_existing: bool = Field(default=False, description="True if period is already persisted in the database")
+    existing_period_id: uuid.UUID | None = Field(default=None, description="Database ID if existing")
+    conflict_reason: str | None = Field(default=None, description="Description of any date or sequence conflict")
+
+
+class PeriodTemplatePreviewRequest(BaseModel):
+    """Payload for generating a non-destructive draft period preview."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    template_type: AcademicPeriodTemplateType = Field(
+        default=AcademicPeriodTemplateType.PERIODS_4,
+        description="Template structure to preview",
+    )
+    custom_period_count: int | None = Field(
+        default=None, ge=1, le=10, description="Custom period count when template_type is CUSTOM"
+    )
+
+
+class PeriodTemplatePreviewResponse(BaseModel):
+    """Preview response containing non-destructive proposed periods and conflict analysis."""
+
+    academic_year_id: uuid.UUID
+    academic_year_name: str
+    academic_year_year: int
+    academic_year_start: date
+    academic_year_end: date
+    calendar_type: AcademicYearCalendarType
+    academic_year_status: AcademicYearStatus
+    template_type: AcademicPeriodTemplateType
+    template_label: str
+    regulatory_disclaimer: str
+    existing_periods: list[AcademicPeriodResponse]
+    proposed_periods: list[DraftPeriodItem]
+    total_weight_existing: float
+    total_weight_proposed: float
+    total_weight_combined: float
+    has_conflicts: bool
+    conflict_messages: list[str]
+    is_complete: bool
+
+
+class SieeComplianceMetadata(BaseModel):
+    """Institutional SIEE and Territorial Calendar compliance metadata."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    siee_version: str | None = Field(default=None, max_length=100, description="SIEE version or reference")
+    approval_act: str | None = Field(default=None, max_length=150, description="Resolution or Board Approval Act")
+    approval_date: date | None = Field(default=None, description="Approval date by Consejo Directivo")
+    calendar_source: str | None = Field(default=None, max_length=200, description="Territorial school calendar resolution")
+    calendar_source_url: str | None = Field(default=None, max_length=500, description="URL or source document path")
+    reviewed_at: date | None = Field(default=None, description="Institutional review date")
+    confirmed_by_rector: bool = Field(
+        default=False,
+        description="Mandatory declaration confirming alignment with institutional SIEE and territorial calendar",
+    )
+
+
+class PeriodTemplateProvisionRequest(BaseModel):
+    """Payload to atomically provision reviewed periods and optionally activate."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    template_type: AcademicPeriodTemplateType = Field(..., description="Applied template type")
+    periods: list[DraftPeriodItem] = Field(..., min_length=1, max_length=10, description="List of validated periods to provision/reconcile")
+    compliance: SieeComplianceMetadata = Field(..., description="Institutional SIEE review and confirmation metadata")
+    activate_immediately: bool = Field(default=False, description="Whether to activate the academic year/periods upon provisioning")
+
+
+class PeriodTemplateProvisionResponse(BaseModel):
+    """Response returned upon successful atomic template provisioning."""
+
+    academic_year_id: uuid.UUID
+    provisioned_count: int
+    retained_count: int
+    total_periods: int
+    total_weight: float
+    is_activated: bool
+    academic_year_status: AcademicYearStatus
+    periods: list[AcademicPeriodResponse]
+    compliance_summary: dict[str, Any]
 
 
 class AcademicYearResponse(BaseModel):

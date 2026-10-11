@@ -194,7 +194,15 @@ export const AcceptInvitation: React.FC = () => {
               ¡Cuenta Activada Exitosamente!
             </h2>
             <p style={{ color: '#64748B', fontSize: '0.875rem', lineHeight: 1.5, marginBottom: '1.5rem' }}>
-              Su contraseña ha sido cifrada y almacenada con seguridad. Su cuenta de Rector institucional está lista para operar.
+              Su contraseña ha sido cifrada y almacenada con seguridad. Su cuenta de{' '}
+              {invitationData?.role_name === 'department_admin'
+                ? 'Administrador Departamental'
+                : invitationData?.role_name === 'municipality_admin'
+                ? 'Administrador Municipal'
+                : invitationData?.role_name === 'coordinator'
+                ? 'Coordinador Académico'
+                : 'Rector institucional'}{' '}
+              está lista para operar.
             </p>
             <div
               style={{
@@ -208,8 +216,26 @@ export const AcceptInvitation: React.FC = () => {
                 textAlign: 'left',
               }}
             >
-              <div><strong>Institución:</strong> {invitationData?.institution_name}</div>
-              <div><strong>Usuario:</strong> {invitationData?.email}</div>
+              <div>
+                <strong>
+                  {invitationData?.role_name === 'department_admin'
+                    ? 'Jurisdicción:'
+                    : invitationData?.role_name === 'municipality_admin'
+                    ? 'Municipio:'
+                    : 'Institución:'}
+                </strong>{' '}
+                {invitationData?.role_name === 'department_admin'
+                  ? `${invitationData?.department_name} (DANE ${invitationData?.department_code})`
+                  : invitationData?.role_name === 'municipality_admin'
+                  ? `${invitationData?.municipality_name} (DIVIPOLA ${invitationData?.municipality_code})`
+                  : invitationData?.institution_name}
+              </div>
+              {invitationData?.campus_name && (
+                <div style={{ marginTop: '0.35rem' }}>
+                  <strong>Sede / Campus:</strong> {invitationData.campus_name}
+                </div>
+              )}
+              <div style={{ marginTop: '0.35rem' }}><strong>Usuario:</strong> {invitationData?.email}</div>
             </div>
             <Button
               variant="primary"
@@ -240,13 +266,24 @@ export const AcceptInvitation: React.FC = () => {
                   marginBottom: '0.5rem',
                 }}
               >
-                Onboarding de Rector • PEVN
+                {invitationData.role_name === 'department_admin'
+                  ? 'Onboarding Administrador Departamental • PEVN'
+                  : invitationData.role_name === 'municipality_admin'
+                  ? 'Onboarding Administrador Municipal • PEVN'
+                  : invitationData.role_name === 'coordinator'
+                  ? 'Onboarding Coordinador Académico • PEVN'
+                  : 'Onboarding de Rector • PEVN'}
               </div>
               <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0F172A', margin: '0.25rem 0' }}>
-                Bienvenido, {invitationData.first_name}
+                Bienvenido, {invitationData.first_name} {invitationData.last_name || ''}
               </h2>
               <p style={{ color: '#64748B', fontSize: '0.875rem', margin: 0 }}>
-                {invitationData.institution_name}
+                {invitationData.role_name === 'department_admin'
+                  ? `Secretaría de Educación: ${invitationData.department_name} (DANE ${invitationData.department_code})`
+                  : invitationData.role_name === 'municipality_admin'
+                  ? `Municipio: ${invitationData.municipality_name} (DIVIPOLA ${invitationData.municipality_code})`
+                  : invitationData.institution_name}
+                {invitationData.campus_name ? ` • Sede: ${invitationData.campus_name}` : ''}
               </p>
             </div>
 
@@ -263,7 +300,13 @@ export const AcceptInvitation: React.FC = () => {
             >
               <div><strong>Correo Asignado:</strong> {invitationData.email}</div>
               <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '0.25rem' }}>
-                Establezca su contraseña personal para activar su acceso rectoral.
+                {invitationData.role_name === 'department_admin'
+                  ? 'Establezca su contraseña personal para activar su acceso administrativo departamental.'
+                  : invitationData.role_name === 'municipality_admin'
+                  ? 'Establezca su contraseña personal para activar su acceso administrativo municipal.'
+                  : invitationData.role_name === 'coordinator'
+                  ? 'Establezca su contraseña personal para activar su acceso como Coordinador Académico.'
+                  : 'Establezca su contraseña personal para activar su acceso rectoral.'}
               </div>
             </div>
 

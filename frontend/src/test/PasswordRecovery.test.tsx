@@ -45,7 +45,10 @@ describe('Password Recovery Components', () => {
   })
 
   it('renders ForgotPassword form and submits recovery request', async () => {
-    vi.mocked(authApi.requestPasswordReset).mockResolvedValue(undefined)
+    vi.mocked(authApi.requestPasswordReset).mockResolvedValue({
+      message: 'Instrucciones Enviadas',
+      development_recovery_url: null,
+    })
 
     render(
       <MemoryRouter>
@@ -131,6 +134,65 @@ describe('Password Recovery Components', () => {
       expect(
         screen.getByRole('button', { name: /Solicitar un Nuevo Enlace/i })
       ).toBeInTheDocument()
+    })
+  })
+
+  it('renders development fallback panel when development_recovery_url is returned', async () => {
+    const mockDevUrl = 'http://localhost:3000/auth/reset-password?token=dev_token_abc123'
+    vi.mocked(authApi.requestPasswordReset).mockResolvedValue({
+      message: 'Instrucciones Enviadas',
+      development_recovery_url: mockDevUrl,
+    })
+
+    render(
+      <MemoryRouter>
+        <AuthProvider>
+          <ForgotPassword />
+        </AuthProvider>
+      </MemoryRouter>
+    )
+
+    const emailInput = screen.getByLabelText(/Correo Electrónico/i)
+    const submitBtn = screen.getByRole('button', { name: /Enviar Enlace/i })
+
+    await userEvent.type(emailInput, 'teacher@pevn.edu.co')
+    await userEvent.click(submitBtn)
+
+    await waitFor(() => {
+      expect(screen.getByText(/ENLACE DE DESARROLLO/i)).toBeInTheDocument()
+      expect(
+        screen.getByText(/SMTP no está configurado. Este enlace se muestra únicamente para pruebas locales/i)
+      ).toBeInTheDocument()
+      expect(screen.getByDisplayValue(mockDevUrl)).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /Copiar/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /Probar recuperación/i })).toBeInTheDocument()
+    })
+  })
+
+  it('does NOT render development fallback panel when development_recovery_url is null', async () => {
+    vi.mocked(authApi.requestPasswordReset).mockResolvedValue({
+      message: 'Instrucciones Enviadas',
+      development_recovery_url: null,
+    })
+
+    render(
+      <MemoryRouter>
+        <AuthProvider>
+          <ForgotPassword />
+        </AuthProvider>
+      </MemoryRouter>
+    )
+
+    const emailInput = screen.getByLabelText(/Correo Electrónico/i)
+    const submitBtn = screen.getByRole('button', { name: /Enviar Enlace/i })
+
+    await userEvent.type(emailInput, 'admin@pevn.edu.co')
+    await userEvent.click(submitBtn)
+
+    await waitFor(() => {
+      expect(screen.getByText(/Instrucciones Enviadas/i)).toBeInTheDocument()
+      expect(screen.queryByText(/ENLACE DE DESARROLLO/i)).not.toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: /Probar recuperación/i })).not.toBeInTheDocument()
     })
   })
 })

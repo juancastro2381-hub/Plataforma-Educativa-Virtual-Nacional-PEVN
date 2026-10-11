@@ -19,9 +19,14 @@ import { EnrollmentsView } from './EnrollmentsView'
 import { TransfersView } from './TransfersView'
 import { AcademicAssignmentsView } from './AcademicAssignmentsView'
 import { DirectiveEvaluationManagementView } from './DirectiveEvaluationManagementView'
+import { AcademicPeriodsView } from './AcademicPeriodsView'
+import { GradesView } from './GradesView'
+import { SubjectsView } from './SubjectsView'
+import { CoordinatorsView } from './CoordinatorsView'
+import { InstitutionSettingsView } from './InstitutionSettingsView'
 
 export const AcademicHub: React.FC = () => {
-  const { user, hasPermission } = useAuth()
+  const { user, hasPermission, hasRole } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
   const [unauthorizedMessage, setUnauthorizedMessage] = useState<string | null>(null)
 
@@ -31,6 +36,7 @@ export const AcademicHub: React.FC = () => {
         [
           'rector',
           'superadmin',
+          'super_admin',
           'national_admin',
           'coordinator',
           'academic_coordinator',
@@ -42,21 +48,42 @@ export const AcademicHub: React.FC = () => {
     )
   }, [user])
 
-  const allTabs: (TabItem & { permission?: string })[] = [
+  const allTabs: (TabItem & { permission?: string; roles?: string[] })[] = [
     { id: 'years', label: 'Años Lectivos', icon: '📅', permission: 'academic_years:read' },
+    { id: 'periods', label: 'Períodos Académicos', icon: '⏱️', permission: 'academic_periods:read' },
+    { id: 'grades', label: 'Grados Curriculares', icon: '🏛️', permission: 'grades:read' },
+    { id: 'subjects', label: 'Asignaturas', icon: '📖', permission: 'subjects:read' },
     { id: 'groups', label: 'Grupos y Cupos', icon: '🏫', permission: 'groups:read' },
     { id: 'students', label: 'Estudiantes (SIMAT)', icon: '🎓', permission: 'students:read' },
     { id: 'teachers', label: 'Planta Docente', icon: '👩‍🏫', permission: 'teachers:read' },
+    {
+      id: 'coordinators',
+      label: 'Coordinadores Académicos',
+      icon: '👔',
+      permission: 'coordinators:read',
+      roles: ['rector', 'institution_admin', 'superadmin', 'super_admin'],
+    },
     { id: 'guardians', label: 'Acudientes', icon: '👪', permission: 'guardians:read' },
     { id: 'enrollments', label: 'Libro de Matrículas', icon: '📑', permission: 'enrollments:read' },
     { id: 'transfers', label: 'Traslados de Salón', icon: '🔄', permission: 'enrollments:read' },
     { id: 'assignments', label: 'Carga Académica', icon: '📚', permission: 'academic_assignments:read' },
-    { id: 'evaluations', label: 'Evaluación y Períodos', icon: '📊', permission: 'evaluations:read' },
+    { id: 'evaluations', label: 'Evaluación y Calificaciones', icon: '📊', permission: 'evaluations:read' },
+    {
+      id: 'settings',
+      label: 'Configuración Institucional',
+      icon: '⚙️',
+      permission: 'institutions:read',
+      roles: ['rector', 'institution_admin', 'superadmin', 'super_admin'],
+    },
   ]
 
   const academicTabs = useMemo<TabItem[]>(() => {
-    return allTabs.filter(t => !t.permission || hasPermission(t.permission))
-  }, [hasPermission])
+    return allTabs.filter(t => {
+      const permOk = !t.permission || hasPermission(t.permission)
+      const roleOk = !t.roles || hasRole(t.roles)
+      return permOk && roleOk
+    })
+  }, [hasPermission, hasRole])
 
   const currentTab = searchParams.get('tab')
   const defaultTab = academicTabs[0]?.id || 'years'
@@ -95,12 +122,20 @@ export const AcademicHub: React.FC = () => {
     switch (activeTab) {
       case 'years':
         return <AcademicYearsView />
+      case 'periods':
+        return <AcademicPeriodsView />
+      case 'grades':
+        return <GradesView />
+      case 'subjects':
+        return <SubjectsView />
       case 'groups':
         return <GroupsView />
       case 'students':
         return <StudentsView />
       case 'teachers':
         return <TeachersView />
+      case 'coordinators':
+        return <CoordinatorsView />
       case 'guardians':
         return <GuardiansView />
       case 'enrollments':
@@ -111,6 +146,8 @@ export const AcademicHub: React.FC = () => {
         return <AcademicAssignmentsView />
       case 'evaluations':
         return <DirectiveEvaluationManagementView />
+      case 'settings':
+        return <InstitutionSettingsView />
       default:
         return <AcademicYearsView />
     }

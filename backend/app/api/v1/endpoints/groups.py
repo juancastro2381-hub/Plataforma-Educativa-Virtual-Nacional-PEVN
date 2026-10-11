@@ -19,6 +19,7 @@ from app.api.deps import (
     CurrentUserDep,
     SessionDep,
     require_permission,
+    resolve_institution_id,
 )
 from app.core.logging import correlation_id_ctx
 from app.core.security.interfaces import SystemRole
@@ -37,21 +38,19 @@ from app.services.group_service import GroupService
 router = APIRouter(prefix="/groups", tags=["Groups"])
 
 
-def _resolve_institution_id(
+async def _resolve_institution_id(
+    db: SessionDep,
     auth: AuthContextDep,
     current_user: CurrentUserDep,
     institution_id_override: uuid.UUID | None = None,
 ) -> uuid.UUID:
     """Resolve active institution context adhering to tenant isolation."""
-    if (
-        SystemRole.SUPERADMIN in auth.roles
-        or SystemRole.NATIONAL_ADMIN in auth.roles
-        or auth.scope.is_national()
-    ) and institution_id_override:
-        return institution_id_override
-    if current_user.institution_id:
-        return current_user.institution_id
-    raise AuthorizationError("Contexto institucional no disponible.")
+    return await resolve_institution_id(
+        db=db,
+        auth=auth,
+        current_user=current_user,
+        institution_id_override=institution_id_override,
+    )
 
 
 @router.post(
@@ -73,7 +72,7 @@ async def create_group(
         Query(description="Override for SuperAdmin only"),
     ] = None,
 ) -> GroupResponse:
-    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    target_institution_id = await _resolve_institution_id(db, auth, current_user, institution_id)
     correlation_id = correlation_id_ctx.get()
 
     service = GroupService(session=db)
@@ -113,7 +112,7 @@ async def get_group(
         Query(description="Override for SuperAdmin only"),
     ] = None,
 ) -> GroupResponse:
-    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    target_institution_id = await _resolve_institution_id(db, auth, current_user, institution_id)
     service = GroupService(session=db)
     group = await service.get_group_by_id(
         group_id=group_id,
@@ -153,7 +152,7 @@ async def list_groups(
         Query(description="Override for SuperAdmin only"),
     ] = None,
 ) -> GroupListResponse:
-    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    target_institution_id = await _resolve_institution_id(db, auth, current_user, institution_id)
     service = GroupService(session=db)
     groups = await service.list_groups(
         institution_id=target_institution_id,
@@ -188,7 +187,7 @@ async def get_group_capacity(
         Query(description="Override for SuperAdmin only"),
     ] = None,
 ) -> GroupCapacityResponse:
-    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    target_institution_id = await _resolve_institution_id(db, auth, current_user, institution_id)
     service = GroupService(session=db)
     limit, active, available = await service.get_available_capacity(
         group_id=group_id,
@@ -222,7 +221,7 @@ async def assign_group_director(
         Query(description="Override for SuperAdmin only"),
     ] = None,
 ) -> GroupResponse:
-    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    target_institution_id = await _resolve_institution_id(db, auth, current_user, institution_id)
     correlation_id = correlation_id_ctx.get()
 
     service = GroupService(session=db)

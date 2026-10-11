@@ -19,38 +19,43 @@ from app.api.deps import (
     CurrentUserDep,
     SessionDep,
     require_permission,
+    resolve_institution_id,
 )
 from app.core.logging import correlation_id_ctx
 from app.core.security.interfaces import SystemRole
 from app.exceptions.errors import AuthorizationError
 from app.models.academic_year import AcademicPeriod, AcademicYear, AcademicYearStatus
 from app.schemas.academic import (
+    AcademicPeriodCreateRequest,
+    AcademicPeriodDirectCreateRequest,
     AcademicPeriodListResponse,
     AcademicPeriodResponse,
     AcademicYearCreateRequest,
     AcademicYearListResponse,
     AcademicYearResponse,
+    PeriodTemplatePreviewRequest,
+    PeriodTemplatePreviewResponse,
+    PeriodTemplateProvisionRequest,
+    PeriodTemplateProvisionResponse,
 )
 from app.services.academic_year_service import AcademicYearService
 
 router = APIRouter(prefix="/academic-years", tags=["Academic Years"])
 
 
-def _resolve_institution_id(
+async def _resolve_institution_id(
+    db: SessionDep,
     auth: AuthContextDep,
     current_user: CurrentUserDep,
     institution_id_override: uuid.UUID | None = None,
 ) -> uuid.UUID:
     """Resolve active institution context adhering to tenant isolation."""
-    if (
-        SystemRole.SUPERADMIN in auth.roles
-        or SystemRole.NATIONAL_ADMIN in auth.roles
-        or auth.scope.is_national()
-    ) and institution_id_override:
-        return institution_id_override
-    if current_user.institution_id:
-        return current_user.institution_id
-    raise AuthorizationError("Contexto institucional no disponible.")
+    return await resolve_institution_id(
+        db=db,
+        auth=auth,
+        current_user=current_user,
+        institution_id_override=institution_id_override,
+    )
 
 
 @router.post(
@@ -72,7 +77,7 @@ async def create_academic_year(
         Query(description="Override for SuperAdmin only"),
     ] = None,
 ) -> AcademicYearResponse:
-    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    target_institution_id = await _resolve_institution_id(db, auth, current_user, institution_id)
     correlation_id = correlation_id_ctx.get()
 
     service = AcademicYearService(session=db)
@@ -111,7 +116,7 @@ async def get_academic_year(
         Query(description="Override for SuperAdmin only"),
     ] = None,
 ) -> AcademicYearResponse:
-    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    target_institution_id = await _resolve_institution_id(db, auth, current_user, institution_id)
     service = AcademicYearService(session=db)
     academic_year = await service.get_academic_year_by_id(
         year_id=year_id,
@@ -138,7 +143,7 @@ async def list_academic_year_periods(
         Query(description="Override for SuperAdmin only"),
     ] = None,
 ) -> AcademicPeriodListResponse:
-    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    target_institution_id = await _resolve_institution_id(db, auth, current_user, institution_id)
     service = AcademicYearService(session=db)
     academic_year = await service.get_academic_year_by_id(
         year_id=year_id,
@@ -154,6 +159,110 @@ async def list_academic_year_periods(
         items=[AcademicPeriodResponse.model_validate(p) for p in periods],
         total=len(periods),
     )
+
+
+@router.post(
+    "/{year_id}/periods",
+    response_model=AcademicPeriodResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Crear período académico para un año lectivo",
+    description="Registra un nuevo período de evaluación dentro del año escolar.",
+    dependencies=[Depends(require_permission("academic_periods", "create"))],
+)
+async def create_academic_year_period(
+    year_id: uuid.UUID,
+    payload: AcademicPeriodCreateRequest,
+    db: SessionDep,
+    auth: AuthContextDep,
+    current_user: CurrentUserDep,
+    client_ip: ClientIpDep,
+    institution_id: Annotated[
+        uuid.UUID | None,
+        Query(description="Override for SuperAdmin only"),
+    ] = None,
+) -> AcademicPeriodResponse:
+    target_institution_id = await _resolve_institution_id(db, auth, current_user, institution_id)
+    correlation_id = correlation_id_ctx.get()
+    service = AcademicYearService(session=db)
+    period = await service.create_academic_period(
+        year_id=year_id,
+        institution_id=target_institution_id,
+        period_number=payload.period_number,
+        name=payload.name,
+        weight_percentage=payload.weight_percentage,
+        start_date=payload.start_date,
+        end_date=payload.end_date,
+        actor_id=current_user.id,
+        actor_ip=client_ip,
+        correlation_id=correlation_id,
+    )
+    await db.commit()
+    await db.refresh(period)
+    return AcademicPeriodResponse.model_validate(period)
+
+
+@router.post(
+    "/{year_id}/periods/template-preview",
+    response_model=PeriodTemplatePreviewResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Previsualizar plantilla de períodos académicos",
+    description="Calcula una propuesta no destructiva de períodos para el año lectivo.",
+    dependencies=[Depends(require_permission("academic_periods", "read"))],
+)
+async def preview_academic_year_period_template(
+    year_id: uuid.UUID,
+    payload: PeriodTemplatePreviewRequest,
+    db: SessionDep,
+    auth: AuthContextDep,
+    current_user: CurrentUserDep,
+    institution_id: Annotated[
+        uuid.UUID | None,
+        Query(description="Override for SuperAdmin only"),
+    ] = None,
+) -> PeriodTemplatePreviewResponse:
+    target_institution_id = await _resolve_institution_id(db, auth, current_user, institution_id)
+    service = AcademicYearService(session=db)
+    return await service.preview_period_template(
+        year_id=year_id,
+        institution_id=target_institution_id,
+        template_type=payload.template_type,
+        custom_period_count=payload.custom_period_count,
+    )
+
+
+@router.post(
+    "/{year_id}/periods/template-provision",
+    response_model=PeriodTemplateProvisionResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Aprovisionar períodos académicos desde plantilla",
+    description="Crea atómicamente los períodos validados y registra la conformidad SIEE.",
+    dependencies=[Depends(require_permission("academic_periods", "create"))],
+)
+async def provision_academic_year_period_template(
+    year_id: uuid.UUID,
+    payload: PeriodTemplateProvisionRequest,
+    db: SessionDep,
+    auth: AuthContextDep,
+    current_user: CurrentUserDep,
+    client_ip: ClientIpDep,
+    institution_id: Annotated[
+        uuid.UUID | None,
+        Query(description="Override for SuperAdmin only"),
+    ] = None,
+) -> PeriodTemplateProvisionResponse:
+    target_institution_id = await _resolve_institution_id(db, auth, current_user, institution_id)
+    correlation_id = correlation_id_ctx.get()
+    service = AcademicYearService(session=db)
+    result = await service.provision_period_template(
+        year_id=year_id,
+        institution_id=target_institution_id,
+        payload=payload,
+        actor_id=current_user.id,
+        actor_ip=client_ip,
+        correlation_id=correlation_id,
+    )
+    await db.commit()
+    return result
 
 
 @router.get(
@@ -177,7 +286,7 @@ async def list_academic_years(
         Query(description="Override for SuperAdmin only"),
     ] = None,
 ) -> AcademicYearListResponse:
-    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    target_institution_id = await _resolve_institution_id(db, auth, current_user, institution_id)
 
     query = select(AcademicYear).where(
         AcademicYear.institution_id == target_institution_id
@@ -214,7 +323,7 @@ async def activate_academic_year(
         Query(description="Override for SuperAdmin only"),
     ] = None,
 ) -> AcademicYearResponse:
-    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    target_institution_id = await _resolve_institution_id(db, auth, current_user, institution_id)
     correlation_id = correlation_id_ctx.get()
 
     service = AcademicYearService(session=db)
@@ -249,7 +358,7 @@ async def close_academic_year(
         Query(description="Override for SuperAdmin only"),
     ] = None,
 ) -> AcademicYearResponse:
-    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    target_institution_id = await _resolve_institution_id(db, auth, current_user, institution_id)
     correlation_id = correlation_id_ctx.get()
 
     service = AcademicYearService(session=db)
@@ -263,3 +372,86 @@ async def close_academic_year(
     await db.commit()
     await db.refresh(academic_year)
     return AcademicYearResponse.model_validate(academic_year)
+
+
+periods_router = APIRouter(prefix="/academic-periods", tags=["Academic Periods"])
+
+
+@periods_router.get(
+    "",
+    response_model=AcademicPeriodListResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Listar períodos académicos",
+    description="Obtiene los períodos de evaluación académica para la institución.",
+    dependencies=[Depends(require_permission("academic_periods", "read"))],
+)
+async def list_academic_periods(
+    db: SessionDep,
+    auth: AuthContextDep,
+    current_user: CurrentUserDep,
+    year_id: Annotated[uuid.UUID | None, Query(description="Filtrar por año lectivo")] = None,
+    institution_id: Annotated[
+        uuid.UUID | None,
+        Query(description="Override for SuperAdmin/DepartmentAdmin"),
+    ] = None,
+) -> AcademicPeriodListResponse:
+    target_institution_id = await _resolve_institution_id(db, auth, current_user, institution_id)
+    query = (
+        select(AcademicPeriod)
+        .join(AcademicYear, AcademicPeriod.academic_year_id == AcademicYear.id)
+        .where(AcademicYear.institution_id == target_institution_id)
+    )
+    if year_id:
+        query = query.where(AcademicPeriod.academic_year_id == year_id)
+    query = query.order_by(AcademicPeriod.period_number.asc())
+    periods = list((await db.execute(query)).scalars().all())
+    return AcademicPeriodListResponse(
+        items=[AcademicPeriodResponse.model_validate(p) for p in periods],
+        total=len(periods),
+    )
+
+
+@periods_router.post(
+    "",
+    response_model=AcademicPeriodResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Crear período académico directo",
+    description="Registra un nuevo período de evaluación indicando el año escolar.",
+    dependencies=[Depends(require_permission("academic_periods", "create"))],
+)
+async def create_academic_period_direct(
+    payload: AcademicPeriodDirectCreateRequest,
+    db: SessionDep,
+    auth: AuthContextDep,
+    current_user: CurrentUserDep,
+    client_ip: ClientIpDep,
+    year_id: Annotated[uuid.UUID | None, Query(description="Año escolar")] = None,
+    institution_id: Annotated[
+        uuid.UUID | None,
+        Query(description="Override for SuperAdmin/DepartmentAdmin"),
+    ] = None,
+) -> AcademicPeriodResponse:
+    target_year_id = payload.academic_year_id or year_id
+    if not target_year_id:
+        from app.core.exceptions import AcademicDomainError
+        raise AcademicDomainError("Debe especificar el año lectivo (year_id) para el período.")
+    target_institution_id = await _resolve_institution_id(db, auth, current_user, institution_id)
+    correlation_id = correlation_id_ctx.get()
+    service = AcademicYearService(session=db)
+    period = await service.create_academic_period(
+        year_id=target_year_id,
+        institution_id=target_institution_id,
+        period_number=payload.period_number,
+        name=payload.name,
+        weight_percentage=payload.weight_percentage,
+        start_date=payload.start_date,
+        end_date=payload.end_date,
+        actor_id=current_user.id,
+        actor_ip=client_ip,
+        correlation_id=correlation_id,
+    )
+    await db.commit()
+    await db.refresh(period)
+    return AcademicPeriodResponse.model_validate(period)
+
+

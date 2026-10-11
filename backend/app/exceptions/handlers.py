@@ -121,26 +121,33 @@ async def validation_exception_handler(
     Converts Pydantic's verbose error format into the application's
     standard error structure. Details are only included in development.
     """
-    logger.info(
-        "Request validation failed",
-        path=request.url.path,
-        error_count=len(exc.errors()),
-    )
-
-    # Build safe validation error details (no internal paths exposed)
+    # Build safe validation error details (no internal paths or sensitive values exposed)
     details = [
         {
             "field": " → ".join(str(loc) for loc in err.get("loc", [])),
-            "message": err.get("msg", "Invalid value"),
+            "message": err.get("msg", "Valor inválido"),
             "type": err.get("type", "value_error"),
         }
         for err in exc.errors()
     ]
 
+    logger.info(
+        "Request validation failed",
+        path=request.url.path,
+        error_count=len(exc.errors()),
+        errors=[
+            {
+                "field": d["field"],
+                "type": d["type"],
+            }
+            for d in details
+        ],
+    )
+
     return _make_error_response(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         code="VALIDATION_ERROR",
-        message="Request validation failed. Check the request and try again.",
+        message="Error de validación en la solicitud. Verifique los campos ingresados.",
         details=details,
     )
 

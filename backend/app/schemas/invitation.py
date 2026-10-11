@@ -10,6 +10,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 from app.models.user import DocumentType
+from app.services.email_service import EmailDeliveryStatus
 
 
 class RectorInvitationCreateRequest(BaseModel):
@@ -40,6 +41,14 @@ class RectorInvitationResponse(BaseModel):
         None,
         description="One-time raw token returned to the administrator for dispatching.",
     )
+    email_delivery_status: EmailDeliveryStatus = Field(
+        default=EmailDeliveryStatus.EMAIL_NOT_CONFIGURED,
+        description="Estado de despacho del correo institucional",
+    )
+    invitation_url: str | None = Field(
+        default=None,
+        description="Enlace directo de activación para fallback cuando el correo no está disponible",
+    )
 
 
 class VerifyInvitationRequest(BaseModel):
@@ -57,7 +66,13 @@ class VerifyInvitationResponse(BaseModel):
     email: str
     first_name: str
     last_name: str
-    institution_name: str
+    institution_name: str | None = None
+    campus_name: str | None = None
+    department_name: str | None = None
+    department_code: str | None = None
+    municipality_name: str | None = None
+    municipality_code: str | None = None
+    role_name: str = "rector"
     expires_at: datetime
 
 

@@ -5,11 +5,13 @@
  * granular permissions, and session management actions.
  */
 
-import React, { useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { institutionApi } from '@/services/institution'
+import type { InstitutionResponse } from '@/types'
 
 export const Dashboard: React.FC = () => {
   const {
@@ -33,6 +35,40 @@ export const Dashboard: React.FC = () => {
   const [passwordError, setPasswordError] = useState<string | null>(null)
   const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null)
   const [isChangingPassword, setIsChangingPassword] = useState(false)
+
+  // Institutional profile data for assigned tenant
+  const [instSummary, setInstSummary] = useState<InstitutionResponse | null>(null)
+  const [isLoadingInst, setIsLoadingInst] = useState(false)
+  const [instLoadError, setInstLoadError] = useState<string | null>(null)
+
+  const loadMyInstitution = useCallback(async () => {
+    const targetInstId = user?.institution_id || user?.scope?.institution_id || activeInstitutionId
+    if (!targetInstId) return
+
+    setIsLoadingInst(true)
+    setInstLoadError(null)
+    try {
+      let inst: InstitutionResponse
+      if (activeInstitutionId && !user?.institution_id) {
+        inst = await institutionApi.getInstitutionById(activeInstitutionId)
+      } else {
+        inst = await institutionApi.getMyInstitution()
+      }
+      setInstSummary(inst)
+      if (inst?.id && inst?.name) {
+        setActiveInstitutionContext(inst.id, inst.name)
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'No se pudo cargar la información de la institución asignada.'
+      setInstLoadError(msg)
+    } finally {
+      setIsLoadingInst(false)
+    }
+  }, [user, activeInstitutionId, setActiveInstitutionContext])
+
+  useEffect(() => {
+    void loadMyInstitution()
+  }, [loadMyInstitution])
 
   if (!user) {
     return null
@@ -209,8 +245,30 @@ export const Dashboard: React.FC = () => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.875rem' }}>
             <div>
               <span style={{ color: '#64748B' }}>Nivel de Alcance: </span>
-              <strong>{user.scope.is_national ? 'Nacional (Todo el Territorio)' : 'Institucional'}</strong>
+              <strong>
+                {user.scope.is_national
+                  ? 'Nacional (Todo el Territorio)'
+                  : user.scope.is_municipality
+                  ? 'Municipal'
+                  : user.scope.is_department || user.scope.department_id
+                  ? 'Departamental'
+                  : 'Institucional'}
+              </strong>
             </div>
+            {user.scope.jurisdiction_name && (
+              <div>
+                <span style={{ color: '#64748B' }}>Jurisdicción: </span>
+                <strong>{user.scope.jurisdiction_name}</strong>
+              </div>
+            )}
+            {user.scope.municipality_code && (
+              <div>
+                <span style={{ color: '#64748B' }}>Código DANE Municipio: </span>
+                <code style={{ fontSize: '0.8rem', backgroundColor: '#F1F5F9', padding: '0.2rem 0.4rem', borderRadius: '4px' }}>
+                  {user.scope.municipality_code}
+                </code>
+              </div>
+            )}
             <div>
               <span style={{ color: '#64748B' }}>País: </span>
               <strong>{user.scope.country_code || 'CO'}</strong>
@@ -223,7 +281,123 @@ export const Dashboard: React.FC = () => {
                 </code>
               </div>
             )}
-            {activeInstitutionId && (
+
+            {/* Enriched Institutional Tenant Information for Rector / Institutional Directive */}
+            {isLoadingInst && (
+              <div style={{ padding: '0.75rem', backgroundColor: '#F8FAFC', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <LoadingSpinner size="sm" />
+                <span style={{ fontSize: '0.8125rem', color: '#64748B' }}>Cargando perfil institucional...</span>
+              </div>
+            )}
+
+            {instLoadError && (
+              <div style={{ padding: '0.75rem', backgroundColor: '#FEF2F2', border: '1px solid #FCA5A5', borderRadius: '8px' }}>
+                <div style={{ color: '#991B1B', fontSize: '0.8125rem', fontWeight: 600 }}>{instLoadError}</div>
+                <button
+                  type="button"
+                  onClick={() => void loadMyInstitution()}
+                  style={{ marginTop: '0.25rem', fontSize: '0.75rem', color: '#B91C1C', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                >
+                  Reintentar
+                </button>
+              </div>
+            )}
+
+            {instSummary && (
+              <div
+                style={{
+                  marginTop: '0.5rem',
+                  padding: '1rem',
+                  backgroundColor: '#F0FDF4',
+                  borderRadius: '10px',
+                  border: '1px solid #BBF7D0',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  <span style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#166534', backgroundColor: '#DCFCE7', padding: '0.15rem 0.5rem', borderRadius: '9999px' }}>
+                    🏫 Institución Educativa Asignada
+                  </span>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 600, color: instSummary.is_active ? '#15803D' : '#B91C1C' }}>
+                    {instSummary.is_active ? '✓ Operacional (Activa)' : '⚠ Inactiva'}
+                  </span>
+                </div>
+
+                <div style={{ fontSize: '1.125rem', fontWeight: 800, color: '#0F172A', marginBottom: '0.25rem' }}>
+                  {instSummary.name}
+                </div>
+
+                <div style={{ fontSize: '0.8125rem', color: '#334155', marginBottom: '0.75rem', display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
+                  <span><strong>DANE:</strong> <code style={{ backgroundColor: '#FFFFFF', padding: '0.1rem 0.3rem', borderRadius: '4px', border: '1px solid #CBD5E1' }}>{instSummary.dane_code}</code></span>
+                  {instSummary.campuses && <span><strong>Sedes Oficiales:</strong> {instSummary.campuses.length}</span>}
+                  {instSummary.email && <span><strong>Correo:</strong> {instSummary.email}</span>}
+                </div>
+
+                {instSummary.campuses && instSummary.campuses.length > 0 && (
+                  <div style={{ fontSize: '0.75rem', color: '#475569', marginBottom: '0.75rem', padding: '0.5rem', backgroundColor: '#FFFFFF', borderRadius: '6px', border: '1px solid #E2E8F0' }}>
+                    <div style={{ fontWeight: 600, color: '#0F172A', marginBottom: '0.25rem' }}>Sedes Registradas:</div>
+                    {instSummary.campuses.map((c) => (
+                      <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', padding: '0.1rem 0' }}>
+                        <span>• {c.name}</span>
+                        <code style={{ fontSize: '0.7rem', color: '#64748B' }}>DANE: {c.dane_sede_code}</code>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Quick Institutional Action Links */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem' }}>
+                  <Link
+                    to="/admin/institutions"
+                    style={{
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      color: '#166534',
+                      backgroundColor: '#DCFCE7',
+                      padding: '0.35rem 0.65rem',
+                      borderRadius: '6px',
+                      textDecoration: 'none',
+                      border: '1px solid #86EFAC',
+                    }}
+                  >
+                    🏛️ Ver Perfil y Sedes
+                  </Link>
+                  <Link
+                    to="/academic"
+                    style={{
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      color: '#1E40AF',
+                      backgroundColor: '#DBEAFE',
+                      padding: '0.35rem 0.65rem',
+                      borderRadius: '6px',
+                      textDecoration: 'none',
+                      border: '1px solid #93C5FD',
+                    }}
+                  >
+                    📚 Gestión Académica
+                  </Link>
+                  {hasRole(['rector', 'superadmin']) && (
+                    <Link
+                      to="/academic?tab=settings"
+                      style={{
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        color: '#7C2D12',
+                        backgroundColor: '#FFEDD5',
+                        padding: '0.35rem 0.65rem',
+                        borderRadius: '6px',
+                        textDecoration: 'none',
+                        border: '1px solid #FDBA74',
+                      }}
+                    >
+                      ⚙️ Delegación Operativa
+                    </Link>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {activeInstitutionId && !instSummary && (
               <div
                 style={{
                   marginTop: '0.5rem',
@@ -328,8 +502,8 @@ export const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* National Administration Module Access Card (Fase 3C) */}
-      {(user.scope.is_national || user.roles.includes('national_admin') || user.roles.includes('superadmin')) && (
+      {/* National / Departmental Institutions Administration Access Card */}
+      {(hasPermission('institutions:read') || user.scope.is_national || user.roles.includes('national_admin') || user.roles.includes('superadmin')) && (
         <div
           style={{
             marginTop: '2rem',
@@ -350,20 +524,40 @@ export const Dashboard: React.FC = () => {
                   fontWeight: 700,
                   textTransform: 'uppercase',
                   letterSpacing: '0.05em',
-                  backgroundColor: 'rgba(252, 209, 22, 0.2)',
-                  color: '#FCD116',
+                  backgroundColor: hasRole('municipality_admin')
+                    ? 'rgba(16, 185, 129, 0.2)'
+                    : hasRole('department_admin')
+                    ? 'rgba(56, 189, 248, 0.2)'
+                    : 'rgba(252, 209, 22, 0.2)',
+                  color: hasRole('municipality_admin')
+                    ? '#34D399'
+                    : hasRole('department_admin')
+                    ? '#38BDF8'
+                    : '#FCD116',
                   padding: '0.25rem 0.75rem',
                   borderRadius: '9999px',
                   marginBottom: '0.5rem',
                 }}
               >
-                Nivel Nacional • Fase 3C
+                {hasRole('municipality_admin')
+                  ? 'Supervisión Municipal • SEM'
+                  : hasRole('department_admin')
+                  ? 'Supervisión Departamental'
+                  : 'Nivel Nacional • Fase 3C'}
               </div>
               <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#FFFFFF', margin: '0 0 0.25rem 0' }}>
-                Aprovisionamiento Institucional y Rectores
+                {hasRole('municipality_admin')
+                  ? 'Catálogo de Instituciones del Municipio'
+                  : hasRole('department_admin')
+                  ? 'Catálogo de Instituciones de la Jurisdicción'
+                  : 'Aprovisionamiento Institucional y Rectores'}
               </h2>
               <p style={{ fontSize: '0.875rem', color: '#94A3B8', margin: 0 }}>
-                Catálogo general de colegios, registro oficial DANE, creación de sedes e invitaciones seguras a Rectores.
+                {hasRole('municipality_admin')
+                  ? 'Inspección de colegios oficiales y sedes educativas del municipio asignado.'
+                  : hasRole('department_admin')
+                  ? 'Inspección de colegios oficiales, sedes educativas y selección de contexto institucional de trabajo.'
+                  : 'Catálogo general de colegios, registro oficial DANE, creación de sedes e invitaciones seguras a Rectores.'}
               </p>
             </div>
             <Link to="/admin/institutions" style={{ textDecoration: 'none' }}>
@@ -374,22 +568,22 @@ export const Dashboard: React.FC = () => {
                   fontWeight: 700,
                 }}
               >
-                Abrir Catálogo Nacional →
+                {hasRole(['department_admin', 'municipality_admin']) ? 'Inspeccionar Instituciones →' : 'Abrir Catálogo Nacional →'}
               </Button>
             </Link>
           </div>
         </div>
       )}
 
-      {/* Territorial Administration & Supervision Access Card */}
-      {hasRole(['superadmin', 'national_admin', 'department_admin', 'municipality_admin']) && (
+      {/* Directory of System Users Access Card */}
+      {hasPermission('users:read') && (
         <div
           style={{
             marginTop: '2rem',
-            backgroundColor: '#1E1B4B',
+            backgroundColor: '#0F172A',
             color: '#FFFFFF',
             borderRadius: '16px',
-            border: '1px solid #312E81',
+            border: '1px solid #1E293B',
             padding: '2rem',
             boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
           }}
@@ -403,31 +597,217 @@ export const Dashboard: React.FC = () => {
                   fontWeight: 700,
                   textTransform: 'uppercase',
                   letterSpacing: '0.05em',
-                  backgroundColor: 'rgba(167, 139, 250, 0.2)',
-                  color: '#A78BFA',
+                  backgroundColor: 'rgba(45, 212, 191, 0.2)',
+                  color: '#2DD4BF',
                   padding: '0.25rem 0.75rem',
                   borderRadius: '9999px',
                   marginBottom: '0.5rem',
                 }}
               >
-                Supervisión Territorial • Secretaría de Educación
+                Gobernanza y Directorio
               </div>
               <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#FFFFFF', margin: '0 0 0.25rem 0' }}>
-                Analítica Territorial e Inspección de Cobertura
+                Directorio General de Usuarios
               </h2>
-              <p style={{ fontSize: '0.875rem', color: '#C4B5FD', margin: 0 }}>
-                Supervisión agregada de matrículas SIMAT, sedes activas y deserción escolar por jurisdicción departamental o municipal.
+              <p style={{ fontSize: '0.875rem', color: '#94A3B8', margin: 0 }}>
+                Consulta de usuarios registrados, roles asignados y estados de cuenta en la jurisdicción.
               </p>
             </div>
-            <Link to="/analytics/territorial" style={{ textDecoration: 'none' }}>
+            <Link to="/admin/users" style={{ textDecoration: 'none' }}>
               <Button
                 variant="primary"
                 style={{
-                  backgroundColor: '#7C3AED',
+                  backgroundColor: '#0D9488',
                   fontWeight: 700,
                 }}
               >
-                Ver Analítica Territorial →
+                Consultar Directorio →
+              </Button>
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {/* Communications & News Access Card */}
+      {(hasPermission('communications:read') || hasPermission('news:read')) && (
+        <div
+          style={{
+            marginTop: '2rem',
+            backgroundColor: '#FFFFFF',
+            borderRadius: '16px',
+            border: '1px solid #E2E8F0',
+            padding: '2rem',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
+            <div>
+              <div
+                style={{
+                  display: 'inline-block',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                  color: '#4F46E5',
+                  padding: '0.25rem 0.75rem',
+                  borderRadius: '9999px',
+                  marginBottom: '0.5rem',
+                }}
+              >
+                Canal Institucional Oficial
+              </div>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0F172A', margin: '0 0 0.25rem 0' }}>
+                Comunicaciones y Noticias
+              </h2>
+              <p style={{ fontSize: '0.875rem', color: '#64748B', margin: 0 }}>
+                Circulares oficiales, boletines informativos y muro de noticias de la comunidad escolar.
+              </p>
+            </div>
+          </div>
+
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+              gap: '1rem',
+            }}
+          >
+            {hasPermission('communications:read') && (
+              <Link to="/communications" style={{ textDecoration: 'none' }}>
+                <div
+                  style={{
+                    padding: '1.25rem',
+                    backgroundColor: '#F8FAFC',
+                    borderRadius: '10px',
+                    border: '1px solid #E2E8F0',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <div style={{ fontSize: '1.75rem', marginBottom: '0.5rem' }}>📨</div>
+                  <div style={{ fontWeight: 700, color: '#0F172A', fontSize: '1rem' }}>Comunicaciones Oficiales</div>
+                  <div style={{ fontSize: '0.8125rem', color: '#64748B', marginTop: '0.25rem' }}>
+                    Revisión de circulares y comunicados formales de las instituciones.
+                  </div>
+                </div>
+              </Link>
+            )}
+            {hasPermission('news:read') && (
+              <Link to="/news" style={{ textDecoration: 'none' }}>
+                <div
+                  style={{
+                    padding: '1.25rem',
+                    backgroundColor: '#F8FAFC',
+                    borderRadius: '10px',
+                    border: '1px solid #E2E8F0',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <div style={{ fontSize: '1.75rem', marginBottom: '0.5rem' }}>📰</div>
+                  <div style={{ fontWeight: 700, color: '#0F172A', fontSize: '1rem' }}>Muro de Noticias</div>
+                  <div style={{ fontSize: '0.8125rem', color: '#64748B', marginTop: '0.25rem' }}>
+                    Artículos, novedades y publicaciones informativas de la comunidad.
+                  </div>
+                </div>
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Incidents & School Climate Access Card */}
+      {hasPermission('incidents:read') && (
+        <div
+          style={{
+            marginTop: '2rem',
+            backgroundColor: '#FFFFFF',
+            borderRadius: '16px',
+            border: '1px solid #E2E8F0',
+            padding: '2rem',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+            <div>
+              <div
+                style={{
+                  display: 'inline-block',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  backgroundColor: 'rgba(249, 115, 22, 0.1)',
+                  color: '#EA580C',
+                  padding: '0.25rem 0.75rem',
+                  borderRadius: '9999px',
+                  marginBottom: '0.5rem',
+                }}
+              >
+                Convivencia Escolar • Ley 1620
+              </div>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0F172A', margin: '0 0 0.25rem 0' }}>
+                Comité de Convivencia e Incidentes
+              </h2>
+              <p style={{ fontSize: '0.875rem', color: '#64748B', margin: 0 }}>
+                Supervisión de incidentes escolares (Tipo I, II y III) y seguimiento a protocolos de atención.
+              </p>
+            </div>
+            <Link to="/incidents" style={{ textDecoration: 'none' }}>
+              <Button
+                variant="primary"
+                style={{
+                  backgroundColor: '#EA580C',
+                  fontWeight: 700,
+                }}
+              >
+                Consultar Incidentes →
+              </Button>
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {/* Prompt Card for Department/Municipality Admin without active institution context */}
+      {hasRole(['department_admin', 'municipality_admin']) && !activeInstitutionId && (
+        <div
+          style={{
+            marginTop: '2rem',
+            backgroundColor: '#EFF6FF',
+            borderRadius: '16px',
+            border: '1px solid #BFDBFE',
+            padding: '2rem',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+            <div>
+              <div
+                style={{
+                  display: 'inline-block',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  backgroundColor: '#DBEAFE',
+                  color: '#1D4ED8',
+                  padding: '0.25rem 0.75rem',
+                  borderRadius: '9999px',
+                  marginBottom: '0.5rem',
+                }}
+              >
+                Inspección Curricular y Aulas Virtuales
+              </div>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#1E3A8A', margin: '0 0 0.25rem 0' }}>
+                Selección de Contexto Institucional
+              </h2>
+              <p style={{ fontSize: '0.875rem', color: '#3B82F6', margin: 0 }}>
+                Para inspeccionar el plan de estudios, salones, matrículas, planta docente y aulas virtuales de una institución específica, seleccione la institución en el catálogo.
+              </p>
+            </div>
+            <Link to="/admin/institutions" style={{ textDecoration: 'none' }}>
+              <Button variant="primary">
+                Seleccionar Institución de la Jurisdicción →
               </Button>
             </Link>
           </div>
@@ -443,7 +823,7 @@ export const Dashboard: React.FC = () => {
           'academic_coordinator',
         ])
         const isPlatformAdminWithContext =
-          hasRole(['superadmin', 'national_admin']) && Boolean(activeInstitutionId)
+          hasRole(['superadmin', 'national_admin', 'department_admin']) && Boolean(activeInstitutionId)
         const isDirective = isInstitutionalDirective || isPlatformAdminWithContext
 
         if (!isDirective) {
@@ -457,6 +837,27 @@ export const Dashboard: React.FC = () => {
             desc: 'Calendario, vigencias y cierres',
             icon: '📅',
             permission: 'academic_years:read',
+          },
+          {
+            tab: 'periods',
+            title: 'Períodos Académicos',
+            desc: 'Cortes evaluativos y ponderaciones',
+            icon: '⏱️',
+            permission: 'academic_periods:read',
+          },
+          {
+            tab: 'grades',
+            title: 'Grados Curriculares',
+            desc: 'Niveles educativos y plan de estudios',
+            icon: '🏛️',
+            permission: 'grades:read',
+          },
+          {
+            tab: 'subjects',
+            title: 'Asignaturas',
+            desc: 'Áreas fundamentales y optativas',
+            icon: '📖',
+            permission: 'subjects:read',
           },
           {
             tab: 'groups',
@@ -480,6 +881,13 @@ export const Dashboard: React.FC = () => {
             permission: 'teachers:read',
           },
           {
+            tab: 'guardians',
+            title: 'Acudientes',
+            desc: 'Contactos y autorizaciones',
+            icon: '👪',
+            permission: 'guardians:read',
+          },
+          {
             tab: 'enrollments',
             title: 'Libro de Matrículas',
             desc: 'Contratos, retiros y grados',
@@ -499,13 +907,6 @@ export const Dashboard: React.FC = () => {
             desc: 'Asignaturas y sustituciones',
             icon: '📚',
             permission: 'academic_assignments:read',
-          },
-          {
-            tab: 'guardians',
-            title: 'Acudientes',
-            desc: 'Contactos y autorizaciones',
-            icon: '👪',
-            permission: 'guardians:read',
           },
         ].filter((c) => hasPermission(c.permission))
 

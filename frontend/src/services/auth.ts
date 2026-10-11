@@ -18,6 +18,7 @@ import type {
   LoginRequest,
   LoginResponse,
   PasswordResetConfirmRequest,
+  PasswordResetInitiateResponse,
   PasswordResetRequest,
   PasswordResetVerifyRequest,
   PasswordResetVerifyResponse,
@@ -85,8 +86,14 @@ export const authApi = {
   /**
    * Request a password reset email/link.
    */
-  async requestPasswordReset(payload: PasswordResetRequest): Promise<void> {
-    await apiClient.post('/api/v1/auth/forgot-password', payload)
+  async requestPasswordReset(
+    payload: PasswordResetRequest
+  ): Promise<PasswordResetInitiateResponse> {
+    const response = await apiClient.post<PasswordResetInitiateResponse>(
+      '/api/v1/auth/forgot-password',
+      payload
+    )
+    return response.data
   },
 
   /**

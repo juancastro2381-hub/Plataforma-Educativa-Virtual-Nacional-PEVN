@@ -18,6 +18,7 @@ from sqlalchemy.orm import selectinload
 
 from app.audit.interfaces import AuditEvent, AuditEventType
 from app.audit.service import audit_service
+from app.core.config import get_settings
 from app.core.logging import get_logger
 from app.core.security.interfaces import SystemRole
 from app.core.security.password import password_hasher
@@ -31,9 +32,36 @@ from app.exceptions.errors import (
 from app.models.institution import Institution
 from app.models.invitation import RectorInvitation
 from app.models.role import Role, UserRole
+from app.models.token import RefreshToken
 from app.models.user import DocumentType, User
+from app.services.email_service import EmailDeliveryStatus, EmailService
 
 _logger = get_logger(__name__)
+
+
+class RectorInviteResult(tuple):
+    """Backwards-compatible tuple for (invitation, raw_token) with delivery attributes."""
+
+    def __new__(
+        cls,
+        invitation: RectorInvitation,
+        raw_token: str,
+        delivery_status: EmailDeliveryStatus = EmailDeliveryStatus.EMAIL_NOT_CONFIGURED,
+        activation_url: str | None = None,
+    ) -> RectorInviteResult:
+        return super().__new__(cls, (invitation, raw_token))
+
+    def __init__(
+        self,
+        invitation: RectorInvitation,
+        raw_token: str,
+        delivery_status: EmailDeliveryStatus = EmailDeliveryStatus.EMAIL_NOT_CONFIGURED,
+        activation_url: str | None = None,
+    ) -> None:
+        self.invitation = invitation
+        self.raw_token = raw_token
+        self.delivery_status = delivery_status
+        self.activation_url = activation_url
 
 
 def _mask_email(email: str) -> str:
@@ -57,9 +85,11 @@ class RectorOnboardingService:
         self,
         session: AsyncSession,
         audit_svc: audit_service.__class__ = audit_service,
+        email_service: EmailService | None = None,
     ) -> None:
         self._session = session
         self._audit = audit_svc
+        self._email = email_service or EmailService()
 
     async def invite_rector(
         self,
@@ -74,6 +104,7 @@ class RectorOnboardingService:
         invited_by_id: uuid.UUID | str,
         invited_by_ip: str = "0.0.0.0",  # noqa: S104
         correlation_id: str | None = None,
+        authority_level: str = "normal_municipal",
     ) -> tuple[RectorInvitation, str]:
         """
         Create a pre-registered inactive Rector account and issue a single-use invitation.
@@ -177,7 +208,7 @@ class RectorOnboardingService:
                 document_number=cleaned_doc,
                 is_active=False,
                 is_verified=False,
-                must_change_password=False,
+                must_change_password=True,
             )
             self._session.add(target_user)
             await self._session.flush()
@@ -228,7 +259,17 @@ class RectorOnboardingService:
         self._session.add(invitation)
         await self._session.flush()
 
-        # 8. Record audit trail
+        # 8. Attempt email delivery
+        activation_url = get_settings().build_invitation_url(raw_token)
+        delivery_status = await self._email.send_invitation_email(
+            recipient_email=cleaned_email,
+            recipient_name=f"{first_name} {last_name}".strip(),
+            role_label="Rector",
+            jurisdiction_label=None,
+            activation_url=activation_url,
+        )
+
+        # 9. Record audit trail
         await self._audit.record(
             AuditEvent(
                 event_type=AuditEventType.RECTOR_INVITED,
@@ -244,12 +285,59 @@ class RectorOnboardingService:
                     "document_type": document_type.value,
                     "document_number": cleaned_doc,
                     "expires_at": expires_at.isoformat(),
+                    "email_delivery_status": delivery_status.value,
+                    "authority_level": authority_level,
                 },
             ),
             session=self._session,
         )
 
-        return invitation, raw_token
+        if authority_level == "superadmin_emergency":
+            await self._audit.record(
+                AuditEvent(
+                    event_type=AuditEventType.SUPERADMIN_EMERGENCY_ROLE_PROVISIONING,
+                    actor_id=str(invited_by_id),
+                    actor_ip=invited_by_ip,
+                    target_id=str(target_user.id),
+                    target_type="User",
+                    institution_id=str(institution_id),
+                    correlation_id=correlation_id,
+                    metadata={
+                        "action": "invite_rector",
+                        "target_role": "rector",
+                        "target_institution_id": str(institution_id),
+                        "invitation_id": str(invitation.id),
+                        "rector_email": cleaned_email,
+                        "authority_level": authority_level,
+                    },
+                ),
+                session=self._session,
+            )
+
+        if delivery_status == EmailDeliveryStatus.EMAIL_SENT:
+            await self._audit.record(
+                AuditEvent(
+                    event_type=AuditEventType.RECTOR_INVITATION_SENT,
+                    actor_id=str(invited_by_id),
+                    actor_ip=invited_by_ip,
+                    target_id=str(target_user.id),
+                    target_type="User",
+                    institution_id=str(institution_id),
+                    correlation_id=correlation_id,
+                    metadata={
+                        "invitation_id": str(invitation.id),
+                        "rector_email": cleaned_email,
+                    },
+                ),
+                session=self._session,
+            )
+
+        return RectorInviteResult(
+            invitation,
+            raw_token,
+            delivery_status=delivery_status,
+            activation_url=activation_url,
+        )
 
     async def verify_invitation(
         self,
@@ -370,6 +458,24 @@ class RectorOnboardingService:
                 status_code=410,
             )
 
+        # Atomic single-use claim: only one concurrent redemption can flip is_used.
+        claimed = await self._session.execute(
+            update(RectorInvitation)
+            .where(
+                RectorInvitation.id == invitation.id,
+                RectorInvitation.is_used == False,  # noqa: E712
+                RectorInvitation.is_revoked == False,  # noqa: E712
+            )
+            .values(is_used=True, used_at=datetime.now(UTC))
+            .returning(RectorInvitation.id)
+            .execution_options(synchronize_session=False)
+        )
+        if claimed.scalar_one_or_none() is None:
+            raise ConflictError(
+                "Esta invitación ya fue utilizada anteriormente para activar la cuenta.",
+                code="INVITATION_ALREADY_USED",
+            )
+
         user = invitation.user
         institution = invitation.institution
 
@@ -377,6 +483,7 @@ class RectorOnboardingService:
         user.hashed_password = password_hasher.hash(password)
         user.is_active = True
         user.is_verified = True
+        user.must_change_password = False
         user.password_changed_at = datetime.now(UTC)
         user.failed_login_attempts = 0
         user.locked_until = None
@@ -442,6 +549,7 @@ class RectorOnboardingService:
         revoked_by_id: uuid.UUID | str,
         revoked_by_ip: str = "0.0.0.0",  # noqa: S104
         correlation_id: str | None = None,
+        authority_level: str = "normal_municipal",
     ) -> tuple[User, str]:
         """
         Revokes/deactivates the active Rector of an institution, enabling immediate succession.
@@ -501,6 +609,14 @@ class RectorOnboardingService:
             .values(is_revoked=True, revoked_at=datetime.now(UTC))
         )
 
+        # 6. Invalidate active session refresh tokens for the revoked rector
+        await self._session.execute(
+            update(RefreshToken)
+            .where(RefreshToken.user_id == revoked_user.id, RefreshToken.is_revoked == False)
+            .values(is_revoked=True)
+            .execution_options(synchronize_session=False)
+        )
+
         await self._session.flush()
 
         # 6. Record audit trail
@@ -519,9 +635,176 @@ class RectorOnboardingService:
                     "reason": reason,
                     "justification": justification,
                     "revoked_at": datetime.now(UTC).isoformat(),
+                    "authority_level": authority_level,
                 },
             ),
             session=self._session,
         )
 
+        if authority_level == "superadmin_emergency":
+            await self._audit.record(
+                AuditEvent(
+                    event_type=AuditEventType.SUPERADMIN_EMERGENCY_ROLE_PROVISIONING,
+                    actor_id=str(revoked_by_id),
+                    actor_ip=revoked_by_ip,
+                    target_id=str(revoked_user.id),
+                    target_type="User",
+                    institution_id=str(institution_id),
+                    correlation_id=correlation_id,
+                    metadata={
+                        "action": "revoke_rector",
+                        "target_role": "rector",
+                        "target_institution_id": str(institution_id),
+                        "target_user_id": str(revoked_user.id),
+                        "reason": reason,
+                        "justification": justification,
+                        "authority_level": authority_level,
+                    },
+                ),
+                session=self._session,
+            )
+
         return revoked_user, reason
+
+    async def resend_invitation(
+        self,
+        institution_id: uuid.UUID,
+        *,
+        actor_id: uuid.UUID | str | None = None,
+        actor_ip: str = "0.0.0.0",  # noqa: S104
+        correlation_id: str | None = None,
+        authority_level: str = "normal_municipal",
+    ) -> RectorInviteResult:
+        """
+        Invalidate previous pending invitations and issue a new single-use token for a pending Rector.
+        """
+        # 1. Verify Institution exists and is active
+        inst_stmt = select(Institution).where(Institution.id == institution_id)
+        inst = (await self._session.execute(inst_stmt)).scalar_one_or_none()
+        if not inst:
+            raise NotFoundError(
+                f"Institución educativa {institution_id} no encontrada.",
+                code="INSTITUTION_NOT_FOUND",
+            )
+        if not inst.is_active:
+            raise ConflictError(
+                "No se pueden reenviar invitaciones para una institución inactiva o suspendida.",
+                code="INSTITUTION_INACTIVE",
+            )
+
+        # 2. Verify Rector Role exists in database
+        role_stmt = select(Role).where(Role.name == SystemRole.RECTOR.value)
+        rector_role = (await self._session.execute(role_stmt)).scalar_one_or_none()
+        if not rector_role:
+            raise NotFoundError(
+                "Rol canónico 'rector' no encontrado en el catálogo de roles.",
+                code="ROLE_NOT_FOUND",
+            )
+
+        # 3. Check if institution already has an active Rector
+        active_rector_stmt = (
+            select(UserRole)
+            .where(
+                UserRole.institution_id == institution_id,
+                UserRole.role_id == rector_role.id,
+                UserRole.is_active == True,  # noqa: E712
+            )
+        )
+        existing_active = (await self._session.execute(active_rector_stmt)).scalar_one_or_none()
+        if existing_active:
+            raise ConflictError(
+                "La cuenta ya fue activada. Para restablecer la contraseña utilice el flujo de recuperación de contraseña.",
+                code="ACCOUNT_ALREADY_ACTIVATED",
+            )
+
+        # 4. Locate pending inactive Rector association
+        pending_ur_stmt = (
+            select(UserRole)
+            .where(
+                UserRole.institution_id == institution_id,
+                UserRole.role_id == rector_role.id,
+                UserRole.is_active == False,  # noqa: E712
+            )
+            .options(selectinload(UserRole.user))
+            .order_by(UserRole.assigned_at.desc())
+        )
+        pending_ur = (await self._session.execute(pending_ur_stmt)).scalar_one_or_none()
+        if not pending_ur or not pending_ur.user:
+            raise NotFoundError(
+                "No existe una cuenta de Rector pendiente de activación para esta institución.",
+                code="NO_PENDING_RECTOR_FOUND",
+            )
+
+        target_user = pending_ur.user
+        if target_user.is_verified or target_user.is_active:
+            raise ConflictError(
+                "La cuenta ya fue activada. Para restablecer la contraseña utilice el flujo de recuperación de contraseña.",
+                code="ACCOUNT_ALREADY_ACTIVATED",
+            )
+
+        # 5. Revoke previous pending invitations for this user and institution
+        await self._session.execute(
+            update(RectorInvitation)
+            .where(
+                RectorInvitation.institution_id == institution_id,
+                RectorInvitation.user_id == target_user.id,
+                RectorInvitation.is_used == False,  # noqa: E712
+                RectorInvitation.is_revoked == False,  # noqa: E712
+            )
+            .values(is_revoked=True, revoked_at=datetime.now(UTC))
+        )
+
+        # 6. Generate high-entropy 48-byte URL-safe raw token and compute SHA-256 hash
+        raw_token = generate_raw_token(48)
+        token_hash = hash_token(raw_token)
+        expires_at = datetime.now(UTC) + timedelta(hours=48)
+
+        invitation = RectorInvitation(
+            institution_id=institution_id,
+            user_id=target_user.id,
+            token_hash=token_hash,
+            invited_by_id=uuid.UUID(str(actor_id)) if actor_id else None,
+            expires_at=expires_at,
+            is_used=False,
+            is_revoked=False,
+        )
+        self._session.add(invitation)
+        await self._session.flush()
+
+        # 7. Attempt email delivery
+        activation_url = get_settings().build_invitation_url(raw_token)
+        delivery_status = await self._email.send_invitation_email(
+            recipient_email=target_user.email,
+            recipient_name=f"{target_user.first_name} {target_user.last_name}".strip(),
+            role_label="Rector",
+            jurisdiction_label=inst.name,
+            activation_url=activation_url,
+        )
+
+        # 8. Record audit trail
+        await self._audit.record(
+            AuditEvent(
+                event_type=AuditEventType.RECTOR_INVITATION_RESENT,
+                actor_id=str(actor_id) if actor_id else None,
+                actor_ip=actor_ip,
+                target_id=str(target_user.id),
+                target_type="User",
+                institution_id=str(institution_id),
+                correlation_id=correlation_id,
+                metadata={
+                    "invitation_id": str(invitation.id),
+                    "rector_email": target_user.email,
+                    "expires_at": expires_at.isoformat(),
+                    "email_delivery_status": delivery_status.value,
+                    "authority_level": authority_level,
+                },
+            ),
+            session=self._session,
+        )
+
+        return RectorInviteResult(
+            invitation,
+            raw_token,
+            delivery_status=delivery_status,
+            activation_url=activation_url,
+        )

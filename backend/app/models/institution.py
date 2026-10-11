@@ -17,6 +17,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base_class import Base
 
 if TYPE_CHECKING:
+    from app.models.official_catalog import OfficialInstitutionCatalog
     from app.models.role import UserRole
     from app.models.territory import Municipality
     from app.models.user import User
@@ -78,11 +79,29 @@ class Institution(Base):
         nullable=False,
         doc="Whether the institution is active in PEVN.",
     )
+    coordinator_delegation_enabled: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        server_default=text("false"),
+        nullable=False,
+        doc="Whether Coordinators are permitted to manage Teachers, Students, and Guardians in this institution (Rector-controlled).",
+    )
+    catalog_institution_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("official_institution_catalog.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+        doc="Authoritative reference to official Colombian educational catalog establishment.",
+    )
 
     # Relationships
     municipality: Mapped[Municipality] = relationship(
         "Municipality",
         back_populates="institutions",
+        lazy="selectin",
+    )
+    catalog_institution: Mapped[OfficialInstitutionCatalog | None] = relationship(
+        "OfficialInstitutionCatalog",
         lazy="selectin",
     )
     campuses: Mapped[list[Campus]] = relationship(
@@ -104,7 +123,7 @@ class Institution(Base):
     )
 
     def __repr__(self) -> str:
-        return f"<Institution dane_code={self.dane_code!r} name={self.name!r}>"
+        return f"<Institution dane_code={self.dane_code!r} name={self.name!r} catalog_id={self.catalog_institution_id}>"
 
 
 class Campus(Base):

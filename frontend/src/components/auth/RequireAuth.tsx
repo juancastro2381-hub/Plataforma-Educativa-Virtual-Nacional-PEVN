@@ -57,6 +57,9 @@ export const RequireAuth: React.FC<RequireAuthProps> = ({
   if (requireInstitutionContext) {
     const hasContext = Boolean(user?.scope?.institution_id || activeInstitutionId)
     if (!hasContext) {
+      if (hasPermission('institutions:read')) {
+        return <Navigate to="/admin/institutions?contextRequired=true" replace />
+      }
       return <Navigate to="/dashboard" replace />
     }
   }

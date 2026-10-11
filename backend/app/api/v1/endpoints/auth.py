@@ -22,12 +22,14 @@ from app.api.deps import (
     SessionDep,
     SettingsDep,
 )
-from app.exceptions.errors import AuthenticationError
+from app.core.config import Environment, get_settings
+from app.exceptions.errors import AuthenticationError, NotFoundError
 from app.schemas.auth import (
     LoginRequest,
     LoginResponse,
     PasswordChangeRequest,
     PasswordResetConfirmRequest,
+    PasswordResetInitiateResponse,
     PasswordResetRequest,
     PasswordResetVerifyRequest,
     PasswordResetVerifyResponse,
@@ -47,7 +49,11 @@ from app.schemas.invitation import (
     VerifyInvitationResponse,
 )
 from app.services.auth_service import auth_service
+from app.services.coordinator_service import CoordinatorService
+from app.services.department_admin_service import DepartmentAdminService
+from app.services.email_service import EmailService
 from app.services.guardian_onboarding_service import GuardianOnboardingService
+from app.services.municipality_admin_service import MunicipalityAdminService
 from app.services.rector_onboarding_service import RectorOnboardingService
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -243,6 +249,7 @@ async def change_password(
 
 @router.post(
     "/password/reset/request",
+    response_model=PasswordResetInitiateResponse,
     status_code=status.HTTP_200_OK,
     summary="Solicitar recuperación de contraseña",
     description=(
@@ -252,6 +259,7 @@ async def change_password(
 )
 @router.post(
     "/forgot-password",
+    response_model=PasswordResetInitiateResponse,
     status_code=status.HTTP_200_OK,
     summary="Solicitar recuperación de contraseña (alias)",
     include_in_schema=False,
@@ -261,23 +269,47 @@ async def request_password_reset(
     request: Request,
     db: SessionDep,
     client_ip: ClientIpDep,
-) -> dict[str, str]:
+) -> PasswordResetInitiateResponse:
     correlation_id = getattr(request.state, "correlation_id", None)
 
-    await auth_service.request_password_reset(
+    raw_token = await auth_service.request_password_reset(
         db=db,
         email=payload.email,
         client_ip=client_ip,
         correlation_id=correlation_id,
     )
 
+    settings = get_settings()
+    email_svc = EmailService(settings=settings)
+    dev_recovery_url: str | None = None
+
+    if raw_token:
+        base_url = settings.FRONTEND_URL.rstrip("/")
+        reset_url = f"{base_url}/auth/reset-password?token={raw_token}"
+        if email_svc.is_configured():
+            await email_svc.send_password_reset_email(
+                recipient_email=payload.email,
+                reset_url=reset_url,
+            )
+        # SMTP is not configured or delivery unavailable
+        # HARD SAFETY GUARD: Never return recovery link in production
+        elif (
+            not settings.is_production
+            and settings.ENVIRONMENT != Environment.PRODUCTION
+            and settings.is_development
+            and settings.AUTH_PASSWORD_RESET_DEV_LINK
+        ):
+            dev_recovery_url = reset_url
+
     # Generic constant response to prevent account enumeration
-    return {
-        "message": (
+    return PasswordResetInitiateResponse(
+        message=(
             "Si la dirección de correo electrónico se encuentra registrada, "
             "se han enviado las instrucciones de recuperación."
-        )
-    }
+        ),
+        development_recovery_url=dev_recovery_url,
+        development_recovery_link=dev_recovery_url,
+    )
 
 
 @router.post(
@@ -373,7 +405,7 @@ async def get_my_profile(
     "/verify-invitation",
     response_model=VerifyInvitationResponse,
     status_code=status.HTTP_200_OK,
-    summary="Validar token de invitación de Rector",
+    summary="Validar token de invitación de Rector, Administrador Departamental o Municipal",
     description="Valida si el token recibido en el enlace de invitación es válido y no ha expirado.",
 )
 async def verify_invitation_endpoint(
@@ -381,15 +413,36 @@ async def verify_invitation_endpoint(
     db: SessionDep,
 ) -> VerifyInvitationResponse:
     onboarding_service = RectorOnboardingService(session=db)
-    result = await onboarding_service.verify_invitation(token=payload.token)
-    return VerifyInvitationResponse(**result)
+    try:
+        result = await onboarding_service.verify_invitation(token=payload.token)
+        return VerifyInvitationResponse(**result)
+    except NotFoundError as e:
+        if getattr(e, "code", None) == "INVITATION_NOT_FOUND":
+            da_service = DepartmentAdminService(session=db)
+            try:
+                da_result = await da_service.verify_invitation(token=payload.token)
+                return VerifyInvitationResponse(**da_result)
+            except NotFoundError as da_e:
+                if getattr(da_e, "code", None) == "INVITATION_NOT_FOUND":
+                    ma_service = MunicipalityAdminService(session=db)
+                    try:
+                        ma_result = await ma_service.verify_invitation(token=payload.token)
+                        return VerifyInvitationResponse(**ma_result)
+                    except NotFoundError as ma_e:
+                        if getattr(ma_e, "code", None) == "INVITATION_NOT_FOUND":
+                            coord_service = CoordinatorService(session=db)
+                            coord_result = await coord_service.verify_invitation(token=payload.token)
+                            return VerifyInvitationResponse(**coord_result)
+                        raise
+                raise
+        raise
 
 
 @router.post(
     "/accept-invitation",
     response_model=AcceptInvitationResponse,
     status_code=status.HTTP_200_OK,
-    summary="Aceptar invitación y definir contraseña de Rector",
+    summary="Aceptar invitación y definir contraseña de cuenta",
     description="Canjea el token de un solo uso, establece la contraseña con Argon2id y activa la cuenta.",
 )
 async def accept_invitation_endpoint(
@@ -400,21 +453,77 @@ async def accept_invitation_endpoint(
 ) -> AcceptInvitationResponse:
     correlation_id = getattr(request.state, "correlation_id", None)
     onboarding_service = RectorOnboardingService(session=db)
-    user = await onboarding_service.accept_invitation(
-        token=payload.token,
-        password=payload.password,
-        password_confirmation=payload.password_confirmation,
-        client_ip=client_ip,
-        correlation_id=correlation_id,
-    )
-    await db.commit()
-
-    return AcceptInvitationResponse(
-        message="Onboarding completado exitosamente. La cuenta ha sido activada y vinculada a la institución.",
-        user_id=user.id,
-        email=user.email,
-        is_active=user.is_active,
-    )
+    try:
+        user = await onboarding_service.accept_invitation(
+            token=payload.token,
+            password=payload.password,
+            password_confirmation=payload.password_confirmation,
+            client_ip=client_ip,
+            correlation_id=correlation_id,
+        )
+        await db.commit()
+        return AcceptInvitationResponse(
+            message="Onboarding completado exitosamente. La cuenta ha sido activada y vinculada a la institución.",
+            user_id=user.id,
+            email=user.email,
+            is_active=user.is_active,
+        )
+    except NotFoundError as e:
+        if getattr(e, "code", None) == "INVITATION_NOT_FOUND":
+            da_service = DepartmentAdminService(session=db)
+            try:
+                user = await da_service.accept_invitation(
+                    token=payload.token,
+                    password=payload.password,
+                    password_confirmation=payload.password_confirmation,
+                    client_ip=client_ip,
+                    correlation_id=correlation_id,
+                )
+                await db.commit()
+                return AcceptInvitationResponse(
+                    message="Onboarding completado exitosamente. La cuenta de Administrador Departamental ha sido activada.",
+                    user_id=user.id,
+                    email=user.email,
+                    is_active=user.is_active,
+                )
+            except NotFoundError as da_e:
+                if getattr(da_e, "code", None) == "INVITATION_NOT_FOUND":
+                    ma_service = MunicipalityAdminService(session=db)
+                    try:
+                        user = await ma_service.accept_invitation(
+                            token=payload.token,
+                            password=payload.password,
+                            password_confirmation=payload.password_confirmation,
+                            client_ip=client_ip,
+                            correlation_id=correlation_id,
+                        )
+                        await db.commit()
+                        return AcceptInvitationResponse(
+                            message="Onboarding completado exitosamente. La cuenta de Administrador Municipal ha sido activada.",
+                            user_id=user.id,
+                            email=user.email,
+                            is_active=user.is_active,
+                        )
+                    except NotFoundError as ma_e:
+                        if getattr(ma_e, "code", None) == "INVITATION_NOT_FOUND":
+                            coord_service = CoordinatorService(session=db)
+                            user = await coord_service.accept_invitation(
+                                token=payload.token,
+                                password=payload.password,
+                                password_confirmation=payload.password_confirmation,
+                                client_ip=client_ip,
+                                correlation_id=correlation_id,
+                            )
+                            await db.commit()
+                            return AcceptInvitationResponse(
+                                message="Onboarding completado exitosamente. La cuenta de Coordinador ha sido activada.",
+                                user_id=user.id,
+                                email=user.email,
+                                is_active=user.is_active,
+                            )
+                        raise
+                raise
+        raise
 
 
 @router.post(

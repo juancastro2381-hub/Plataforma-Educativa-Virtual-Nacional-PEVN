@@ -9,7 +9,7 @@ from __future__ import annotations
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Request, status
 
 from app.api.deps import (
     AuthContextDep,
@@ -17,6 +17,7 @@ from app.api.deps import (
     CurrentUserDep,
     SessionDep,
     require_permission,
+    resolve_institution_id,
 )
 from app.core.logging import correlation_id_ctx
 from app.core.security.interfaces import SystemRole
@@ -34,20 +35,20 @@ from app.services.news_service import NewsService
 router = APIRouter(prefix="/news", tags=["News"])
 
 
-def _resolve_institution_id(
+async def _resolve_institution_id(
+    db: SessionDep,
     auth: AuthContextDep,
     current_user: CurrentUserDep,
     institution_id_override: uuid.UUID | None = None,
+    request: Request | None = None,
 ) -> uuid.UUID:
-    if (
-        SystemRole.SUPERADMIN in auth.roles
-        or SystemRole.NATIONAL_ADMIN in auth.roles
-        or auth.scope.is_national()
-    ) and institution_id_override:
-        return institution_id_override
-    if current_user.institution_id:
-        return current_user.institution_id
-    raise AuthorizationError("Contexto institucional no disponible.")
+    return await resolve_institution_id(
+        db=db,
+        auth=auth,
+        current_user=current_user,
+        institution_id_override=institution_id_override,
+        request=request,
+    )
 
 
 @router.post(
@@ -59,6 +60,7 @@ def _resolve_institution_id(
     dependencies=[Depends(require_permission("news", "create"))],
 )
 async def create_news(
+    request: Request,
     payload: NewsCreateRequest,
     db: SessionDep,
     auth: AuthContextDep,
@@ -69,7 +71,9 @@ async def create_news(
         Query(description="Override for SuperAdmin only"),
     ] = None,
 ) -> InstitutionalNewsResponse:
-    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    target_institution_id = await _resolve_institution_id(
+        db, auth, current_user, institution_id, request=request
+    )
     correlation_id = correlation_id_ctx.get()
 
     service = NewsService(session=db)
@@ -92,6 +96,7 @@ async def create_news(
     dependencies=[Depends(require_permission("news", "read"))],
 )
 async def get_news(
+    request: Request,
     news_id: uuid.UUID,
     db: SessionDep,
     auth: AuthContextDep,
@@ -101,7 +106,9 @@ async def get_news(
         Query(description="Override for SuperAdmin only"),
     ] = None,
 ) -> InstitutionalNewsResponse:
-    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    target_institution_id = await _resolve_institution_id(
+        db, auth, current_user, institution_id, request=request
+    )
     service = NewsService(session=db)
     news = await service.get_news_by_id(news_id=news_id, institution_id=target_institution_id)
     return InstitutionalNewsResponse.model_validate(news)
@@ -115,6 +122,7 @@ async def get_news(
     dependencies=[Depends(require_permission("news", "update"))],
 )
 async def update_news(
+    request: Request,
     news_id: uuid.UUID,
     payload: NewsUpdateRequest,
     db: SessionDep,
@@ -126,7 +134,9 @@ async def update_news(
         Query(description="Override for SuperAdmin only"),
     ] = None,
 ) -> InstitutionalNewsResponse:
-    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    target_institution_id = await _resolve_institution_id(
+        db, auth, current_user, institution_id, request=request
+    )
     correlation_id = correlation_id_ctx.get()
 
     service = NewsService(session=db)
@@ -150,6 +160,7 @@ async def update_news(
     dependencies=[Depends(require_permission("news", "publish"))],
 )
 async def publish_news(
+    request: Request,
     news_id: uuid.UUID,
     db: SessionDep,
     auth: AuthContextDep,
@@ -160,7 +171,9 @@ async def publish_news(
         Query(description="Override for SuperAdmin only"),
     ] = None,
 ) -> InstitutionalNewsResponse:
-    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    target_institution_id = await _resolve_institution_id(
+        db, auth, current_user, institution_id, request=request
+    )
     correlation_id = correlation_id_ctx.get()
 
     service = NewsService(session=db)
@@ -183,6 +196,7 @@ async def publish_news(
     dependencies=[Depends(require_permission("news", "read"))],
 )
 async def list_news(
+    request: Request,
     db: SessionDep,
     auth: AuthContextDep,
     current_user: CurrentUserDep,
@@ -193,7 +207,9 @@ async def list_news(
         Query(description="Override for SuperAdmin only"),
     ] = None,
 ) -> NewsListResponse:
-    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    target_institution_id = await _resolve_institution_id(
+        db, auth, current_user, institution_id, request=request
+    )
     service = NewsService(session=db)
     items = await service.list_news(
         institution_id=target_institution_id,

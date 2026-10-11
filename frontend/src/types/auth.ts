@@ -21,7 +21,11 @@ export interface ScopeResponse {
   institution_id: string | null
   campus_id: string | null
   is_national: boolean
+  is_department?: boolean
+  is_municipality?: boolean
   is_institution: boolean
+  jurisdiction_name?: string | null
+  municipality_code?: string | null
 }
 
 export interface User {
@@ -70,6 +74,12 @@ export interface PasswordResetRequest {
   email: string
 }
 
+export interface PasswordResetInitiateResponse {
+  message: string
+  development_recovery_url?: string | null
+  development_recovery_link?: string | null
+}
+
 export interface PasswordResetConfirmRequest {
   token: string
   new_password: string
@@ -105,6 +115,8 @@ export interface UserResponse {
   institution_id: string | null
   is_active: boolean
   is_verified: boolean
+  roles?: string[]
+  phone_number?: string | null
   created_at: string
   updated_at: string
 }

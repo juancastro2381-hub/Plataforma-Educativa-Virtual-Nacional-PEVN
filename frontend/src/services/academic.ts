@@ -11,6 +11,9 @@ import type {
   AcademicAssignmentCreateRequest,
   AcademicAssignmentListResponse,
   AcademicAssignmentResponse,
+  AcademicPeriodCreateRequest,
+  AcademicPeriodListResponse,
+  AcademicPeriodResponse,
   AcademicYearCreateRequest,
   AcademicYearListResponse,
   AcademicYearResponse,
@@ -36,6 +39,11 @@ import type {
   GuardianCreateRequest,
   GuardianListResponse,
   GuardianResponse,
+  KnowledgeAreaListResponse,
+  PeriodTemplatePreviewRequest,
+  PeriodTemplatePreviewResponse,
+  PeriodTemplateProvisionRequest,
+  PeriodTemplateProvisionResponse,
   StudentAccountActionResponse,
   StudentAccountProvisionRequest,
   StudentAccountStatusUpdateRequest,
@@ -92,6 +100,11 @@ export const academicApi = {
   ): Promise<SubjectResponse> {
     const params = institutionIdOverride ? { institution_id: institutionIdOverride } : undefined
     const response = await apiClient.post<SubjectResponse>('/api/v1/subjects', payload, { params })
+    return response.data
+  },
+
+  async listKnowledgeAreas(): Promise<KnowledgeAreaListResponse> {
+    const response = await apiClient.get<KnowledgeAreaListResponse>('/api/v1/subjects/knowledge-areas')
     return response.data
   },
 
@@ -160,6 +173,60 @@ export const academicApi = {
     const response = await apiClient.post<AcademicYearResponse>(
       `/api/v1/academic-years/${yearId}/close`,
       {},
+      { params }
+    )
+    return response.data
+  },
+
+  async listAcademicPeriods(
+    yearId: string,
+    institutionIdOverride?: string
+  ): Promise<AcademicPeriodListResponse> {
+    const params = institutionIdOverride ? { institution_id: institutionIdOverride } : undefined
+    const response = await apiClient.get<AcademicPeriodListResponse>(
+      `/api/v1/academic-years/${yearId}/periods`,
+      { params }
+    )
+    return response.data
+  },
+
+  async createAcademicPeriod(
+    yearId: string,
+    payload: AcademicPeriodCreateRequest,
+    institutionIdOverride?: string
+  ): Promise<AcademicPeriodResponse> {
+    const params = institutionIdOverride ? { institution_id: institutionIdOverride } : undefined
+    const response = await apiClient.post<AcademicPeriodResponse>(
+      `/api/v1/academic-years/${yearId}/periods`,
+      payload,
+      { params }
+    )
+    return response.data
+  },
+
+  async previewPeriodTemplate(
+    yearId: string,
+    payload: PeriodTemplatePreviewRequest,
+    institutionIdOverride?: string
+  ): Promise<PeriodTemplatePreviewResponse> {
+    const params = institutionIdOverride ? { institution_id: institutionIdOverride } : undefined
+    const response = await apiClient.post<PeriodTemplatePreviewResponse>(
+      `/api/v1/academic-years/${yearId}/periods/template-preview`,
+      payload,
+      { params }
+    )
+    return response.data
+  },
+
+  async provisionPeriodTemplate(
+    yearId: string,
+    payload: PeriodTemplateProvisionRequest,
+    institutionIdOverride?: string
+  ): Promise<PeriodTemplateProvisionResponse> {
+    const params = institutionIdOverride ? { institution_id: institutionIdOverride } : undefined
+    const response = await apiClient.post<PeriodTemplateProvisionResponse>(
+      `/api/v1/academic-years/${yearId}/periods/template-provision`,
+      payload,
       { params }
     )
     return response.data

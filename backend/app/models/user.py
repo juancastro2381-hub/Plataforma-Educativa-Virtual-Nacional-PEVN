@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import enum
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from sqlalchemy import (
@@ -188,7 +188,12 @@ class User(Base):
         """Check if account is currently locked due to brute force protection."""
         if self.locked_until is None:
             return False
-        return datetime.now(self.locked_until.tzinfo) < self.locked_until
+        locked_until_dt = (
+            self.locked_until
+            if self.locked_until.tzinfo is not None
+            else self.locked_until.replace(tzinfo=UTC)
+        )
+        return datetime.now(UTC) < locked_until_dt
 
     def __repr__(self) -> str:
         return f"<User id={self.id} username={self.username!r} email={self.email!r}>"

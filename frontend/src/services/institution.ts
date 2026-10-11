@@ -10,6 +10,8 @@
 
 import apiClient from '@/services/api/client'
 import type {
+  CoordinatorDelegationSettingResponse,
+  CoordinatorDelegationSettingUpdateRequest,
   InstitutionCreateRequest,
   InstitutionListResponse,
   InstitutionResponse,
@@ -18,6 +20,8 @@ import type {
   OfficialCatalogSyncResponse,
   OfficialCatalogSyncStatus,
   OfficialInstitutionResolution,
+  OfficialCatalogListResponse,
+  ProvisionCatalogInstitutionRequest,
   RectorInvitationCreateRequest,
   RectorInvitationResponse,
 } from '@/types'
@@ -67,6 +71,47 @@ export const institutionApi = {
   },
 
   /**
+   * List official educational establishments from ministerial/DANE catalog with real-time PEVN status.
+   * Scoped to actor's territorial jurisdiction (municipal, departmental, national).
+   */
+  async listOfficialCatalog(
+    params: {
+      department_code?: string
+      municipality_code?: string
+      search?: string
+      status_filter?: string
+      page?: number
+      page_size?: number
+    } = {}
+  ): Promise<OfficialCatalogListResponse> {
+    const queryParams = new URLSearchParams()
+    if (params.department_code) queryParams.set('department_code', params.department_code)
+    if (params.municipality_code) queryParams.set('municipality_code', params.municipality_code)
+    if (params.search && params.search.trim()) queryParams.set('search', params.search.trim())
+    if (params.status_filter && params.status_filter.trim()) queryParams.set('status_filter', params.status_filter.trim())
+    if (params.page) queryParams.set('page', String(params.page))
+    if (params.page_size) queryParams.set('page_size', String(params.page_size))
+
+    const url = `/api/v1/institutions/catalog-explorer${queryParams.toString() ? `?${queryParams.toString()}` : ''}`
+    const response = await apiClient.get<OfficialCatalogListResponse>(url)
+    return response.data
+  },
+
+  /**
+   * Provision an official establishment from the government catalog into an active PEVN tenant.
+   * Validates territorial boundaries and registers all campuses automatically.
+   */
+  async provisionFromCatalog(
+    payload: ProvisionCatalogInstitutionRequest
+  ): Promise<InstitutionResponse> {
+    const response = await apiClient.post<InstitutionResponse>(
+      '/api/v1/institutions/provision-catalog',
+      payload
+    )
+    return response.data
+  },
+
+  /**
    * Update the operational status (active/suspended) of an educational institution.
    */
   async updateInstitutionStatus(
@@ -97,6 +142,19 @@ export const institutionApi = {
   },
 
   /**
+   * Resend an invitation token for an institution's pending Rector.
+   * Invalidates earlier pending tokens and returns a new time-limited token.
+   */
+  async resendRectorInvitation(
+    institutionId: string
+  ): Promise<RectorInvitationResponse> {
+    const response = await apiClient.post<RectorInvitationResponse>(
+      `/api/v1/institutions/${institutionId}/rector-invitation/resend`
+    )
+    return response.data
+  },
+
+  /**
    * Fetch current user's institution details.
    */
   async getMyInstitution(): Promise<InstitutionResponse> {
@@ -112,6 +170,35 @@ export const institutionApi = {
   async getInstitutionById(institutionId: string): Promise<InstitutionResponse> {
     const response = await apiClient.get<InstitutionResponse>(
       `/api/v1/institutions/${institutionId}`
+    )
+    return response.data
+  },
+
+  /**
+   * Get the coordinator delegation setting for an institution.
+   */
+  async getCoordinatorDelegationSetting(
+    institutionId: string
+  ): Promise<CoordinatorDelegationSettingResponse> {
+    const response = await apiClient.get<CoordinatorDelegationSettingResponse>(
+      `/api/v1/institutions/${institutionId}/settings/coordinator-delegation`
+    )
+    return response.data
+  },
+
+  /**
+   * Update the coordinator delegation setting for an institution (Rector-controlled).
+   */
+  async updateCoordinatorDelegationSetting(
+    institutionId: string,
+    enabled: boolean
+  ): Promise<CoordinatorDelegationSettingResponse> {
+    const payload: CoordinatorDelegationSettingUpdateRequest = {
+      coordinator_delegation_enabled: enabled,
+    }
+    const response = await apiClient.patch<CoordinatorDelegationSettingResponse>(
+      `/api/v1/institutions/${institutionId}/settings/coordinator-delegation`,
+      payload
     )
     return response.data
   },

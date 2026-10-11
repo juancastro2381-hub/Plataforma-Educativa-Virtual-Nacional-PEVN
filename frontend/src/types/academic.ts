@@ -7,6 +7,7 @@
  */
 
 import type { DocumentType, User } from './auth'
+import type { AcademicPeriodResponse } from './evaluation'
 
 // ===========================================================================
 // 1. Domain Enums
@@ -57,6 +58,22 @@ export interface GradeListResponse {
 }
 
 // ===========================================================================
+// 1.5. Knowledge Area Types (Áreas de Conocimiento)
+// ===========================================================================
+
+export interface KnowledgeAreaResponse {
+  id: string
+  name: string
+  is_mandatory: boolean
+  institution_id?: string | null
+}
+
+export interface KnowledgeAreaListResponse {
+  items: KnowledgeAreaResponse[]
+  total: number
+}
+
+// ===========================================================================
 // 1.6. Subject Types (Curricular Subjects)
 // ===========================================================================
 
@@ -81,6 +98,18 @@ export interface SubjectCreateRequest {
   grade_id: string
   name: string
   weekly_hours?: number
+}
+
+// ===========================================================================
+// 1.7. Academic Period Types
+// ===========================================================================
+
+export interface AcademicPeriodCreateRequest {
+  period_number: number
+  name: string
+  weight_percentage: number
+  start_date: string
+  end_date: string
 }
 
 // ===========================================================================
@@ -112,6 +141,83 @@ export interface AcademicYearResponse {
 export interface AcademicYearListResponse {
   items: AcademicYearResponse[]
   total: number
+}
+
+// ===========================================================================
+// 2.5. Academic Period Template & Provisioning Types (NTA-10-R7)
+// ===========================================================================
+
+export type AcademicPeriodTemplateType =
+  | 'SEMESTRAL_2'
+  | 'TRIMESTRAL_3'
+  | 'PERIODS_4'
+  | 'PERIODS_5'
+  | 'CUSTOM'
+
+export interface DraftPeriodItem {
+  period_number: number
+  name: string
+  weight_percentage: number
+  start_date: string
+  end_date: string
+  is_existing?: boolean
+  existing_period_id?: string | null
+  conflict_reason?: string | null
+}
+
+export interface PeriodTemplatePreviewRequest {
+  template_type: AcademicPeriodTemplateType
+  custom_period_count?: number
+}
+
+export interface PeriodTemplatePreviewResponse {
+  academic_year_id: string
+  academic_year_name: string
+  academic_year_year: number
+  academic_year_start: string
+  academic_year_end: string
+  calendar_type: AcademicYearCalendarType
+  academic_year_status: AcademicYearStatus
+  template_type: AcademicPeriodTemplateType
+  template_label: string
+  regulatory_disclaimer: string
+  existing_periods: AcademicPeriodResponse[]
+  proposed_periods: DraftPeriodItem[]
+  total_weight_existing: number
+  total_weight_proposed: number
+  total_weight_combined: number
+  has_conflicts: boolean
+  conflict_messages: string[]
+  is_complete: boolean
+}
+
+export interface SieeComplianceMetadata {
+  siee_version?: string
+  approval_act?: string
+  approval_date?: string
+  calendar_source?: string
+  calendar_source_url?: string
+  reviewed_at?: string
+  confirmed_by_rector: boolean
+}
+
+export interface PeriodTemplateProvisionRequest {
+  template_type: AcademicPeriodTemplateType
+  periods: DraftPeriodItem[]
+  compliance: SieeComplianceMetadata
+  activate_immediately?: boolean
+}
+
+export interface PeriodTemplateProvisionResponse {
+  academic_year_id: string
+  provisioned_count: number
+  retained_count: number
+  total_periods: number
+  total_weight: number
+  is_activated: boolean
+  academic_year_status: AcademicYearStatus
+  periods: AcademicPeriodResponse[]
+  compliance_summary: Record<string, unknown>
 }
 
 // ===========================================================================

@@ -17,22 +17,30 @@ from sqlalchemy.orm import selectinload
 
 from app.api.deps import (
     AuthContextDep,
+    ClientIpDep,
     CurrentUserDep,
     SessionDep,
     require_permission,
+    resolve_institution_id,
 )
+from app.audit.interfaces import AuditEvent, AuditEventType
+from app.audit.service import audit_service
 from app.core.exceptions import AcademicDomainError, CrossTenantMismatchError
+from app.core.logging import correlation_id_ctx
 from app.core.security.interfaces import SystemRole
 from app.exceptions.errors import AuthorizationError
 from app.models.grade import EducationalLevel, Grade
 from app.models.subject import KnowledgeArea, Subject
 from app.schemas.academic import (
+    KnowledgeAreaListResponse,
+    KnowledgeAreaResponse,
     SubjectCreateRequest,
     SubjectListResponse,
     SubjectResponse,
 )
 
 router = APIRouter(prefix="/subjects", tags=["Subjects"])
+knowledge_areas_router = APIRouter(prefix="/knowledge-areas", tags=["Knowledge Areas"])
 
 # Statutory Colombian curriculum specifications
 STANDARD_SUBJECT_SPECS = [
@@ -64,21 +72,19 @@ MEDIA_SUBJECT_SPECS = [
 ]
 
 
-def _resolve_institution_id(
+async def _resolve_institution_id(
+    db: SessionDep,
     auth: AuthContextDep,
     current_user: CurrentUserDep,
     institution_id_override: uuid.UUID | None = None,
 ) -> uuid.UUID:
     """Resolve active institution context adhering to tenant isolation."""
-    if (
-        SystemRole.SUPERADMIN in auth.roles
-        or SystemRole.NATIONAL_ADMIN in auth.roles
-        or auth.scope.is_national()
-    ) and institution_id_override:
-        return institution_id_override
-    if current_user.institution_id:
-        return current_user.institution_id
-    raise AuthorizationError("Contexto institucional no disponible.")
+    return await resolve_institution_id(
+        db=db,
+        auth=auth,
+        current_user=current_user,
+        institution_id_override=institution_id_override,
+    )
 
 
 async def _seed_statutory_subjects_if_needed(
@@ -138,7 +144,7 @@ async def list_subjects(
     institution_id: Annotated[uuid.UUID | None, Query(description="Override for SuperAdmin only")] = None,
 ) -> SubjectListResponse:
     """List curricular subjects adhering to multi-tenant isolation."""
-    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    target_institution_id = await _resolve_institution_id(db, auth, current_user, institution_id)
 
     # Ensure statutory curriculum is bootstrapped for this institution
     await _seed_statutory_subjects_if_needed(db, target_institution_id)
@@ -164,6 +170,45 @@ async def list_subjects(
     )
 
 
+@router.get(
+    "/knowledge-areas",
+    response_model=KnowledgeAreaListResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Listar áreas de conocimiento",
+    description="Devuelve las áreas fundamentales del currículo nacional y las institucionales.",
+    dependencies=[Depends(require_permission("subjects", "read"))],
+)
+@knowledge_areas_router.get(
+    "",
+    response_model=KnowledgeAreaListResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Listar áreas de conocimiento (directo)",
+    description="Devuelve las áreas fundamentales del currículo nacional y las institucionales.",
+    dependencies=[Depends(require_permission("subjects", "read"))],
+)
+async def list_knowledge_areas(
+    db: SessionDep,
+    auth: AuthContextDep,
+    current_user: CurrentUserDep,
+    institution_id: Annotated[uuid.UUID | None, Query(description="Override for SuperAdmin only")] = None,
+) -> KnowledgeAreaListResponse:
+    """List curricular knowledge areas accessible to the institutional context."""
+    target_institution_id = await _resolve_institution_id(db, auth, current_user, institution_id)
+    query = (
+        select(KnowledgeArea)
+        .where(
+            (KnowledgeArea.institution_id.is_(None)) | (KnowledgeArea.institution_id == target_institution_id)
+        )
+        .order_by(KnowledgeArea.name.asc())
+    )
+    result = await db.execute(query)
+    kas = list(result.scalars().all())
+    return KnowledgeAreaListResponse(
+        items=[KnowledgeAreaResponse.model_validate(k) for k in kas],
+        total=len(kas),
+    )
+
+
 @router.post(
     "",
     response_model=SubjectResponse,
@@ -177,10 +222,12 @@ async def create_subject(
     db: SessionDep,
     auth: AuthContextDep,
     current_user: CurrentUserDep,
+    client_ip: ClientIpDep,
     institution_id: Annotated[uuid.UUID | None, Query(description="Override for SuperAdmin only")] = None,
 ) -> SubjectResponse:
     """Create a new curricular subject."""
-    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    target_institution_id = await _resolve_institution_id(db, auth, current_user, institution_id)
+    clean_name = payload.name.strip()
 
     # Validate Knowledge Area
     ka = (await db.execute(select(KnowledgeArea).where(KnowledgeArea.id == payload.knowledge_area_id))).scalar_one_or_none()
@@ -192,14 +239,49 @@ async def create_subject(
     if not gr:
         raise AcademicDomainError("Grado curricular no encontrado.")
 
+    # Duplicate name check for same grade in this institution
+    existing_stmt = select(Subject.id).where(
+        Subject.institution_id == target_institution_id,
+        Subject.grade_id == payload.grade_id,
+        Subject.name.ilike(clean_name),
+    )
+    existing = (await db.execute(existing_stmt)).scalar_one_or_none()
+    if existing:
+        raise AcademicDomainError(
+            f"Ya existe una asignatura con el nombre '{clean_name}' para el grado {gr.name} en esta institución."
+        )
+
     subject = Subject(
         institution_id=target_institution_id,
         knowledge_area_id=payload.knowledge_area_id,
         grade_id=payload.grade_id,
-        name=payload.name.strip(),
+        name=clean_name,
         weekly_hours=payload.weekly_hours,
     )
     db.add(subject)
+    await db.flush()
+
+    correlation_id = correlation_id_ctx.get()
+    await audit_service.record(
+        AuditEvent(
+            event_type=AuditEventType.SUBJECT_CREATED,
+            actor_id=str(current_user.id),
+            actor_ip=client_ip,
+            target_id=str(subject.id),
+            target_type="Subject",
+            institution_id=str(target_institution_id),
+            correlation_id=correlation_id,
+            metadata={
+                "name": subject.name,
+                "grade_id": str(payload.grade_id),
+                "knowledge_area_id": str(payload.knowledge_area_id),
+                "weekly_hours": payload.weekly_hours,
+            },
+        ),
+        session=db,
+    )
+
     await db.commit()
     await db.refresh(subject)
     return SubjectResponse.model_validate(subject)
+

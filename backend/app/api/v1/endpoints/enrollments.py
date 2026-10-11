@@ -19,6 +19,7 @@ from app.api.deps import (
     CurrentUserDep,
     SessionDep,
     require_permission,
+    resolve_institution_id,
 )
 from app.core.logging import correlation_id_ctx
 from app.core.security.interfaces import SystemRole
@@ -37,21 +38,19 @@ from app.services.enrollment_service import EnrollmentService
 router = APIRouter(prefix="/enrollments", tags=["Enrollments"])
 
 
-def _resolve_institution_id(
+async def _resolve_institution_id(
+    db: SessionDep,
     auth: AuthContextDep,
     current_user: CurrentUserDep,
     institution_id_override: uuid.UUID | None = None,
 ) -> uuid.UUID:
     """Resolve active institution context adhering to tenant isolation."""
-    if (
-        SystemRole.SUPERADMIN in auth.roles
-        or SystemRole.NATIONAL_ADMIN in auth.roles
-        or auth.scope.is_national()
-    ) and institution_id_override:
-        return institution_id_override
-    if current_user.institution_id:
-        return current_user.institution_id
-    raise AuthorizationError("Contexto institucional no disponible.")
+    return await resolve_institution_id(
+        db=db,
+        auth=auth,
+        current_user=current_user,
+        institution_id_override=institution_id_override,
+    )
 
 
 @router.post(
@@ -73,7 +72,7 @@ async def create_enrollment(
         Query(description="Override for SuperAdmin only"),
     ] = None,
 ) -> EnrollmentResponse:
-    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    target_institution_id = await _resolve_institution_id(db, auth, current_user, institution_id)
     correlation_id = correlation_id_ctx.get()
 
     service = EnrollmentService(session=db)
@@ -112,7 +111,7 @@ async def get_enrollment(
         Query(description="Override for SuperAdmin only"),
     ] = None,
 ) -> EnrollmentResponse:
-    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    target_institution_id = await _resolve_institution_id(db, auth, current_user, institution_id)
     service = EnrollmentService(session=db)
     enrollment = await service.get_enrollment_by_id(
         enrollment_id=enrollment_id,
@@ -156,7 +155,7 @@ async def list_enrollments(
         Query(description="Override for SuperAdmin only"),
     ] = None,
 ) -> EnrollmentListResponse:
-    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    target_institution_id = await _resolve_institution_id(db, auth, current_user, institution_id)
     service = EnrollmentService(session=db)
     enrollments = await service.list_enrollments(
         institution_id=target_institution_id,
@@ -193,7 +192,7 @@ async def activate_enrollment(
         Query(description="Override for SuperAdmin only"),
     ] = None,
 ) -> EnrollmentResponse:
-    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    target_institution_id = await _resolve_institution_id(db, auth, current_user, institution_id)
     correlation_id = correlation_id_ctx.get()
 
     service = EnrollmentService(session=db)
@@ -229,7 +228,7 @@ async def withdraw_enrollment(
         Query(description="Override for SuperAdmin only"),
     ] = None,
 ) -> EnrollmentResponse:
-    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    target_institution_id = await _resolve_institution_id(db, auth, current_user, institution_id)
     correlation_id = correlation_id_ctx.get()
 
     service = EnrollmentService(session=db)
@@ -266,7 +265,7 @@ async def graduate_enrollment(
         Query(description="Override for SuperAdmin only"),
     ] = None,
 ) -> EnrollmentResponse:
-    target_institution_id = _resolve_institution_id(auth, current_user, institution_id)
+    target_institution_id = await _resolve_institution_id(db, auth, current_user, institution_id)
     correlation_id = correlation_id_ctx.get()
 
     service = EnrollmentService(session=db)

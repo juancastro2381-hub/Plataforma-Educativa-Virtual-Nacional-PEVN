@@ -29,6 +29,7 @@ from app.db.base_class import Base
 
 if TYPE_CHECKING:
     from app.models.institution import Campus, Institution
+    from app.models.territory import Department, Municipality
     from app.models.user import User
 
 
@@ -200,6 +201,20 @@ class UserRole(Base):
         index=True,
         doc="Campus scope for this role assignment (NULL for institution-wide roles).",
     )
+    department_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("departments.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
+        doc="Department scope for territorial role assignment (NULL for national/institutional roles).",
+    )
+    municipality_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("municipalities.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
+        doc="Municipality scope for territorial role assignment (NULL for national/departmental/institutional roles).",
+    )
     is_active: Mapped[bool] = mapped_column(
         Boolean,
         default=True,
@@ -231,6 +246,14 @@ class UserRole(Base):
     campus: Mapped[Campus | None] = relationship(
         "Campus",
         back_populates="user_roles",
+        lazy="selectin",
+    )
+    department: Mapped[Department | None] = relationship(
+        "Department",
+        lazy="selectin",
+    )
+    municipality: Mapped[Municipality | None] = relationship(
+        "Municipality",
         lazy="selectin",
     )
 

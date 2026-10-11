@@ -15,11 +15,19 @@ import { Dashboard } from '@/pages/Dashboard'
 import { AcademicHub } from '@/pages/academic/AcademicHub'
 import { VirtualClassroomsView } from '@/pages/virtual-classrooms/VirtualClassroomsView'
 import { InstitutionsView } from '@/pages/admin/InstitutionsView'
+import { OnboardingView } from '@/pages/admin/OnboardingView'
+import { DepartmentAdminsView } from '@/pages/admin/DepartmentAdminsView'
+import { MunicipalityAdminsView } from '@/pages/admin/MunicipalityAdminsView'
+import { TerritorialControlCenterView } from '@/pages/admin/TerritorialControlCenterView'
 import { AcceptInvitation } from '@/pages/auth/AcceptInvitation'
 import { GuardianActivationView } from '@/pages/auth/GuardianActivationView'
 import { ForgotPassword } from '@/pages/auth/ForgotPassword'
 import { ResetPassword } from '@/pages/auth/ResetPassword'
 import { TerritorialAnalyticsView } from '@/pages/analytics/TerritorialAnalyticsView'
+import { UsersView } from '@/pages/admin/UsersView'
+import { CommunicationsView } from '@/pages/communications/CommunicationsView'
+import { NewsView } from '@/pages/communications/NewsView'
+import { IncidentsView } from '@/pages/coexistence/IncidentsView'
 import { TeacherPortal } from '@/pages/teacher/TeacherPortal'
 import { StudentPortal } from '@/pages/student/StudentPortal'
 import { GuardianPortal } from '@/pages/guardian/GuardianPortal'
@@ -70,7 +78,15 @@ const router = createBrowserRouter([
         element: <ResetPassword />,
       },
       {
+        path: 'reset-password',
+        element: <ResetPassword />,
+      },
+      {
         path: 'auth/accept-invitation',
+        element: <AcceptInvitation />,
+      },
+      {
+        path: 'invitation/accept',
         element: <AcceptInvitation />,
       },
       {
@@ -92,8 +108,56 @@ const router = createBrowserRouter([
       {
         path: 'admin/institutions',
         element: (
-          <RequireAuth roles={['superadmin', 'national_admin']}>
+          <RequireAuth permissions={['institutions:read']}>
             <InstitutionsView />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: 'admin/onboarding',
+        element: (
+          <RequireAuth roles={['superadmin', 'national_admin', 'department_admin']}>
+            <OnboardingView />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: 'admin/users',
+        element: (
+          <RequireAuth permissions={['users:read']}>
+            <UsersView />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: 'users',
+        element: (
+          <RequireAuth permissions={['users:read']}>
+            <UsersView />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: 'admin/department-admins',
+        element: (
+          <RequireAuth roles={['superadmin', 'national_admin']}>
+            <DepartmentAdminsView />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: 'admin/municipality-admins',
+        element: (
+          <RequireAuth roles={['superadmin', 'national_admin', 'department_admin']}>
+            <MunicipalityAdminsView />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: 'admin/control-center',
+        element: (
+          <RequireAuth roles={['superadmin', 'national_admin', 'department_admin']}>
+            <TerritorialControlCenterView />
           </RequireAuth>
         ),
       },
@@ -101,7 +165,7 @@ const router = createBrowserRouter([
         path: 'academic',
         element: (
           <RequireAuth
-            roles={['rector', 'institution_admin', 'coordinator', 'academic_coordinator', 'superadmin', 'national_admin']}
+            roles={['rector', 'institution_admin', 'coordinator', 'academic_coordinator', 'superadmin', 'super_admin', 'national_admin', 'department_admin']}
             requireInstitutionContext
           >
             <AcademicHub />
@@ -161,6 +225,30 @@ const router = createBrowserRouter([
         element: (
           <RequireAuth roles={['superadmin', 'national_admin', 'department_admin', 'municipality_admin']}>
             <TerritorialAnalyticsView />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: 'communications',
+        element: (
+          <RequireAuth permissions={['communications:read']}>
+            <CommunicationsView />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: 'news',
+        element: (
+          <RequireAuth permissions={['news:read']}>
+            <NewsView />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: 'incidents',
+        element: (
+          <RequireAuth permissions={['incidents:read']}>
+            <IncidentsView />
           </RequireAuth>
         ),
       },

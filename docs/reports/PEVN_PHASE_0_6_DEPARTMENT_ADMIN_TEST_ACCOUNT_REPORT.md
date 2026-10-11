@@ -164,7 +164,7 @@ The account is immediately available for browser-based manual validation:
 
 * **Login URL:** [http://localhost:3000/login](http://localhost:3000/login)
 * **Username:** `department_admin` (or `department_admin@pevn.edu.co`)
-* **Password:** `PevnDepartment2026!*`
+* **Password:** `<SECURE_ENV_PASSWORD>`
 
 ---
 

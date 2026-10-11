@@ -1,0 +1,36 @@
+# Gitleaks Configuration for PEVN (Plataforma Educativa Virtual Nacional)
+# Framework: AI Software Factory Standard v1.2 — Phase NTA-05 Hardening
+
+title = "PEVN Secret Scanner Configuration"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Global allowlist for harmless placeholders, documentation, and synthetic fixtures"
+paths = [
+    '''backend/tests/.*''',
+    '''docs/.*''',
+    '''frontend/src/tests/.*''',
+    '''\.git/.*''',
+]
+stopwords = [
+    "DUMMY_ARGON2ID_HASH",
+    "<SECURE_ENV_PASSWORD>",
+    "SECURE_ENV_PASSWORD",
+    "placeholder",
+    "dummy_hash",
+]
+
+[[rules]]
+id = "pevn-plaintext-password-assignment"
+description = "Disallow hardcoded plaintext password assignments in code files"
+regex = '''(?i)(password|secret|api_key|token)\s*[:=]\s*["'][A-Za-z0-9@#$%^&+=!_]{8,}["']'''
+path = '''backend/app/.*'''
+entropy = 3.5
+
+[[rules]]
+id = "pevn-jwt-secret-leak"
+description = "Disallow hardcoded JWT secret keys"
+regex = '''(?i)SECRET_KEY\s*=\s*["'][a-f0-9]{32,}["']'''
+path = '''backend/app/.*'''
