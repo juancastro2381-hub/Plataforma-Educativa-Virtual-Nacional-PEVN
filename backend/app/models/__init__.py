@@ -102,6 +102,12 @@ from app.models.virtual_classroom import (
     VirtualClassroom,
     VirtualClassroomStatus,
 )
+from app.models.technical_incident import (
+    TechnicalIncident,
+    TechnicalIncidentCategory,
+    TechnicalIncidentSeverity,
+    TechnicalIncidentStatus,
+)
 
 __all__ = [
     "AcademicAchievement",
@@ -184,6 +190,10 @@ __all__ = [
     "TargetScopeType",
     "Teacher",
     "TeacherContractType",
+    "TechnicalIncident",
+    "TechnicalIncidentCategory",
+    "TechnicalIncidentSeverity",
+    "TechnicalIncidentStatus",
     "User",
     "UserRole",
     "VirtualClassroom",

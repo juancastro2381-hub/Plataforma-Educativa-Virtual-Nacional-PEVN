@@ -31,6 +31,10 @@ import { IncidentsView } from '@/pages/coexistence/IncidentsView'
 import { TeacherPortal } from '@/pages/teacher/TeacherPortal'
 import { StudentPortal } from '@/pages/student/StudentPortal'
 import { GuardianPortal } from '@/pages/guardian/GuardianPortal'
+import { PlatformHealthView } from '@/pages/operations/PlatformHealthView'
+import { TechnicalSupportView } from '@/pages/operations/TechnicalSupportView'
+import { SecurityAuditView } from '@/pages/operations/SecurityAuditView'
+import { TenantDiagnosticsView } from '@/pages/operations/TenantDiagnosticsView'
 import { AuthProvider } from '@/context/AuthContext'
 import { RequireAuth } from '@/components/auth/RequireAuth'
 
@@ -249,6 +253,38 @@ const router = createBrowserRouter([
         element: (
           <RequireAuth permissions={['incidents:read']}>
             <IncidentsView />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: 'operations/health',
+        element: (
+          <RequireAuth roles={['superadmin', 'super_admin']}>
+            <PlatformHealthView />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: 'operations/support',
+        element: (
+          <RequireAuth roles={['superadmin', 'super_admin']}>
+            <TechnicalSupportView />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: 'operations/audit',
+        element: (
+          <RequireAuth roles={['superadmin', 'super_admin']}>
+            <SecurityAuditView />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: 'operations/tenant-diagnostics',
+        element: (
+          <RequireAuth roles={['superadmin', 'super_admin']}>
+            <TenantDiagnosticsView />
           </RequireAuth>
         ),
       },

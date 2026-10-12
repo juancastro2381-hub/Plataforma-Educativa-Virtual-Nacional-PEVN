@@ -24,6 +24,8 @@ export function RootLayout() {
     setActiveInstitutionContext,
   } = useAuth()
 
+  const isSuperAdmin = hasRole(['superadmin', 'super_admin'])
+
   const isInstitutionalDirective = hasRole([
     'rector',
     'institution_admin',
@@ -31,46 +33,54 @@ export function RootLayout() {
     'academic_coordinator',
   ])
   const canAccessInstitutions =
-    hasPermission('institutions:read') ||
-    hasRole(['superadmin', 'national_admin']) ||
-    Boolean(user?.scope.is_national)
+    !isSuperAdmin && (
+      hasPermission('institutions:read') ||
+      hasRole('national_admin') ||
+      Boolean(user?.scope.is_national)
+    )
 
   const canAccessUsers =
-    hasPermission('users:read') ||
-    hasRole(['superadmin', 'national_admin'])
+    !isSuperAdmin && (
+      hasPermission('users:read') ||
+      hasRole('national_admin')
+    )
 
   const canAccessAcademic =
-    isInstitutionalDirective ||
-    hasRole(['superadmin', 'national_admin', 'department_admin']) ||
-    hasPermission('academic_years:read')
+    !isSuperAdmin && (
+      isInstitutionalDirective ||
+      hasRole(['national_admin', 'department_admin']) ||
+      hasPermission('academic_years:read')
+    )
 
   const canAccessVirtualClassrooms =
-    hasPermission('virtual_classrooms:read')
+    !isSuperAdmin && hasPermission('virtual_classrooms:read')
 
   const canAccessCommunications =
-    hasPermission('communications:read')
+    !isSuperAdmin && hasPermission('communications:read')
 
   const canAccessNews =
-    hasPermission('news:read')
+    !isSuperAdmin && hasPermission('news:read')
 
   const canAccessIncidents =
-    hasPermission('incidents:read')
+    !isSuperAdmin && hasPermission('incidents:read')
 
   const canAccessTerritorial =
-    hasRole(['superadmin', 'national_admin', 'department_admin', 'municipality_admin'])
+    !isSuperAdmin && hasRole(['national_admin', 'department_admin', 'municipality_admin'])
 
   const canAccessControlCenter =
-    hasRole(['superadmin', 'national_admin', 'department_admin'])
+    !isSuperAdmin && hasRole(['national_admin', 'department_admin'])
 
   const canAccessOnboarding =
-    hasRole(['superadmin', 'national_admin', 'department_admin'])
+    !isSuperAdmin && hasRole(['national_admin', 'department_admin'])
 
   const canAccessDepartmentAdmins =
-    hasRole(['superadmin', 'national_admin'])
+    !isSuperAdmin && hasRole('national_admin')
 
   const canAccessMunicipalityAdmins =
-    hasRole(['superadmin', 'national_admin', 'department_admin']) ||
-    hasPermission('municipality_admins:read')
+    !isSuperAdmin && (
+      hasRole(['national_admin', 'department_admin']) ||
+      hasPermission('municipality_admins:read')
+    )
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: '#F8FAFC' }}>
@@ -145,7 +155,91 @@ export function RootLayout() {
           <nav aria-label="Navegación principal">
             {isAuthenticated && user ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-                {/* GESTIÓN EDUCATIVA */}
+                {/* CONSOLA DE OPERACIONES TÉCNICAS (SUPER_ADMIN L100 EXCLUSIVO) */}
+                {isSuperAdmin && (
+                  <>
+                    <Link
+                      to="/dashboard"
+                      style={{
+                        color: '#FCD116',
+                        textDecoration: 'none',
+                        fontSize: '0.8125rem',
+                        fontWeight: 700,
+                        padding: '0.25rem 0.4rem',
+                      }}
+                      title="Centro de Operaciones y Gobernanza L100"
+                    >
+                      ⚙️ Operaciones
+                    </Link>
+                    <Link
+                      to="/operations/health"
+                      style={{
+                        color: '#4ADE80',
+                        textDecoration: 'none',
+                        fontSize: '0.8125rem',
+                        fontWeight: 600,
+                        padding: '0.25rem 0.4rem',
+                      }}
+                      title="Salud de Infraestructura y Conectividad"
+                    >
+                      Salud Plataforma
+                    </Link>
+                    <Link
+                      to="/operations/support"
+                      style={{
+                        color: '#38BDF8',
+                        textDecoration: 'none',
+                        fontSize: '0.8125rem',
+                        fontWeight: 600,
+                        padding: '0.25rem 0.4rem',
+                      }}
+                      title="Mesa de Ayuda Técnica e Incidentes"
+                    >
+                      Soporte Técnico
+                    </Link>
+                    <Link
+                      to="/operations/audit"
+                      style={{
+                        color: '#F87171',
+                        textDecoration: 'none',
+                        fontSize: '0.8125rem',
+                        fontWeight: 600,
+                        padding: '0.25rem 0.4rem',
+                      }}
+                      title="Auditoría de Seguridad y Accesos"
+                    >
+                      Seguridad & Auditoría
+                    </Link>
+                    <Link
+                      to="/admin/users"
+                      style={{
+                        color: '#2DD4BF',
+                        textDecoration: 'none',
+                        fontSize: '0.8125rem',
+                        fontWeight: 600,
+                        padding: '0.25rem 0.4rem',
+                      }}
+                      title="Directorio Global de Usuarios"
+                    >
+                      Usuarios
+                    </Link>
+                    <Link
+                      to="/operations/tenant-diagnostics"
+                      style={{
+                        color: '#FBBF24',
+                        textDecoration: 'none',
+                        fontSize: '0.8125rem',
+                        fontWeight: 600,
+                        padding: '0.25rem 0.4rem',
+                      }}
+                      title="Diagnóstico Operacional de Inquilinos"
+                    >
+                      Diagnóstico Inquilinos
+                    </Link>
+                  </>
+                )}
+
+                {/* GESTIÓN EDUCATIVA Y TERRITORIAL (ROLES NACIONAL, TERRITORIAL Y DIRECTIVO) */}
                 {canAccessInstitutions && (
                   <Link
                     to="/admin/institutions"
@@ -384,40 +478,77 @@ export function RootLayout() {
 
                 {/* Active Context Indicator */}
                 {activeInstitutionId && (
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.4rem',
-                      backgroundColor: 'rgba(252, 209, 22, 0.15)',
-                      border: '1px solid rgba(252, 209, 22, 0.4)',
-                      color: '#FCD116',
-                      borderRadius: '6px',
-                      padding: '0.2rem 0.5rem',
-                      fontSize: '0.75rem',
-                      fontWeight: 600,
-                    }}
-                    title={`Contexto institucional activo: ${activeInstitutionName || activeInstitutionId}`}
-                  >
-                    <span>🏛️ {activeInstitutionName ? (activeInstitutionName.length > 18 ? activeInstitutionName.slice(0, 16) + '...' : activeInstitutionName) : 'Sede Activa'}</span>
-                    <button
-                      type="button"
-                      onClick={() => setActiveInstitutionContext(null)}
+                  isSuperAdmin ? (
+                    <div
                       style={{
-                        background: 'none',
-                        border: 'none',
-                        color: '#FCA5A5',
-                        cursor: 'pointer',
-                        fontWeight: 'bold',
-                        fontSize: '0.8rem',
-                        padding: '0 2px',
-                        lineHeight: 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                        border: '1px solid rgba(239, 68, 68, 0.5)',
+                        color: '#FECACA',
+                        borderRadius: '6px',
+                        padding: '0.2rem 0.6rem',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
                       }}
-                      title="Salir del contexto institucional"
+                      title={`Contexto Diagnóstico de Inquilino Activo: ${activeInstitutionName || activeInstitutionId}`}
                     >
-                      ✕
-                    </button>
-                  </div>
+                      <span>🔍 DIAGNÓSTICO: {activeInstitutionName ? (activeInstitutionName.length > 16 ? activeInstitutionName.slice(0, 14) + '...' : activeInstitutionName) : 'Inquilino'}</span>
+                      <button
+                        type="button"
+                        onClick={() => setActiveInstitutionContext(null)}
+                        style={{
+                          backgroundColor: '#DC2626',
+                          border: 'none',
+                          color: '#FFFFFF',
+                          cursor: 'pointer',
+                          fontWeight: 700,
+                          fontSize: '0.75rem',
+                          padding: '0.15rem 0.5rem',
+                          borderRadius: '4px',
+                        }}
+                        title="Salir del diagnóstico de inquilino y volver a Operaciones Globales"
+                      >
+                        ✕ Salir a Operaciones Globales
+                      </button>
+                    </div>
+                  ) : (
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.4rem',
+                        backgroundColor: 'rgba(252, 209, 22, 0.15)',
+                        border: '1px solid rgba(252, 209, 22, 0.4)',
+                        color: '#FCD116',
+                        borderRadius: '6px',
+                        padding: '0.2rem 0.5rem',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                      }}
+                      title={`Contexto institucional activo: ${activeInstitutionName || activeInstitutionId}`}
+                    >
+                      <span>🏛️ {activeInstitutionName ? (activeInstitutionName.length > 18 ? activeInstitutionName.slice(0, 16) + '...' : activeInstitutionName) : 'Sede Activa'}</span>
+                      <button
+                        type="button"
+                        onClick={() => setActiveInstitutionContext(null)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#FCA5A5',
+                          cursor: 'pointer',
+                          fontWeight: 'bold',
+                          fontSize: '0.8rem',
+                          padding: '0 2px',
+                          lineHeight: 1,
+                        }}
+                        title="Salir del contexto institucional"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )
                 )}
 
                 {/* Scope Badge */}
@@ -432,9 +563,15 @@ export function RootLayout() {
                       fontSize: '0.75rem',
                       fontWeight: 600,
                     }}
-                    title={`Jurisdicción operativa: ${user.scope.is_national ? 'Nacional' : user.scope.is_department ? `Departamento ${user.scope.department_id}` : user.scope.is_municipality ? `Municipio ${user.scope.municipality_code || user.scope.jurisdiction_name || user.scope.municipality_id}` : user.scope.institution_id ? `Institucional` : 'Local'}`}
+                    title={
+                      hasRole('superadmin')
+                        ? 'Gobernanza Global de Plataforma (Nivel 100)'
+                        : `Jurisdicción operativa: ${user.scope.is_national ? 'Nacional' : user.scope.is_department ? `Departamento ${user.scope.department_id}` : user.scope.is_municipality ? `Municipio ${user.scope.municipality_code || user.scope.jurisdiction_name || user.scope.municipality_id}` : user.scope.institution_id ? `Institucional` : 'Local'}`
+                    }
                   >
-                    {user.scope.is_national
+                    {hasRole('superadmin')
+                      ? '🌐 Global'
+                      : user.scope.is_national
                       ? '🇨🇴 Nal.'
                       : user.scope.is_department
                       ? `📍 Dpto ${user.scope.department_id}`
@@ -449,13 +586,24 @@ export function RootLayout() {
                 <Link
                   to="/dashboard"
                   style={{
-                    color: '#F8FAFC',
+                    color: isSuperAdmin ? '#FCD116' : '#F8FAFC',
                     textDecoration: 'none',
                     fontSize: '0.8125rem',
                     fontWeight: 600,
                   }}
+                  title={
+                    isSuperAdmin
+                      ? 'Consola de Operaciones Globales (SUPER_ADMIN L100)'
+                      : hasRole('national_admin')
+                      ? 'Panel de Gobernanza Nacional (NATIONAL_ADMIN L90)'
+                      : `Panel de control (${user.username})`
+                  }
                 >
-                  Panel ({user.username})
+                  {isSuperAdmin
+                    ? `⚙️ Operaciones (${user.username})`
+                    : hasRole('national_admin')
+                    ? `🇨🇴 Panel Nacional (${user.username})`
+                    : `Panel (${user.username})`}
                 </Link>
                 <button
                   onClick={() => void logout()}

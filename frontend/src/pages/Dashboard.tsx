@@ -11,6 +11,12 @@ import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { institutionApi } from '@/services/institution'
+import {
+  operationsApi,
+  type PlatformOverviewResponse,
+  type AuditFeedItem,
+  type TechnicalIncident,
+} from '@/services/operations'
 import type { InstitutionResponse } from '@/types'
 
 export const Dashboard: React.FC = () => {
@@ -69,6 +75,40 @@ export const Dashboard: React.FC = () => {
   useEffect(() => {
     void loadMyInstitution()
   }, [loadMyInstitution])
+
+  // SuperAdmin Operations Telemetry & Feeds
+  const [opsOverview, setOpsOverview] = useState<PlatformOverviewResponse | null>(null)
+  const [opsAuditFeed, setOpsAuditFeed] = useState<AuditFeedItem[]>([])
+  const [opsIncidents, setOpsIncidents] = useState<TechnicalIncident[]>([])
+  const [isLoadingOps, setIsLoadingOps] = useState(false)
+  const [opsError, setOpsError] = useState<string | null>(null)
+
+  const loadOpsData = useCallback(async () => {
+    if (!hasRole(['superadmin', 'super_admin'])) return
+    setIsLoadingOps(true)
+    setOpsError(null)
+    try {
+      const [ov, audit, inc] = await Promise.all([
+        operationsApi.getOverview(),
+        operationsApi.getAuditFeed({ limit: 5, only_security: true }),
+        operationsApi.listSupportCases({ limit: 5 }),
+      ])
+      setOpsOverview(ov)
+      setOpsAuditFeed(audit.items)
+      setOpsIncidents(inc.items)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al cargar telemetría operacional.'
+      setOpsError(msg)
+    } finally {
+      setIsLoadingOps(false)
+    }
+  }, [hasRole])
+
+  useEffect(() => {
+    if (hasRole(['superadmin', 'super_admin'])) {
+      void loadOpsData()
+    }
+  }, [hasRole, loadOpsData])
 
   if (!user) {
     return null
@@ -141,14 +181,19 @@ export const Dashboard: React.FC = () => {
               fontWeight: 700,
               textTransform: 'uppercase',
               letterSpacing: '0.05em',
-              backgroundColor: 'rgba(255, 255, 255, 0.15)',
-              color: '#F8FAFC',
+              backgroundColor: hasRole('superadmin') ? 'rgba(252, 209, 22, 0.2)' : 'rgba(255, 255, 255, 0.15)',
+              color: hasRole('superadmin') ? '#FCD116' : '#F8FAFC',
               padding: '0.25rem 0.75rem',
               borderRadius: '9999px',
               marginBottom: '0.5rem',
+              border: hasRole('superadmin') ? '1px solid rgba(252, 209, 22, 0.4)' : 'none',
             }}
           >
-            Sesión Activa • PEVN Colombia
+            {hasRole('superadmin')
+              ? '🌐 Operador Técnico Global • SUPER_ADMIN (Nivel 100)'
+              : hasRole('national_admin')
+              ? '🇨🇴 Gobernanza Educativa Nacional • NATIONAL_ADMIN (Nivel 90)'
+              : 'Sesión Activa • PEVN Colombia'}
           </div>
           <h1
             style={{
@@ -162,7 +207,7 @@ export const Dashboard: React.FC = () => {
             Bienvenido, {user.full_name || user.username}
           </h1>
           <p style={{ color: '#E2E8F0', fontSize: '0.875rem', margin: 0, fontWeight: 400 }}>
-            {user.email} • Documento: {user.document_type} {user.document_number || 'N/A'}
+            {user.email} • Rol Canónico: <strong style={{ color: '#FDE047' }}>{user.roles.join(', ')}</strong> • Nivel: {hasRole('superadmin') ? '100 (Global)' : user.scope.is_national ? '90 (Nacional)' : 'Territorial/Institucional'} • Documento: {user.document_type} {user.document_number || 'N/A'}
           </p>
         </div>
 
@@ -246,8 +291,10 @@ export const Dashboard: React.FC = () => {
             <div>
               <span style={{ color: '#64748B' }}>Nivel de Alcance: </span>
               <strong>
-                {user.scope.is_national
-                  ? 'Nacional (Todo el Territorio)'
+                {hasRole('superadmin')
+                  ? '🌐 Global (Operador Técnico del Estado / Plataforma)'
+                  : user.scope.is_national
+                  ? '🇨🇴 Nacional (Todo el Territorio)'
                   : user.scope.is_municipality
                   ? 'Municipal'
                   : user.scope.is_department || user.scope.department_id
@@ -255,6 +302,14 @@ export const Dashboard: React.FC = () => {
                   : 'Institucional'}
               </strong>
             </div>
+            {hasRole('superadmin') && (
+              <div>
+                <span style={{ color: '#64748B' }}>Rango y Autoridad: </span>
+                <span style={{ color: '#0F172A', fontWeight: 700, backgroundColor: '#FEF08A', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>
+                  Nivel 100 • Dominio Global Técnico y Configuración
+                </span>
+              </div>
+            )}
             {user.scope.jurisdiction_name && (
               <div>
                 <span style={{ color: '#64748B' }}>Jurisdicción: </span>
@@ -502,8 +557,400 @@ export const Dashboard: React.FC = () => {
         </div>
       </div>
 
+      {/* SUPER_ADMIN Dedicated Technical Operations Portal (Level 100) */}
+      {hasRole('superadmin') && (
+        <div
+          style={{
+            marginTop: '2rem',
+            backgroundColor: '#0F172A',
+            color: '#FFFFFF',
+            borderRadius: '16px',
+            border: '1px solid #334155',
+            padding: '2rem',
+            boxShadow: '0 10px 25px -5px rgba(15, 23, 42, 0.4)',
+          }}
+        >
+          {/* Header Banner */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
+            <div>
+              <div
+                style={{
+                  display: 'inline-block',
+                  fontSize: '0.75rem',
+                  fontWeight: 800,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  backgroundColor: 'rgba(252, 209, 22, 0.2)',
+                  color: '#FCD116',
+                  padding: '0.25rem 0.75rem',
+                  borderRadius: '9999px',
+                  marginBottom: '0.5rem',
+                  border: '1px solid rgba(252, 209, 22, 0.4)',
+                }}
+              >
+                🌐 CENTRO DE OPERACIONES TÉCNICAS • NIVEL 100
+              </div>
+              <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#FFFFFF', margin: '0 0 0.25rem 0' }}>
+                Consola de Observabilidad, Soporte y Gobernanza de Plataforma
+              </h2>
+              <p style={{ fontSize: '0.875rem', color: '#94A3B8', margin: 0, maxWidth: '750px' }}>
+                Supervisión técnica de salud del sistema, latencia de base de datos, incidentes operacionales, auditoría de seguridad y diagnósticos de inquilinato.
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', backgroundColor: '#1E293B', padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid #334155' }}>
+                <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>Estado de Plataforma:</span>
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: opsOverview?.overall_status === 'OPERATIONAL' ? '#4ADE80' : '#F87171', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: opsOverview?.overall_status === 'OPERATIONAL' ? '#22C55E' : '#EF4444' }} />
+                  {isLoadingOps
+                    ? 'Sondeando...'
+                    : opsOverview
+                    ? `${opsOverview.overall_status} (${opsOverview.database.latency_ms !== null && opsOverview.database.latency_ms !== undefined ? `${opsOverview.database.latency_ms} ms` : 'Sin latencia'})`
+                    : 'No disponible'}
+                </span>
+              </div>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => void loadOpsData()}
+                disabled={isLoadingOps}
+                style={{ backgroundColor: 'rgba(255,255,255,0.1)', color: '#FFFFFF', border: '1px solid rgba(255,255,255,0.2)' }}
+              >
+                {isLoadingOps ? 'Sondeando...' : '🔄 Actualizar'}
+              </Button>
+            </div>
+          </div>
+
+          {opsError && (
+            <div style={{ padding: '0.75rem 1rem', backgroundColor: '#451A1A', border: '1px solid #7F1D1D', borderRadius: '8px', color: '#FCA5A5', marginBottom: '1.5rem', fontSize: '0.8125rem' }}>
+              <strong>Aviso de telemetría:</strong> {opsError}
+            </div>
+          )}
+
+          {/* Real-Time Telemetry KPI Cards */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+            <div style={{ backgroundColor: '#1E293B', padding: '1rem 1.25rem', borderRadius: '10px', border: '1px solid #334155' }}>
+              <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase' }}>
+                Base de Datos Primaria
+              </div>
+              <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#4ADE80', marginTop: '0.25rem' }}>
+                {isLoadingOps ? 'Midiendo...' : opsOverview?.database.status === 'ok' ? '✓ Operativa' : opsOverview ? '⚠ Falla' : 'No disponible'}
+              </div>
+              <div style={{ fontSize: '0.75rem', color: '#CBD5E1', marginTop: '0.25rem' }}>
+                Latencia: <strong>{isLoadingOps ? 'Midiendo...' : opsOverview?.database.latency_ms !== null && opsOverview?.database.latency_ms !== undefined ? `${opsOverview.database.latency_ms} ms` : 'N/D'}</strong> • Pool: {opsOverview?.database.pool_size ?? 'N/D'}
+              </div>
+            </div>
+
+            <div style={{ backgroundColor: '#1E293B', padding: '1rem 1.25rem', borderRadius: '10px', border: '1px solid #334155' }}>
+              <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase' }}>
+                Caché & Sesiones (Redis)
+              </div>
+              <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#38BDF8', marginTop: '0.25rem' }}>
+                {isLoadingOps ? 'Consultando...' : opsOverview?.redis.status === 'ok' ? '✓ Conectado' : opsOverview ? 'Tolerante' : 'No disponible'}
+              </div>
+              <div style={{ fontSize: '0.75rem', color: '#CBD5E1', marginTop: '0.25rem' }}>
+                Modo: <strong>{isLoadingOps ? 'Consultando...' : opsOverview?.redis.mode || 'N/D'}</strong>
+              </div>
+            </div>
+
+            <div style={{ backgroundColor: '#1E293B', padding: '1rem 1.25rem', borderRadius: '10px', border: '1px solid #334155' }}>
+              <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase' }}>
+                Mesa de Soporte / Incidentes
+              </div>
+              <div style={{ fontSize: '1.25rem', fontWeight: 800, color: (opsOverview?.metrics?.active_incidents || 0) > 0 ? '#F87171' : '#4ADE80', marginTop: '0.25rem' }}>
+                {isLoadingOps ? 'Consultando...' : opsOverview?.metrics?.active_incidents !== undefined ? `${opsOverview.metrics.active_incidents} activos` : `${opsIncidents.length} activos`}
+              </div>
+              <div style={{ fontSize: '0.75rem', color: '#CBD5E1', marginTop: '0.25rem' }}>
+                Resolución y mitigación técnica
+              </div>
+            </div>
+
+            <div style={{ backgroundColor: '#1E293B', padding: '1rem 1.25rem', borderRadius: '10px', border: '1px solid #334155' }}>
+              <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase' }}>
+                Seguridad & Auditoría (24h)
+              </div>
+              <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#FCD116', marginTop: '0.25rem' }}>
+                {isLoadingOps ? 'Consultando...' : opsOverview?.metrics?.security_events_24h !== undefined ? `${opsOverview.metrics.security_events_24h} eventos` : 'N/D'}
+              </div>
+              <div style={{ fontSize: '0.75rem', color: '#CBD5E1', marginTop: '0.25rem' }}>
+                Trazas de acceso en audit_logs
+              </div>
+            </div>
+          </div>
+
+          {/* 6 Core Technical Operations Action Modules */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+              gap: '1rem',
+              marginBottom: '2rem',
+            }}
+          >
+            {/* Module 1: Platform Health & Observability */}
+            <Link to="/operations/health" style={{ textDecoration: 'none' }}>
+              <div
+                style={{
+                  padding: '1.25rem',
+                  backgroundColor: '#1E293B',
+                  borderRadius: '12px',
+                  border: '1px solid #334155',
+                  transition: 'all 0.2s ease',
+                  cursor: 'pointer',
+                  height: '100%',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                  <span style={{ fontSize: '1.5rem' }}>🩺</span>
+                  <div style={{ fontWeight: 700, color: '#4ADE80', fontSize: '1rem' }}>Salud de Infraestructura</div>
+                </div>
+                <p style={{ fontSize: '0.8125rem', color: '#94A3B8', margin: 0, lineHeight: 1.5 }}>
+                  Sondeo en tiempo real de servicios API, bases de datos PostgreSQL, cluster Redis y adaptadores estatales.
+                </p>
+              </div>
+            </Link>
+
+            {/* Module 2: Technical Support & Incidents */}
+            <Link to="/operations/support" style={{ textDecoration: 'none' }}>
+              <div
+                style={{
+                  padding: '1.25rem',
+                  backgroundColor: '#1E293B',
+                  borderRadius: '12px',
+                  border: '1px solid #334155',
+                  transition: 'all 0.2s ease',
+                  cursor: 'pointer',
+                  height: '100%',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                  <span style={{ fontSize: '1.5rem' }}>🛠️</span>
+                  <div style={{ fontWeight: 700, color: '#38BDF8', fontSize: '1rem' }}>Mesa de Ayuda e Incidentes</div>
+                </div>
+                <p style={{ fontSize: '0.8125rem', color: '#94A3B8', margin: 0, lineHeight: 1.5 }}>
+                  Gestión y mitigación de incidencias operacionales, tickets de infraestructura y asignación de operadores on-call.
+                </p>
+              </div>
+            </Link>
+
+            {/* Module 3: Security & Audit Stream */}
+            <Link to="/operations/audit" style={{ textDecoration: 'none' }}>
+              <div
+                style={{
+                  padding: '1.25rem',
+                  backgroundColor: '#1E293B',
+                  borderRadius: '12px',
+                  border: '1px solid #334155',
+                  transition: 'all 0.2s ease',
+                  cursor: 'pointer',
+                  height: '100%',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                  <span style={{ fontSize: '1.5rem' }}>🛡️</span>
+                  <div style={{ fontWeight: 700, color: '#F87171', fontSize: '1rem' }}>Seguridad & Auditoría Forense</div>
+                </div>
+                <p style={{ fontSize: '0.8125rem', color: '#94A3B8', margin: 0, lineHeight: 1.5 }}>
+                  Inspección de autenticaciones, violaciones RBAC 403, bloqueos de cuenta y registro inmutable de acciones de operador.
+                </p>
+              </div>
+            </Link>
+
+            {/* Module 4: Tenant Diagnostics */}
+            <Link to="/operations/tenant-diagnostics" style={{ textDecoration: 'none' }}>
+              <div
+                style={{
+                  padding: '1.25rem',
+                  backgroundColor: '#1E293B',
+                  borderRadius: '12px',
+                  border: '1px solid #334155',
+                  transition: 'all 0.2s ease',
+                  cursor: 'pointer',
+                  height: '100%',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                  <span style={{ fontSize: '1.5rem' }}>🏛️</span>
+                  <div style={{ fontWeight: 700, color: '#FCD116', fontSize: '1rem' }}>Diagnóstico de Inquilinos</div>
+                </div>
+                <p style={{ fontSize: '0.8125rem', color: '#94A3B8', margin: 0, lineHeight: 1.5 }}>
+                  Sondeo técnico y troubleshooting de instituciones con selección explícita y registro obligatorio de auditoría.
+                </p>
+              </div>
+            </Link>
+
+            {/* Module 5: User & Access Diagnostics */}
+            <Link to="/admin/users" style={{ textDecoration: 'none' }}>
+              <div
+                style={{
+                  padding: '1.25rem',
+                  backgroundColor: '#1E293B',
+                  borderRadius: '12px',
+                  border: '1px solid #334155',
+                  transition: 'all 0.2s ease',
+                  cursor: 'pointer',
+                  height: '100%',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                  <span style={{ fontSize: '1.5rem' }}>👥</span>
+                  <div style={{ fontWeight: 700, color: '#2DD4BF', fontSize: '1rem' }}>Directorio Global de Usuarios</div>
+                </div>
+                <p style={{ fontSize: '0.8125rem', color: '#94A3B8', margin: 0, lineHeight: 1.5 }}>
+                  Inspección de todas las cuentas nacionales, roles, estados de activación, bloqueos por fuerza bruta y reseteos.
+                </p>
+              </div>
+            </Link>
+
+            {/* Module 6: Territorial Control Center */}
+            <Link to="/admin/control-center" style={{ textDecoration: 'none' }}>
+              <div
+                style={{
+                  padding: '1.25rem',
+                  backgroundColor: '#1E293B',
+                  borderRadius: '12px',
+                  border: '1px solid #334155',
+                  transition: 'all 0.2s ease',
+                  cursor: 'pointer',
+                  height: '100%',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                  <span style={{ fontSize: '1.5rem' }}>🌐</span>
+                  <div style={{ fontWeight: 700, color: '#A5B4FC', fontSize: '1rem' }}>Centro de Control Territorial</div>
+                </div>
+                <p style={{ fontSize: '0.8125rem', color: '#94A3B8', margin: 0, lineHeight: 1.5 }}>
+                  Supervisión macro de DIVIPOLA, entidades territoriales certificadas e interoperabilidad regional.
+                </p>
+              </div>
+            </Link>
+          </div>
+
+          {/* Two Live Feeds: Security Events & Active Incidents */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
+            {/* Live Security Feed */}
+            <div style={{ backgroundColor: '#1E293B', borderRadius: '12px', border: '1px solid #334155', padding: '1.25rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  🛡️ Flujo Reciente de Seguridad
+                </span>
+                <Link to="/operations/audit" style={{ fontSize: '0.75rem', color: '#38BDF8', textDecoration: 'none' }}>
+                  Ver Todo →
+                </Link>
+              </div>
+              {opsAuditFeed.length === 0 ? (
+                <p style={{ fontSize: '0.8125rem', color: '#94A3B8', margin: 0 }}>No hay eventos de seguridad recientes registrados.</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {opsAuditFeed.map((item) => (
+                    <div
+                      key={item.id}
+                      style={{
+                        padding: '0.5rem 0.75rem',
+                        backgroundColor: '#0F172A',
+                        borderRadius: '6px',
+                        border: '1px solid #334155',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        fontSize: '0.75rem',
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontWeight: 700, color: item.success ? '#E2E8F0' : '#FCA5A5', fontFamily: 'monospace' }}>
+                          {item.event_type}
+                        </div>
+                        <div style={{ color: '#64748B', fontSize: '0.7rem' }}>
+                          IP: {item.actor_ip} • {item.occurred_at ? new Date(item.occurred_at).toLocaleTimeString() : 'Reciente'}
+                        </div>
+                      </div>
+                      <span
+                        style={{
+                          fontSize: '0.65rem',
+                          fontWeight: 700,
+                          padding: '0.15rem 0.4rem',
+                          borderRadius: '4px',
+                          backgroundColor: item.success ? 'rgba(74, 222, 128, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                          color: item.success ? '#4ADE80' : '#F87171',
+                        }}
+                      >
+                        {item.success ? '✓ ÉXITO' : '✕ DENEGADO'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Live Incidents Feed */}
+            <div style={{ backgroundColor: '#1E293B', borderRadius: '12px', border: '1px solid #334155', padding: '1.25rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  🛠️ Incidentes Técnicos en Seguimiento
+                </span>
+                <Link to="/operations/support" style={{ fontSize: '0.75rem', color: '#38BDF8', textDecoration: 'none' }}>
+                  Ver Mesa de Ayuda →
+                </Link>
+              </div>
+              {opsIncidents.length === 0 ? (
+                <p style={{ fontSize: '0.8125rem', color: '#94A3B8', margin: 0 }}>No hay tickets ni incidentes técnicos abiertos.</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {opsIncidents.map((inc) => (
+                    <div
+                      key={inc.id}
+                      style={{
+                        padding: '0.5rem 0.75rem',
+                        backgroundColor: '#0F172A',
+                        borderRadius: '6px',
+                        border: '1px solid #334155',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        fontSize: '0.75rem',
+                      }}
+                    >
+                      <div style={{ maxWidth: '70%' }}>
+                        <div style={{ fontWeight: 700, color: '#E2E8F0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          [{inc.ticket_number}] {inc.title}
+                        </div>
+                        <div style={{ color: '#64748B', fontSize: '0.7rem' }}>
+                          Servicio: {inc.affected_service} • Estado: {inc.status}
+                        </div>
+                      </div>
+                      <span
+                        style={{
+                          fontSize: '0.65rem',
+                          fontWeight: 700,
+                          padding: '0.15rem 0.4rem',
+                          borderRadius: '4px',
+                          backgroundColor:
+                            inc.severity === 'CRITICAL'
+                              ? 'rgba(239, 68, 68, 0.2)'
+                              : inc.severity === 'HIGH'
+                              ? 'rgba(249, 115, 22, 0.2)'
+                              : 'rgba(234, 179, 8, 0.2)',
+                          color:
+                            inc.severity === 'CRITICAL'
+                              ? '#F87171'
+                              : inc.severity === 'HIGH'
+                              ? '#FB923C'
+                              : '#FDE047',
+                        }}
+                      >
+                        {inc.severity}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* National / Departmental Institutions Administration Access Card */}
-      {(hasPermission('institutions:read') || user.scope.is_national || user.roles.includes('national_admin') || user.roles.includes('superadmin')) && (
+      {!hasRole('superadmin') && (hasPermission('institutions:read') || user.scope.is_national || user.roles.includes('national_admin')) && (
         <div
           style={{
             marginTop: '2rem',
@@ -576,7 +1023,7 @@ export const Dashboard: React.FC = () => {
       )}
 
       {/* Directory of System Users Access Card */}
-      {hasPermission('users:read') && (
+      {!hasRole('superadmin') && hasPermission('users:read') && (
         <div
           style={{
             marginTop: '2rem',
@@ -629,7 +1076,7 @@ export const Dashboard: React.FC = () => {
       )}
 
       {/* Communications & News Access Card */}
-      {(hasPermission('communications:read') || hasPermission('news:read')) && (
+      {!hasRole('superadmin') && (hasPermission('communications:read') || hasPermission('news:read')) && (
         <div
           style={{
             marginTop: '2rem',
@@ -717,7 +1164,7 @@ export const Dashboard: React.FC = () => {
       )}
 
       {/* Incidents & School Climate Access Card */}
-      {hasPermission('incidents:read') && (
+      {!hasRole('superadmin') && hasPermission('incidents:read') && (
         <div
           style={{
             marginTop: '2rem',
@@ -823,7 +1270,7 @@ export const Dashboard: React.FC = () => {
           'academic_coordinator',
         ])
         const isPlatformAdminWithContext =
-          hasRole(['superadmin', 'national_admin', 'department_admin']) && Boolean(activeInstitutionId)
+          hasRole(['national_admin', 'department_admin']) && Boolean(activeInstitutionId)
         const isDirective = isInstitutionalDirective || isPlatformAdminWithContext
 
         if (!isDirective) {
@@ -1010,7 +1457,7 @@ export const Dashboard: React.FC = () => {
       )}
 
       {/* Virtual Classrooms & Real-Time Collaboration Access Card (Phase 4) */}
-      {hasPermission('virtual_classrooms:read') && (
+      {!hasRole('superadmin') && hasPermission('virtual_classrooms:read') && (
         <div
           style={{
             marginTop: '2rem',

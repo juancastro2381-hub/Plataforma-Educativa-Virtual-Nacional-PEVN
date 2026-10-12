@@ -66,23 +66,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const syncInstitutionalContext = useCallback(async (u: User) => {
     const instId = u.institution_id || u.scope?.institution_id
-    if (instId) {
-      let instName = ''
+    if (!instId) {
+      // Clear any prior active context for global or unassigned accounts
+      setActiveInstitutionContext(null)
+      return
+    }
+
+    let instName = ''
+    try {
+      instName = localStorage.getItem('pevn_active_institution_name') || ''
+    } catch {
+      instName = ''
+    }
+    setActiveInstitutionContext(instId, instName || undefined)
+    if (!instName) {
       try {
-        instName = localStorage.getItem('pevn_active_institution_name') || ''
-      } catch {
-        instName = ''
-      }
-      setActiveInstitutionContext(instId, instName || undefined)
-      if (!instName) {
-        try {
-          const instData = await institutionApi.getMyInstitution()
-          if (instData?.name) {
-            setActiveInstitutionContext(instId, instData.name)
-          }
-        } catch {
-          // Non-blocking fallback
+        const instData = await institutionApi.getMyInstitution()
+        if (instData?.name) {
+          setActiveInstitutionContext(instId, instData.name)
         }
+      } catch {
+        // Non-blocking fallback
       }
     }
   }, [setActiveInstitutionContext])
@@ -113,6 +117,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       } catch {
         if (isMounted) {
           setUser(null)
+          setActiveInstitutionContext(null)
         }
       } finally {
         if (isMounted) {
@@ -126,18 +131,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return () => {
       isMounted = false
     }
-  }, [syncInstitutionalContext])
+  }, [setActiveInstitutionContext, syncInstitutionalContext])
 
   const login = useCallback(async (credentials: LoginRequest) => {
     setIsLoading(true)
     try {
+      // Reset institutional context upon explicit login before binding new user
+      setActiveInstitutionContext(null)
       const data = await authApi.login(credentials)
       setUser(data.user)
       void syncInstitutionalContext(data.user)
     } finally {
       setIsLoading(false)
     }
-  }, [syncInstitutionalContext])
+  }, [setActiveInstitutionContext, syncInstitutionalContext])
 
   const logout = useCallback(async () => {
     setIsLoading(true)

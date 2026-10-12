@@ -1193,6 +1193,8 @@ export const InstitutionsView: React.FC = () => {
                 ? `Nivel Municipal • Secretaría de Educación Municipal (${user?.scope.jurisdiction_name || user?.scope.municipality_code || 'Territorial'})`
                 : isDepartmentAdmin
                 ? `Nivel Departamental • Secretaría de Educación (DANE ${user?.scope.department_id || 'Territorial'})`
+                : hasRole('superadmin')
+                ? 'Nivel Global • Operador Técnico de Plataforma'
                 : 'Nivel Nacional • Ministerio de Educación'}
             </span>
             {catalogSyncStatus?.catalog_status === 'DEVELOPMENT_SEED' && (

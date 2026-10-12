@@ -30,6 +30,7 @@ from app.api.v1.endpoints import (
     municipality_admins,
     news,
     onboarding,
+    operations,
     ready,
     recordings,
     siee_policies,
@@ -56,6 +57,10 @@ api_v1_router.include_router(
     ready.router,
     prefix="/ready",
     tags=["Operations"],
+)
+
+api_v1_router.include_router(
+    operations.router,
 )
 
 # ---- Authentication endpoints ---------------------------------------------

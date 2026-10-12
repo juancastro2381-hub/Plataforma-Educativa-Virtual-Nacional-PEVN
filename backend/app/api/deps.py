@@ -108,12 +108,17 @@ async def get_current_user(
 
 
 async def get_auth_context(
+    request: Request,
     user: Annotated[User, Depends(get_current_user)],
 ) -> AuthorizationContext:
     """
     Build and return the complete AuthorizationContext for the current request.
     """
-    return auth_service.build_auth_context(user)
+    ctx = auth_service.build_auth_context(user)
+    header_val = request.headers.get("x-institution-context") or request.headers.get("x-institution-id")
+    if header_val:
+        ctx.extra["institution_context_header"] = header_val
+    return ctx
 
 
 def require_permission(
@@ -221,6 +226,11 @@ async def resolve_institution_id(
                 target_inst_id = uuid.UUID(header_val)
             except (ValueError, TypeError):
                 target_inst_id = None
+    elif hasattr(auth, "extra") and auth.extra.get("institution_context_header"):
+        try:
+            target_inst_id = uuid.UUID(auth.extra["institution_context_header"])
+        except (ValueError, TypeError):
+            target_inst_id = None
 
     if (
         SystemRole.SUPERADMIN in auth.roles
