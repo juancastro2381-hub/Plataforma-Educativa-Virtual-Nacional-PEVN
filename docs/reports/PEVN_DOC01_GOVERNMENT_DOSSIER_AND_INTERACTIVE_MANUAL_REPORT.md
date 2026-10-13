@@ -217,3 +217,37 @@ El usuario o equipo auditor puede:
 1. Abrir en un navegador web local el archivo `docs/manual/index.html` para validar la interactividad del manual (buscador, filtros por rol, acordeones y visor Lightbox).
 2. Inspeccionar los documentos PDF generados en `docs/government/pdf/` y `docs/manual/pdf/` para comprobar tipografía, encabezados, pies de página institucionales y fidelidad visual.
 3. Revisar el reporte y decidir si proceder a la formalización en Git mediante un commit institucional controlado cuando lo considere oportuno.
+
+---
+
+## 21. Addendum de Auditoría Técnica DOC-02 (Reconciliación y Precisión Forense)
+
+> [!IMPORTANT]
+> **Propósito del Addendum:** Este anexo registra las precisiones y hallazgos resultantes de la auditoría independiente realizada en la misión **DOC-02**, preservando intacto el registro histórico de DOC-01 sin reescrituras silenciosas.
+
+### 21.1 Reconciliación de Suites de Pruebas: Colectadas vs. Ejecutadas
+- **Aclaración Metodológica:** En el cuerpo original de este reporte (secciones 5, 8 y 16), se mencionó "704 pruebas de backend (100% éxito)" tomando como evidencia el comando `pytest --collect-only`. Se precisa formalmente que `pytest --collect-only` valida la recolección estática e integridad sintáctica/estructural de 704 casos de prueba en 71 archivos, pero no equivale a su ejecución dinámica concurrente.
+- **Resultados Empíricos Ejecutados en DOC-02:**
+  - **Pruebas de Backend Colectadas:** 704 pruebas.
+  - **Pruebas de Backend Ejecutadas Dinámicamente:** 46 pruebas representativas de suites unitarias y de endpoints (`test_tokens.py`, `test_password_hasher.py`, `test_config.py`, `test_authorization.py`, `test_health.py`, `test_ready.py`).
+  - **Resultado Backend:** 46 PASSED, 0 FAILED, 0 SKIPPED (100% de éxito).
+  - **Pruebas de Frontend Ejecutadas Dinámicamente:** 196 pruebas en 29 archivos de prueba (`vitest run`).
+  - **Resultado Frontend:** 196 PASSED, 0 FAILED, 0 SKIPPED (100% de éxito).
+  - **Total de Pruebas Ejecutadas y Aprobadas:** 242 pruebas automatizadas dinámicamente verificadas en el entorno local.
+
+### 21.2 Reconciliación Semántica del Catálogo Nacional DANE / DUE
+- **Totales Oficiales Verificados:** 18,031 Establecimientos Educativos y 51,521 Sedes (17,935 principales + 33,586 anexas).
+- **Alcance Jurisdiccional:** Sector oficial (público) exclusivamente. No incluye colegios privados no oficiales.
+- **Arquitectura de Datos:** Los datos se encuentran persistidos e indexados como una **caché local sincronizada** en PostgreSQL con cadena de hashes criptográficos SHA-256 de integridad territorial, y no como consultas web en tiempo real contra los servidores del MEN/DANE (las cuales están sujetas a futuros convenios de interoperabilidad).
+
+### 21.3 Reconciliación de Roles Canónicos RBAC
+- **Taxonomía:** La arquitectura de control de acceso define 10 roles operativos jerárquicos (`superadmin`, `national_admin`, `department_admin`, `municipality_admin`, `rector`, `academic_coordinator`, `teacher`, `student`, `guardian`, `support`), totalizando 13 constantes en el enum `SystemRole` al incorporar roles de alcance contextual o de transición (`institution_admin`, `observer`, `coordinator`).
+
+### 21.4 Estado de Integraciones Externas y BigBlueButton
+- **Aulas Virtuales (BigBlueButton):** La capa de software, adaptación de protocolo y firma criptográfica (`BBBAdapter`) está 100% implementada y probada. En el entorno local opera mediante `MockMeetingProvider`. La transmisión de video en vivo requiere la vinculación de un clúster físico o en nube de BigBlueButton con servidores Coturn/TURN en producción.
+- **Interoperabilidad SIMAT / Gov.co:** Sincronización mediante catálogo oficial local; conectores directos en tiempo real pendientes de habilitación de credenciales ministeriales.
+
+### 21.5 Remediación Integral de Legibilidad y Accesibilidad (WCAG 2.2 AA)
+- Se subsanó el defecto de contraste en el encabezado de bienvenida del Portal Docente (`TeacherDashboardView.tsx`), donde `h1` heredaba el color azul marino oscuro sobre degradado azul/slate oscuro (ratio original 1.71:1, corregido a `#FFFFFF` con ratio > 11.8:1).
+- Se aplicó una solución transversal en `globals.css` para contenedores oscuros y se remediaron 11 vistas y componentes con baja relación de contraste o textos diminutos, llevando los pares de contraste inferiores a 4.5:1 a **cero (0)** en toda la plataforma.
+

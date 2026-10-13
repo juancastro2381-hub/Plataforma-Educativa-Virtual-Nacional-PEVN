@@ -116,7 +116,7 @@ export const TerritorialAnalyticsView: React.FC = () => {
           }}
         >
           <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>⚠️</div>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem' }}>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem', color: '#991B1B' }}>
             No fue posible cargar la analítica territorial
           </h2>
           <p style={{ fontSize: '0.875rem', marginBottom: '1.5rem' }}>{error}</p>
@@ -143,11 +143,11 @@ export const TerritorialAnalyticsView: React.FC = () => {
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
           <span style={{ fontSize: '2rem' }}>📊</span>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0 }}>
+          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0, color: '#FFFFFF' }}>
             Tablero de Analítica Territorial
           </h1>
         </div>
-        <p style={{ color: '#94A3B8', fontSize: '0.9375rem', margin: '0 0 1rem 0' }}>
+        <p style={{ color: '#CBD5E1', fontSize: '0.9375rem', margin: '0 0 1rem 0' }}>
           Monitoreo y cobertura del Catálogo Educativo Oficial (MEN / DANE) y tasa de aprovisionamiento institucional.
         </p>
         <div

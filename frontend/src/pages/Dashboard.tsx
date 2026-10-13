@@ -1277,7 +1277,7 @@ export const Dashboard: React.FC = () => {
               <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#1E3A8A', margin: '0 0 0.25rem 0' }}>
                 Selección de Contexto Institucional
               </h2>
-              <p style={{ fontSize: '0.875rem', color: '#3B82F6', margin: 0 }}>
+              <p style={{ fontSize: '0.875rem', color: '#1E40AF', margin: 0 }}>
                 Para inspeccionar el plan de estudios, salones, matrículas, planta docente y aulas virtuales de una institución específica, seleccione la institución en el catálogo.
               </p>
             </div>

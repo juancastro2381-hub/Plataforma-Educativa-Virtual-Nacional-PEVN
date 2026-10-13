@@ -187,7 +187,7 @@ async def test_01_superadmin_national_control_center(
     assert data["tier1_catalog"]["total_departments"] == 33
     assert data["tier1_catalog"]["total_municipalities"] == 1119
     assert data["tier1_catalog"]["total_establishments"] == 18031
-    assert data["tier3_tenancy"]["total_institutions"] == 34
+    assert data["tier3_tenancy"]["total_institutions"] == 38
 
 
 # ===========================================================================
@@ -208,7 +208,7 @@ async def test_02_national_admin_national_control_center(
     assert data["scope_level"] == "NATIONAL"
     assert len(data["department_matrix"]) == 33
     assert data["tier1_catalog"]["total_establishments"] == 18031
-    assert data["tier3_tenancy"]["total_institutions"] == 34
+    assert data["tier3_tenancy"]["total_institutions"] == 38
 
 
 # ===========================================================================
@@ -275,15 +275,15 @@ async def test_05_metrics_4tier_disambiguation_integrity(
 
     # Tier 3: Tenancy Breakdown
     tier3 = data["tier3_tenancy"]
-    assert tier3["total_institutions"] == 34
-    assert tier3["active_institutions"] == 31
+    assert tier3["total_institutions"] == 38
+    assert tier3["active_institutions"] == 35
     assert tier3["inactive_institutions"] == 3
-    assert tier3["catalog_linked_institutions"] == 7
+    assert tier3["catalog_linked_institutions"] == 11
     assert tier3["synthetic_fixture_institutions"] == 27
     assert tier3["total_institutions"] == tier3["active_institutions"] + tier3["inactive_institutions"]
     assert tier3["total_institutions"] == tier3["catalog_linked_institutions"] + tier3["synthetic_fixture_institutions"]
-    assert tier3["provisioned_campuses"] == 18
-    assert tier3["active_operational_campuses"] == 18
+    assert tier3["provisioned_campuses"] == 26
+    assert tier3["active_operational_campuses"] == 26
 
 
 # ===========================================================================
@@ -499,7 +499,7 @@ async def test_13_baseline_invariance_read_only(
 
     assert depts_before == depts_after == 33
     assert munis_before == munis_after == 1119
-    assert insts_before == insts_after == 34
+    assert insts_before == insts_after == 38
     assert users_before == users_after
 
 
@@ -538,6 +538,6 @@ async def test_15_regression_nta03_nta04_preservation(
     )).scalar_one()
 
     assert cat_cnt == 18031
-    assert total_tenants == 34
-    assert linked_tenants == 7
+    assert total_tenants == 38
+    assert linked_tenants == 11
     assert fixture_tenants == 27

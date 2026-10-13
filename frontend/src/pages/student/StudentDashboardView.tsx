@@ -76,7 +76,7 @@ export const StudentDashboardView: React.FC<StudentDashboardViewProps> = ({
                 width: '52px',
                 height: '52px',
                 borderRadius: '50%',
-                backgroundColor: '#16A34A',
+                backgroundColor: '#15803D',
                 color: '#FFFFFF',
                 display: 'flex',
                 alignItems: 'center',
@@ -90,7 +90,7 @@ export const StudentDashboardView: React.FC<StudentDashboardViewProps> = ({
 
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                <span style={{ fontSize: '0.75rem', fontWeight: 800, backgroundColor: '#22C55E', color: '#FFFFFF', padding: '0.15rem 0.55rem', borderRadius: '9999px' }}>
+                <span style={{ fontSize: '0.8125rem', fontWeight: 800, backgroundColor: '#15803D', color: '#FFFFFF', padding: '0.2rem 0.65rem', borderRadius: '9999px' }}>
                   CLASE EN VIVO
                 </span>
                 <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#166534' }}>
@@ -111,7 +111,7 @@ export const StudentDashboardView: React.FC<StudentDashboardViewProps> = ({
           <button
             onClick={() => onJoinClass(liveClass)}
             style={{
-              backgroundColor: '#16A34A',
+              backgroundColor: '#15803D',
               color: '#FFFFFF',
               border: 'none',
               padding: '0.85rem 1.75rem',
@@ -122,11 +122,11 @@ export const StudentDashboardView: React.FC<StudentDashboardViewProps> = ({
               display: 'flex',
               alignItems: 'center',
               gap: '0.6rem',
-              boxShadow: '0 4px 6px -1px rgba(22, 163, 74, 0.35)',
+              boxShadow: '0 4px 6px -1px rgba(21, 128, 61, 0.35)',
               transition: 'all 0.15s ease',
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#15803D')}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#16A34A')}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#166534')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#15803D')}
           >
             <span>INGRESAR A CLASE AHORA</span>
             <span aria-hidden="true">→</span>

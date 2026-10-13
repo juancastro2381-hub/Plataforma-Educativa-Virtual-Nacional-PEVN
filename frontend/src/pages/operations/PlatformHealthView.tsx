@@ -220,11 +220,11 @@ export const PlatformHealthView: React.FC = () => {
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <span style={{ fontWeight: 700, color: '#0F172A', fontSize: '0.9375rem' }}>{svc.name}</span>
-                    <span style={{ fontSize: '0.7rem', color: '#64748B', backgroundColor: '#E2E8F0', padding: '0.1rem 0.4rem', borderRadius: '4px', textTransform: 'uppercase' }}>
+                    <span style={{ fontSize: '0.8125rem', color: '#1E293B', backgroundColor: '#E2E8F0', padding: '0.15rem 0.5rem', borderRadius: '4px', textTransform: 'uppercase', fontWeight: 600 }}>
                       {svc.type}
                     </span>
                   </div>
-                  <div style={{ fontSize: '0.8125rem', color: '#64748B', marginTop: '0.25rem' }}>
+                  <div style={{ fontSize: '0.875rem', color: '#475569', marginTop: '0.25rem' }}>
                     {svc.details}
                   </div>
                 </div>
@@ -232,7 +232,7 @@ export const PlatformHealthView: React.FC = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <span
                     style={{
-                      fontSize: '0.75rem',
+                      fontSize: '0.8125rem',
                       fontWeight: 700,
                       padding: '0.25rem 0.65rem',
                       borderRadius: '9999px',

@@ -676,7 +676,7 @@ export const TeachersView: React.FC = () => {
                   <div style={{ fontWeight: 700, color: '#1E40AF', fontSize: '0.875rem' }}>
                     🆕 Nuevo Docente Institucional
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: '#3B82F6', marginTop: '0.1rem' }}>
+                  <div style={{ fontSize: '0.8125rem', color: '#1D4ED8', marginTop: '0.1rem', fontWeight: 500 }}>
                     Se creará la cuenta institucional y se asignará automáticamente el rol de Docente.
                   </div>
                 </div>
@@ -1221,7 +1221,7 @@ export const TeachersView: React.FC = () => {
                 <label style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#1E293B', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                   🔑 Enlace de Configuración de Contraseña
                 </label>
-                <span style={{ fontSize: '0.75rem', color: '#64748B', backgroundColor: '#F1F5F9', padding: '0.15rem 0.5rem', borderRadius: '4px' }}>
+                <span style={{ fontSize: '0.8125rem', color: '#334155', backgroundColor: '#F1F5F9', padding: '0.2rem 0.55rem', borderRadius: '4px', fontWeight: 600 }}>
                   Uso Único · 1 Hora
                 </span>
               </div>

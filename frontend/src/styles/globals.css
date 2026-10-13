@@ -108,6 +108,28 @@
     margin: 0;
   }
 
+  /* Accessible headings on dark containers and surfaces (WCAG 2.2 AA / AAA) */
+  [data-theme="dark"] h1,
+  [data-theme="dark"] h2,
+  [data-theme="dark"] h3,
+  [data-theme="dark"] h4,
+  [data-theme="dark"] h5,
+  [data-theme="dark"] h6,
+  .dark h1,
+  .dark h2,
+  .dark h3,
+  .dark h4,
+  .dark h5,
+  .dark h6,
+  .bg-navy h1,
+  .bg-navy h2,
+  .bg-navy h3,
+  .bg-navy-dark h1,
+  .bg-navy-dark h2,
+  .bg-navy-dark h3 {
+    color: #FFFFFF;
+  }
+
   p {
     margin: 0;
   }

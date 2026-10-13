@@ -1120,7 +1120,7 @@ export const StudentsView: React.FC = () => {
                     <div style={{ fontWeight: 700, color: '#1E40AF' }}>
                       ✓ {selectedUser.first_name} {selectedUser.last_name}
                     </div>
-                    <div style={{ fontSize: '0.75rem', color: '#3B82F6' }}>
+                    <div style={{ fontSize: '0.8125rem', color: '#1D4ED8', fontWeight: 500 }}>
                       {selectedUser.email} • {selectedUser.document_type} {selectedUser.document_number}
                     </div>
                   </div>

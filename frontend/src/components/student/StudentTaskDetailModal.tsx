@@ -528,7 +528,7 @@ export const StudentTaskDetailModal: React.FC<StudentTaskDetailModalProps> = ({
                           target="_blank"
                           rel="noopener noreferrer"
                           style={{
-                            backgroundColor: '#059669',
+                            backgroundColor: '#047857',
                             color: '#FFFFFF',
                             textDecoration: 'none',
                             padding: '0.45rem 0.9rem',
@@ -870,11 +870,11 @@ export const StudentTaskDetailModal: React.FC<StudentTaskDetailModalProps> = ({
                                   title="Eliminar archivo"
                                   style={{
                                     backgroundColor: '#FEF2F2',
-                                    color: '#DC2626',
+                                    color: '#991B1B',
                                     border: '1px solid #FECACA',
                                     borderRadius: '6px',
                                     padding: '0.35rem 0.65rem',
-                                    fontSize: '0.75rem',
+                                    fontSize: '0.8125rem',
                                     fontWeight: 700,
                                     cursor: deletingAttachmentId === att.id ? 'not-allowed' : 'pointer',
                                   }}
@@ -967,7 +967,7 @@ export const StudentTaskDetailModal: React.FC<StudentTaskDetailModalProps> = ({
                       }}
                       disabled={submitting || savingDraft || uploadingFile}
                       style={{
-                        backgroundColor: '#059669',
+                        backgroundColor: '#047857',
                         border: 'none',
                         color: '#FFFFFF',
                         padding: '0.55rem 1.25rem',
@@ -975,7 +975,7 @@ export const StudentTaskDetailModal: React.FC<StudentTaskDetailModalProps> = ({
                         fontSize: '0.875rem',
                         fontWeight: 700,
                         cursor: submitting || savingDraft || uploadingFile ? 'not-allowed' : 'pointer',
-                        boxShadow: '0 2px 4px rgba(5, 150, 105, 0.25)',
+                        boxShadow: '0 2px 4px rgba(4, 120, 87, 0.25)',
                       }}
                     >
                       {submitting ? 'Enviando entrega...' : '🚀 Entregar Actividad'}

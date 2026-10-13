@@ -189,7 +189,7 @@ export const GuardianAlertBanner: React.FC<Props> = ({
               style={{
                 padding: '0.45rem 0.875rem',
                 borderRadius: '8px',
-                backgroundColor: '#D97706',
+                backgroundColor: '#B45309',
                 color: '#FFFFFF',
                 border: 'none',
                 fontSize: '0.8125rem',

@@ -1246,7 +1246,7 @@ export const TeacherActivitiesView: React.FC<Props> = ({
                   Cargando materiales...
                 </div>
               ) : activityResources.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '1.5rem', color: '#94A3B8', fontSize: '0.875rem', backgroundColor: '#F8FAFC', borderRadius: '8px', border: '1px dashed #CBD5E1' }}>
+                <div style={{ textAlign: 'center', padding: '1.5rem', color: '#475569', fontSize: '0.875rem', backgroundColor: '#F8FAFC', borderRadius: '8px', border: '1px dashed #CBD5E1' }}>
                   No hay materiales pedagógicos adjuntos para esta actividad. Utilice el formulario inferior para agregar archivos o enlaces.
                 </div>
               ) : (
@@ -1311,12 +1311,12 @@ export const TeacherActivitiesView: React.FC<Props> = ({
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{
-                              backgroundColor: '#059669',
+                              backgroundColor: '#047857',
                               color: '#FFFFFF',
                               textDecoration: 'none',
                               padding: '0.35rem 0.75rem',
                               borderRadius: '6px',
-                              fontSize: '0.75rem',
+                              fontSize: '0.8125rem',
                               fontWeight: 700,
                             }}
                           >

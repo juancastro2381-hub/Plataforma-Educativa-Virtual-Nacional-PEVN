@@ -53,7 +53,7 @@ export const RequirePermission: React.FC<RequirePermissionProps> = ({
             height: '48px',
             borderRadius: '50%',
             backgroundColor: '#FEF3C7',
-            color: '#D97706',
+            color: '#92400E',
             marginBottom: '1rem',
             fontSize: '1.5rem',
             fontWeight: 'bold',

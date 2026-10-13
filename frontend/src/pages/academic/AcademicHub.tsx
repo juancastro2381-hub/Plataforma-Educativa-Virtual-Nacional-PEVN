@@ -282,7 +282,7 @@ export const AcademicHub: React.FC = () => {
             style={{
               backgroundColor: 'transparent',
               border: 'none',
-              color: '#3B82F6',
+              color: '#1D4ED8',
               fontWeight: 700,
               fontSize: '1rem',
               cursor: 'pointer',
@@ -321,7 +321,7 @@ export const AcademicHub: React.FC = () => {
               <button
                 type="button"
                 style={{
-                  backgroundColor: '#0284C7',
+                  backgroundColor: '#0369A1',
                   color: '#FFFFFF',
                   border: 'none',
                   padding: '0.75rem 1.5rem',

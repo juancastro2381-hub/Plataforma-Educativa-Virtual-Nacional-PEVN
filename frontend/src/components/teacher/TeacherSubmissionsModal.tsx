@@ -183,35 +183,35 @@ export const TeacherSubmissionsModal: React.FC<TeacherSubmissionsModalProps> = (
   const getStatusBadge = (status: string | null, isLate: boolean) => {
     if (!status || status === 'DRAFT') {
       return (
-        <span style={{ backgroundColor: '#F1F5F9', color: '#64748B', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600 }}>
+        <span style={{ backgroundColor: '#F1F5F9', color: '#334155', padding: '0.2rem 0.55rem', borderRadius: '4px', fontSize: '0.8125rem', fontWeight: 600 }}>
           Sin Entregar
         </span>
       )
     }
     if (status === 'LATE' || isLate) {
       return (
-        <span style={{ backgroundColor: '#FEE2E2', color: '#991B1B', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 700 }}>
+        <span style={{ backgroundColor: '#FEE2E2', color: '#991B1B', padding: '0.2rem 0.55rem', borderRadius: '4px', fontSize: '0.8125rem', fontWeight: 700 }}>
           ⚠️ Tardía
         </span>
       )
     }
     if (status === 'SUBMITTED') {
       return (
-        <span style={{ backgroundColor: '#DCFCE7', color: '#166534', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 700 }}>
+        <span style={{ backgroundColor: '#DCFCE7', color: '#166534', padding: '0.2rem 0.55rem', borderRadius: '4px', fontSize: '0.8125rem', fontWeight: 700 }}>
           ✓ Entregado
         </span>
       )
     }
     if (status === 'RETURNED') {
       return (
-        <span style={{ backgroundColor: '#FED7AA', color: '#9A3412', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 700 }}>
+        <span style={{ backgroundColor: '#FED7AA', color: '#9A3412', padding: '0.2rem 0.55rem', borderRadius: '4px', fontSize: '0.8125rem', fontWeight: 700 }}>
           ↩ Devuelto
         </span>
       )
     }
     if (status === 'GRADED') {
       return (
-        <span style={{ backgroundColor: '#DCFCE7', color: '#15803D', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 700 }}>
+        <span style={{ backgroundColor: '#DCFCE7', color: '#14532D', padding: '0.2rem 0.55rem', borderRadius: '4px', fontSize: '0.8125rem', fontWeight: 700 }}>
           ✓ Calificado
         </span>
       )
@@ -490,7 +490,7 @@ export const TeacherSubmissionsModal: React.FC<TeacherSubmissionsModalProps> = (
                             padding: '0.45rem 1rem',
                             borderRadius: '6px',
                             border: 'none',
-                            backgroundColor: '#EA580C',
+                            backgroundColor: '#C2410C',
                             color: '#FFFFFF',
                             fontSize: '0.8125rem',
                             fontWeight: 700,
@@ -586,7 +586,7 @@ export const TeacherSubmissionsModal: React.FC<TeacherSubmissionsModalProps> = (
                             ))}
                           </div>
                         ) : (
-                          <div style={{ backgroundColor: '#F8FAFC', padding: '0.75rem 1rem', borderRadius: '8px', color: '#94A3B8', fontSize: '0.8125rem' }}>
+                          <div style={{ backgroundColor: '#F8FAFC', padding: '0.75rem 1rem', borderRadius: '8px', color: '#475569', fontSize: '0.8125rem' }}>
                             No se adjuntaron archivos en este intento.
                           </div>
                         )}

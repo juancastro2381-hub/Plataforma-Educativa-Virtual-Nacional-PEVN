@@ -116,9 +116,9 @@ export const GuardianCommunicationsView: React.FC<Props> = ({ onBackToDashboard:
             {unreadCount > 0 && (
               <span
                 style={{
-                  backgroundColor: '#EF4444',
+                  backgroundColor: '#DC2626',
                   color: '#FFFFFF',
-                  fontSize: '0.75rem',
+                  fontSize: '0.8125rem',
                   fontWeight: 800,
                   padding: '0.2rem 0.6rem',
                   borderRadius: '9999px',
@@ -349,7 +349,7 @@ export const GuardianCommunicationsView: React.FC<Props> = ({ onBackToDashboard:
                       style={{
                         marginTop: '0.75rem',
                         width: '100%',
-                        backgroundColor: '#16A34A',
+                        backgroundColor: '#15803D',
                         color: '#FFFFFF',
                         border: 'none',
                         borderRadius: '8px',
@@ -488,7 +488,7 @@ export const GuardianCommunicationsView: React.FC<Props> = ({ onBackToDashboard:
                 disabled={acknowledgingId === selectedItem.id}
                 style={{
                   width: '100%',
-                  backgroundColor: '#16A34A',
+                  backgroundColor: '#15803D',
                   color: '#FFFFFF',
                   border: 'none',
                   borderRadius: '10px',

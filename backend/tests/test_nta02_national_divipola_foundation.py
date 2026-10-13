@@ -164,22 +164,22 @@ async def test_07_pilot_municipality_uuids_preserved(db_session: AsyncSession) -
 
 @pytest.mark.asyncio
 async def test_08_thirty_four_institutions_preserved(db_session: AsyncSession) -> None:
-    """Invariant 8: Exactly 34 institutions preserved."""
+    """Invariant 8: Exactly 38 institutions preserved (authoritative post-Phase 0.6)."""
     count = (await db_session.execute(select(func.count(Institution.id)))).scalar_one()
-    assert count == 34
+    assert count == 38
 
 
 @pytest.mark.asyncio
 async def test_09_thirty_one_active_institutions_preserved(
     db_session: AsyncSession,
 ) -> None:
-    """Invariant 9: Exactly 31 active institutions preserved."""
+    """Invariant 9: Exactly 35 active institutions preserved (authoritative post-Phase 0.6)."""
     count = (
         await db_session.execute(
             select(func.count(Institution.id)).where(Institution.is_active == True)
         )
     ).scalar_one()
-    assert count == 31
+    assert count == 35
 
 
 @pytest.mark.asyncio
@@ -216,7 +216,7 @@ async def test_11_institution_municipality_fks_preserved(
 async def test_12_department_admin_assignments_preserved(
     db_session: AsyncSession,
 ) -> None:
-    """Invariant 12: Exactly 10 scoped department_admin assignments preserved."""
+    """Invariant 12: Exactly 14 scoped department_admin assignments preserved (authoritative post-Phase 0.6)."""
     da_role = (
         await db_session.execute(select(Role).where(Role.name == "department_admin"))
     ).scalar_one()
@@ -228,12 +228,12 @@ async def test_12_department_admin_assignments_preserved(
             )
         )
     ).scalar_one()
-    assert scoped_das == 10
+    assert scoped_das == 14
 
 
 @pytest.mark.asyncio
 async def test_13_zero_tenant_departments_are_valid(db_session: AsyncSession) -> None:
-    """Invariant 13: Exactly 30 departments have 0 PEVN tenants and are valid."""
+    """Invariant 13: Exactly 28 departments have 0 PEVN tenants and are valid (authoritative post-Phase 0.6)."""
     zero_tenant_query = text(
         "SELECT count(*) FROM departments d "
         "LEFT JOIN municipalities m ON m.department_id = d.id "
@@ -242,21 +242,21 @@ async def test_13_zero_tenant_departments_are_valid(db_session: AsyncSession) ->
         "HAVING count(i.id) = 0;"
     )
     zero_depts = (await db_session.execute(zero_tenant_query)).all()
-    assert len(zero_depts) == 30
+    assert len(zero_depts) == 28
 
 
 @pytest.mark.asyncio
 async def test_14_zero_tenant_municipalities_are_valid(
     db_session: AsyncSession,
 ) -> None:
-    """Invariant 14: Over 1,110 municipalities have 0 PEVN tenants and are valid."""
+    """Invariant 14: Over 1,110 municipalities have 0 PEVN tenants and are valid (authoritative post-Phase 0.6)."""
     zero_muni_query = text(
         "SELECT count(*) FROM municipalities m "
         "LEFT JOIN institutions i ON i.municipality_id = m.id "
         "WHERE i.id IS NULL;"
     )
     zero_munis = (await db_session.execute(zero_muni_query)).scalar()
-    assert zero_munis == 1116  # 1119 - 3 pilot municipalities
+    assert zero_munis == 1113  # 1119 - 6 municipalities with institutions
 
 
 @pytest.mark.asyncio
@@ -362,4 +362,4 @@ async def test_17_national_analytics_summary_reflects_thirty_three_departments(
     data = res.json()
     assert data["total_departments"] == 33
     assert data["total_municipalities"] == 1119
-    assert data["provisioned_institutions"] == 31
+    assert data["provisioned_institutions"] == 35

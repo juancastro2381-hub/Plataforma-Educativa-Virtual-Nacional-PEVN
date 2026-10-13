@@ -126,9 +126,9 @@ export const StudentSubjectsView: React.FC<StudentSubjectsViewProps> = ({
                 {subj.knowledge_area_name && (
                   <span
                     style={{
-                      fontSize: '0.75rem',
+                      fontSize: '0.8125rem',
                       fontWeight: 700,
-                      color: '#6366F1',
+                      color: '#4338CA',
                       backgroundColor: '#EEF2FF',
                       padding: '0.2rem 0.55rem',
                       borderRadius: '6px',
@@ -176,7 +176,7 @@ export const StudentSubjectsView: React.FC<StudentSubjectsViewProps> = ({
                   {subj.teacher_email && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <span>✉️</span>
-                      <span style={{ color: '#3B82F6', fontSize: '0.8125rem' }}>{subj.teacher_email}</span>
+                      <span style={{ color: '#1D4ED8', fontSize: '0.8125rem', fontWeight: 600 }}>{subj.teacher_email}</span>
                     </div>
                   )}
 

@@ -153,21 +153,21 @@ export const TeacherNewsView: React.FC<Props> = ({ teacherName: _teacherName }) 
               style={{
                 backgroundColor: '#F59E0B',
                 color: '#000000',
-                fontSize: '0.7rem',
+                fontSize: '0.8125rem',
                 fontWeight: 800,
-                padding: '0.2rem 0.6rem',
+                padding: '0.25rem 0.65rem',
                 borderRadius: '6px',
                 textTransform: 'uppercase',
               }}
             >
               ★ Noticia Destacada
             </span>
-            <span style={{ fontSize: '0.8125rem', color: '#CBD5E1' }}>
+            <span style={{ fontSize: '0.875rem', color: '#E2E8F0', fontWeight: 600 }}>
               {getNewsCategoryInfo(featured.category).label}
             </span>
           </div>
 
-          <h3 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800, lineHeight: 1.3 }}>
+          <h3 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800, lineHeight: 1.3, color: '#FFFFFF' }}>
             {featured.title}
           </h3>
 
@@ -179,8 +179,8 @@ export const TeacherNewsView: React.FC<Props> = ({ teacherName: _teacherName }) 
             style={{
               display: 'flex',
               justifyContent: 'space-between',
-              fontSize: '0.8125rem',
-              color: '#94A3B8',
+              fontSize: '0.875rem',
+              color: '#CBD5E1',
               marginTop: '0.5rem',
             }}
           >

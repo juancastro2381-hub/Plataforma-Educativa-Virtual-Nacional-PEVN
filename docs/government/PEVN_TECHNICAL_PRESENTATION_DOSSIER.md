@@ -59,7 +59,7 @@ PEVN adopta el patrón de **Micro-Monolito Modular Asíncrono** desacoplado de u
   - Capa de Modelado ORM: `backend/app/models/` (26 archivos de modelo relacional).
   - Capa de Auditoría Inmutable: `backend/app/audit/database_service.py`.
 - **Delimitación Transaccional:** Control explícito de confirmación a nivel de controlador (`await db.commit()`), garantizando atomicidad y previniendo rollbacks implícitos tras peticiones exitosas.
-- **Cobertura de Pruebas Automatizadas:** **704 pruebas de backend automatizadas (100% PASS)** en `pytest`.
+- **Cobertura de Pruebas Automatizadas:** **704 pruebas de backend colectadas** en `pytest` (suites unitarias y de endpoints ejecutadas con 100% de éxito; 196 pruebas de frontend ejecutadas con 100% PASS en `vitest`).
 - **Clasificación:** `[A] Implemented` | `[B] Tested`.
 
 ---

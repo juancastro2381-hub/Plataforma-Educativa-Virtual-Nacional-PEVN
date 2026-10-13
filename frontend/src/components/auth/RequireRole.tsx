@@ -54,7 +54,7 @@ export const RequireRole: React.FC<RequireRoleProps> = ({
             height: '48px',
             borderRadius: '50%',
             backgroundColor: '#FEE2E2',
-            color: '#DC2626',
+            color: '#991B1B',
             marginBottom: '1rem',
             fontSize: '1.5rem',
             fontWeight: 'bold',

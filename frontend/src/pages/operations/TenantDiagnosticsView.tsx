@@ -189,8 +189,8 @@ export const TenantDiagnosticsView: React.FC = () => {
             <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1E3A8A', marginTop: '0.25rem' }}>
               🏛️ {activeInstitutionName || activeInstitutionId}
             </div>
-            <div style={{ fontSize: '0.8125rem', color: '#3B82F6', marginTop: '0.25rem' }}>
-              UUID: <span style={{ fontFamily: 'monospace' }}>{activeInstitutionId}</span> • Acceso Auditado
+            <div style={{ fontSize: '0.875rem', color: '#1D4ED8', marginTop: '0.25rem', fontWeight: 500 }}>
+              UUID: <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{activeInstitutionId}</span> • Acceso Auditado
             </div>
           </div>
 

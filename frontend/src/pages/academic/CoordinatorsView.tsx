@@ -749,7 +749,7 @@ export const CoordinatorsView: React.FC = () => {
               height: '56px',
               borderRadius: '50%',
               backgroundColor: '#F0FDF4',
-              color: '#16A34A',
+              color: '#15803D',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',

@@ -1,0 +1,2007 @@
+# -*- coding: utf-8 -*-
+"""
+Script generador del Manual Interactivo Institucional de PEVN (DOC-03)
+Ubicación de destino: docs/manual/PEVN_INSTITUTIONAL_USER_GUIDE.html
+"""
+
+import os
+import sys
+
+OUTPUT_FILE = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "docs", "manual", "PEVN_INSTITUTIONAL_USER_GUIDE.html"))
+
+def build_html():
+    html = """<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PEVN — Guía Institucional Integral y Tour Interactivo de Demostración</title>
+  <meta name="description" content="Guía institucional completa y tour interactivo de la Plataforma Educativa Virtual Nacional (PEVN) para el Ministerio de Educación Nacional (MEN), Secretarías de Educación, Rectores y Docentes.">
+  <style>
+    :root {
+      --primary-dark: #0A192F;
+      --primary: #1A365D;
+      --primary-light: #2B6CB0;
+      --secondary: #0D9488;
+      --secondary-light: #14B8A6;
+      --accent: #D97706;
+      --accent-light: #FEF3C7;
+      --text-main: #1E293B;
+      --text-muted: #64748B;
+      --text-light: #94A3B8;
+      --bg-body: #F8FAFC;
+      --bg-card: #FFFFFF;
+      --bg-alt: #F1F5F9;
+      --border: #E2E8F0;
+      --border-dark: #CBD5E1;
+      --success: #15803D;
+      --success-bg: #DCFCE7;
+      --warning: #B45309;
+      --warning-bg: #FEF3C7;
+      --danger: #B91C1C;
+      --danger-bg: #FEE2E2;
+      --info: #1D4ED8;
+      --info-bg: #DBEAFE;
+      --purple: #6B21A8;
+      --purple-bg: #F3E8FF;
+      --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 16px;
+      --radius-full: 9999px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; font-size: 16px; }
+    body {
+      font-family: var(--font-family);
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.6;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    /* TOP NAVBAR */
+    .navbar {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: rgba(10, 25, 47, 0.98);
+      backdrop-filter: blur(10px);
+      color: #FFFFFF;
+      padding: 0.75rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid var(--primary-light);
+      box-shadow: var(--shadow-md);
+    }
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      text-decoration: none;
+      color: #FFFFFF;
+    }
+    .nav-logo-badge {
+      background: linear-gradient(135deg, var(--secondary), var(--primary-light));
+      color: #FFFFFF;
+      font-weight: 800;
+      font-size: 0.85rem;
+      padding: 0.35rem 0.65rem;
+      border-radius: var(--radius-sm);
+      letter-spacing: 1px;
+    }
+    .nav-titles h1 {
+      font-size: 1.15rem;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+      line-height: 1.2;
+    }
+    .nav-titles span {
+      font-size: 0.75rem;
+      color: #94A3B8;
+      display: block;
+    }
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .btn-nav {
+      background: rgba(255, 255, 255, 0.12);
+      color: #FFFFFF;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      padding: 0.45rem 0.9rem;
+      border-radius: var(--radius-md);
+      font-size: 0.825rem;
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+    .btn-nav:hover {
+      background: rgba(255, 255, 255, 0.22);
+      border-color: #FFFFFF;
+      transform: translateY(-1px);
+    }
+    .btn-nav-primary {
+      background: var(--secondary);
+      border-color: var(--secondary-light);
+    }
+    .btn-nav-primary:hover {
+      background: var(--secondary-light);
+    }
+
+    /* CONTENEDOR PRINCIPAL */
+    .app-container {
+      display: flex;
+      flex: 1;
+      max-width: 1600px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* SIDEBAR DE NAVEGACIÓN */
+    .sidebar {
+      width: 320px;
+      flex-shrink: 0;
+      background: #FFFFFF;
+      border-right: 1px solid var(--border);
+      height: calc(100vh - 65px);
+      position: sticky;
+      top: 65px;
+      overflow-y: auto;
+      padding: 1.25rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+    .search-box {
+      position: relative;
+    }
+    .search-input {
+      width: 100%;
+      padding: 0.65rem 0.75rem 0.65rem 2.2rem;
+      border: 1px solid var(--border-dark);
+      border-radius: var(--radius-md);
+      font-size: 0.85rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .search-input:focus {
+      border-color: var(--primary-light);
+      box-shadow: 0 0 0 3px rgba(43, 108, 176, 0.15);
+    }
+    .search-icon {
+      position: absolute;
+      left: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+    .role-filters {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+    .role-filters-title {
+      font-size: 0.725rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.25rem;
+    }
+    .role-pills-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+    }
+    .role-pill {
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.25rem 0.6rem;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--border);
+      background: var(--bg-alt);
+      color: var(--text-main);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .role-pill:hover, .role-pill.active {
+      background: var(--primary);
+      color: #FFFFFF;
+      border-color: var(--primary);
+    }
+
+    .toc-tree {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+    .toc-section-header {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 0.5rem 0.35rem 0.2rem;
+      margin-top: 0.5rem;
+    }
+    .toc-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.45rem 0.65rem;
+      font-size: 0.825rem;
+      color: var(--text-main);
+      text-decoration: none;
+      border-radius: var(--radius-sm);
+      transition: all 0.15s;
+    }
+    .toc-item:hover {
+      background: var(--bg-alt);
+      color: var(--primary-light);
+    }
+    .toc-item.active {
+      background: var(--info-bg);
+      color: var(--info);
+      font-weight: 700;
+      border-left: 3px solid var(--info);
+    }
+
+    /* CONTENIDO PRINCIPAL */
+    .main-content {
+      flex: 1;
+      padding: 2.5rem 3rem;
+      max-width: 1280px;
+      overflow-x: hidden;
+    }
+
+    /* HERO PORTADA */
+    .hero-dossier {
+      background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+      color: #FFFFFF;
+      padding: 3rem 2.5rem;
+      border-radius: var(--radius-lg);
+      margin-bottom: 2.5rem;
+      box-shadow: var(--shadow-lg);
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .hero-badge-row {
+      display: flex;
+      gap: 0.6rem;
+      align-items: center;
+      margin-bottom: 1.25rem;
+      flex-wrap: wrap;
+    }
+    .hero-badge {
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.3rem 0.75rem;
+      border-radius: var(--radius-full);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .badge-sovereignty { background: rgba(13, 148, 136, 0.3); color: #5EEAD4; border: 1px solid #14B8A6; }
+    .badge-audit { background: rgba(217, 119, 6, 0.3); color: #FCD34D; border: 1px solid #F59E0B; }
+    .badge-gov { background: rgba(59, 130, 246, 0.3); color: #93C5FD; border: 1px solid #3B82F6; }
+
+    .hero-title {
+      font-size: 2.35rem;
+      font-weight: 900;
+      line-height: 1.2;
+      letter-spacing: -0.5px;
+      margin-bottom: 1rem;
+    }
+    .hero-subtitle {
+      font-size: 1.1rem;
+      color: #CBD5E1;
+      max-width: 900px;
+      line-height: 1.6;
+      margin-bottom: 2rem;
+    }
+    .hero-kpis {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1.25rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.15);
+    }
+    .kpi-card {
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(4px);
+      padding: 1rem 1.25rem;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+    .kpi-num {
+      font-size: 1.65rem;
+      font-weight: 800;
+      color: #38BDF8;
+      display: block;
+      line-height: 1.2;
+    }
+    .kpi-label {
+      font-size: 0.775rem;
+      color: #94A3B8;
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.4px;
+      margin-top: 0.25rem;
+    }
+
+    /* AVISOS INSTITUCIONALES / ALERTS */
+    .alert-box {
+      padding: 1.25rem 1.5rem;
+      border-radius: var(--radius-md);
+      margin: 1.75rem 0;
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+      border-left: 5px solid;
+    }
+    .alert-icon { font-size: 1.5rem; flex-shrink: 0; line-height: 1; margin-top: 0.1rem; }
+    .alert-content h4 { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.35rem; }
+    .alert-content p { font-size: 0.875rem; line-height: 1.55; margin: 0; }
+
+    .alert-info { background: var(--info-bg); border-color: var(--info); color: #1E3A8A; }
+    .alert-success { background: var(--success-bg); border-color: var(--success); color: #065F46; }
+    .alert-warning { background: var(--warning-bg); border-color: var(--warning); color: #92400E; }
+    .alert-danger { background: var(--danger-bg); border-color: var(--danger); color: #991B1B; }
+
+    /* SECCIONES Y ARTÍCULOS */
+    .guide-section {
+      margin-bottom: 3.5rem;
+      scroll-margin-top: 80px;
+    }
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      padding-bottom: 0.85rem;
+      border-bottom: 2px solid var(--border);
+      margin-bottom: 1.75rem;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+    .section-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .section-num {
+      background: var(--primary);
+      color: #FFFFFF;
+      font-weight: 800;
+      font-size: 0.85rem;
+      width: 2rem;
+      height: 2rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .section-title {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: var(--primary-dark);
+      letter-spacing: -0.3px;
+    }
+    .section-badge {
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.25rem 0.65rem;
+      border-radius: var(--radius-full);
+      background: var(--bg-alt);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+
+    /* TABLAS DE CAPACIDADES */
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      margin: 1.5rem 0;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+      background: #FFFFFF;
+    }
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.825rem;
+      text-align: left;
+    }
+    .data-table th {
+      background: var(--primary);
+      color: #FFFFFF;
+      padding: 0.75rem 1rem;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      white-space: nowrap;
+    }
+    .data-table td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+      color: var(--text-main);
+    }
+    .data-table tr:nth-child(even) td { background: #FAFAFA; }
+    .data-table tr:hover td { background: #F0F9FF; }
+
+    /* STATUS PILLS */
+    .status-pill {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.2rem 0.55rem;
+      border-radius: var(--radius-full);
+      white-space: nowrap;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .status-verified { background: #DCFCE7; color: #166534; border: 1px solid #86EFAC; }
+    .status-partial { background: #DBEAFE; color: #1E40AF; border: 1px solid #93C5FD; }
+    .status-external { background: #FEF3C7; color: #92400E; border: 1px solid #FCD34D; }
+    .status-in-progress { background: #F3E8FF; color: #6B21A8; border: 1px solid #D8B4FE; }
+    .status-planned { background: #F1F5F9; color: #475569; border: 1px solid #CBD5E1; }
+    .status-unverified { background: #FEE2E2; color: #991B1B; border: 1px solid #FCA5A5; }
+
+    /* CAPTURAS CON CLICK-TO-ENLARGE */
+    .figure-card {
+      margin: 1.75rem 0;
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-md);
+      transition: box-shadow 0.2s ease;
+    }
+    .figure-card:hover {
+      box-shadow: var(--shadow-lg);
+    }
+    .figure-img-container {
+      position: relative;
+      cursor: zoom-in;
+      background: #EDF2F7;
+      overflow: hidden;
+    }
+    .figure-img {
+      width: 100%;
+      height: auto;
+      display: block;
+      transition: transform 0.25s ease;
+    }
+    .figure-img-container:hover .figure-img {
+      transform: scale(1.012);
+    }
+    .figure-zoom-hint {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      background: rgba(10, 25, 47, 0.85);
+      color: #FFFFFF;
+      padding: 0.3rem 0.65rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.75rem;
+      font-weight: 600;
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .figure-meta-bar {
+      padding: 0.85rem 1.25rem;
+      background: #FAFAFA;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .figure-caption {
+      font-size: 0.85rem;
+      color: var(--text-main);
+    }
+    .figure-caption strong { color: var(--primary); }
+    .figure-route-tag {
+      font-family: monospace;
+      font-size: 0.75rem;
+      background: var(--bg-alt);
+      color: var(--primary-light);
+      padding: 0.2rem 0.5rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+    }
+
+    /* TARJETAS DE PASOS NUMERADOS */
+    .steps-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      margin: 1.5rem 0;
+    }
+    .step-card {
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      gap: 1.25rem;
+      box-shadow: var(--shadow-sm);
+      position: relative;
+    }
+    .step-num {
+      background: var(--primary-light);
+      color: #FFFFFF;
+      font-size: 1rem;
+      font-weight: 800;
+      width: 2.25rem;
+      height: 2.25rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .step-body {
+      flex: 1;
+    }
+    .step-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .step-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--primary-dark);
+    }
+    .step-role-badge {
+      font-size: 0.725rem;
+      font-weight: 700;
+      background: var(--info-bg);
+      color: var(--info);
+      padding: 0.2rem 0.55rem;
+      border-radius: var(--radius-full);
+    }
+    .step-desc {
+      font-size: 0.875rem;
+      color: var(--text-main);
+      margin-bottom: 0.75rem;
+      line-height: 1.55;
+    }
+    .step-io-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 0.75rem;
+      background: var(--bg-alt);
+      padding: 0.85rem 1rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.8rem;
+    }
+    .step-io-item strong {
+      display: block;
+      color: var(--primary);
+      margin-bottom: 0.15rem;
+    }
+
+    /* RECORRIDOS PRODUCT TOUR */
+    .tour-journey-card {
+      background: #FFFFFF;
+      border: 2px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.75rem;
+      margin-bottom: 2rem;
+      box-shadow: var(--shadow-md);
+    }
+    .tour-journey-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1.25rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .tour-journey-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .tour-badge {
+      background: var(--secondary);
+      color: #FFFFFF;
+      font-weight: 800;
+      font-size: 0.75rem;
+      padding: 0.25rem 0.65rem;
+      border-radius: var(--radius-sm);
+      text-transform: uppercase;
+    }
+    .tour-journey-title {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--primary-dark);
+    }
+    .tour-meta-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+      background: #F8FAFC;
+      padding: 1rem;
+      border-radius: var(--radius-md);
+      font-size: 0.825rem;
+      border: 1px solid var(--border);
+    }
+    .tour-meta-item strong { color: var(--text-muted); display: block; font-size: 0.725rem; text-transform: uppercase; }
+    .tour-meta-item span { color: var(--text-main); font-weight: 600; }
+
+    /* GLOSARIO Y FAQ ACCORDIONS */
+    .accordion-item {
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      margin-bottom: 0.75rem;
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+    .accordion-summary {
+      padding: 1rem 1.25rem;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--primary-dark);
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      user-select: none;
+      background: #FFFFFF;
+      transition: background 0.15s;
+    }
+    .accordion-summary:hover {
+      background: var(--bg-alt);
+    }
+    .accordion-content {
+      padding: 1rem 1.25rem;
+      font-size: 0.875rem;
+      line-height: 1.6;
+      color: var(--text-main);
+      background: #FAFAFA;
+      border-top: 1px solid var(--border);
+    }
+
+    /* MODAL LIGHTBOX */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(10, 25, 47, 0.92);
+      backdrop-filter: blur(8px);
+      z-index: 2000;
+      justify-content: center;
+      align-items: center;
+      padding: 2rem;
+    }
+    .modal-overlay.active {
+      display: flex;
+    }
+    .modal-dialog {
+      background: #FFFFFF;
+      border-radius: var(--radius-lg);
+      max-width: 1400px;
+      width: 100%;
+      max-height: 94vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: var(--shadow-xl);
+    }
+    .modal-header {
+      padding: 1rem 1.5rem;
+      background: var(--primary-dark);
+      color: #FFFFFF;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+    .modal-close-btn {
+      background: rgba(255, 255, 255, 0.15);
+      border: none;
+      color: #FFFFFF;
+      font-size: 1.25rem;
+      width: 2rem;
+      height: 2rem;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+    }
+    .modal-close-btn:hover { background: rgba(255, 255, 255, 0.3); }
+    .modal-body {
+      padding: 1rem;
+      overflow-y: auto;
+      text-align: center;
+      background: #0F172A;
+    }
+    .modal-img {
+      max-width: 100%;
+      height: auto;
+      max-height: 78vh;
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow-md);
+    }
+    .modal-footer {
+      padding: 0.85rem 1.5rem;
+      background: #FAFAFA;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    /* RESPONSIVE DESIGN */
+    @media (max-width: 1024px) {
+      .sidebar { display: none; }
+      .main-content { padding: 1.5rem; }
+      .hero-title { font-size: 1.85rem; }
+    }
+    @media (max-width: 640px) {
+      .hero-dossier { padding: 1.5rem 1.25rem; }
+      .hero-title { font-size: 1.5rem; }
+      .main-content { padding: 1rem; }
+      .section-title { font-size: 1.3rem; }
+      .step-card { flex-direction: column; gap: 0.75rem; }
+    }
+
+    /* PRINT STYLES */
+    @media print {
+      .navbar, .sidebar, .btn-nav, .search-box, .figure-zoom-hint, .modal-overlay { display: none !important; }
+      .app-container { max-width: 100%; }
+      .main-content { padding: 0 !important; }
+      .hero-dossier { background: #FFFFFF !important; color: #000000 !important; border: 1px solid #CCC; box-shadow: none; }
+      .hero-title { color: #000000 !important; }
+      .hero-subtitle { color: #444 !important; }
+      .kpi-card { background: #EEE !important; border: 1px solid #CCC; }
+      .kpi-num { color: #000 !important; }
+      .figure-card { page-break-inside: avoid; border: 1px solid #DDD; }
+      .step-card, .tour-journey-card { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOP NAVBAR -->
+  <header class="navbar" role="banner">
+    <a href="#inicio" class="nav-brand">
+      <span class="nav-logo-badge">PEVN</span>
+      <div class="nav-titles">
+        <h1>Plataforma Educativa Virtual Nacional</h1>
+        <span>Guía Institucional Integral &amp; Tour de Demostración</span>
+      </div>
+    </a>
+    <div class="nav-actions">
+      <a href="pdf/PEVN_INSTITUTIONAL_USER_GUIDE.pdf" class="btn-nav btn-nav-primary" title="Descargar versión PDF oficial" download>
+        <span>📄</span> Descargar PDF Oficial
+      </a>
+      <button class="btn-nav" onclick="window.print()" title="Imprimir o guardar como PDF">
+        <span>🖨️</span> Imprimir
+      </button>
+    </div>
+  </header>
+
+  <div class="app-container">
+
+    <!-- SIDEBAR DE NAVEGACIÓN -->
+    <aside class="sidebar" role="navigation" aria-label="Navegación del manual">
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="manualSearch" class="search-input" placeholder="Buscar módulo, rol o flujo..." aria-label="Buscar en la guía">
+      </div>
+
+      <div class="role-filters">
+        <span class="role-filters-title">Filtrar por Perfil / Audiencia</span>
+        <div class="role-pills-wrap">
+          <button class="role-pill active" data-filter="all">Todos</button>
+          <button class="role-pill" data-filter="men">MEN / Nacional</button>
+          <button class="role-pill" data-filter="sed">Secretarías SED/SEM</button>
+          <button class="role-pill" data-filter="rector">Rectoría</button>
+          <button class="role-pill" data-filter="coord">Coordinación</button>
+          <button class="role-pill" data-filter="docente">Docentes</button>
+          <button class="role-pill" data-filter="estudiante">Estudiantes</button>
+          <button class="role-pill" data-filter="acudiente">Acudientes</button>
+        </div>
+      </div>
+
+      <nav class="toc-tree">
+        <div class="toc-section-header">Estructura Institucional</div>
+        <a href="#inicio" class="toc-item active">🏛️ 1. Presentación y Propósito</a>
+        <a href="#gobernanza" class="toc-item">⚖️ 2. Soberanía e Interoperabilidad</a>
+        <a href="#capacidades" class="toc-item">📊 3. Matriz de Capacidades</a>
+
+        <div class="toc-section-header">Tour Interactivo de Producto</div>
+        <a href="#tour-demostracion" class="toc-item">🚀 4. 10 Recorridos de Demostración</a>
+
+        <div class="toc-section-header">Módulos por Rol Operativo</div>
+        <a href="#modulo-identidad" class="toc-item">🔐 5. Identidad y Acceso Central</a>
+        <a href="#modulo-territorial" class="toc-item">🗺️ 6. Gobierno Territorial (SED/SEM)</a>
+        <a href="#modulo-rectoria" class="toc-item">🎓 7. Liderazgo Institucional (Rector)</a>
+        <a href="#modulo-coordinacion" class="toc-item">📋 8. Coordinación y Asignación</a>
+        <a href="#modulo-docente" class="toc-item">👨‍🏫 9. Gestión Pedagógica y SIEE</a>
+        <a href="#modulo-estudiante" class="toc-item">🎒 10. Portal del Estudiante</a>
+        <a href="#modulo-acudiente" class="toc-item">👨‍👩‍👧 11. Portal de Acudientes</a>
+        <a href="#modulo-aulas-bbb" class="toc-item">📹 12. Aulas Virtuales BBB</a>
+
+        <div class="toc-section-header">Soporte y Demostración</div>
+        <a href="#diagnostico-demo" class="toc-item">🧪 13. Preparación de Demostración</a>
+        <a href="#glosario" class="toc-item">📖 14. Glosario Técnico y Legal</a>
+        <a href="#faq" class="toc-item">❓ 15. Preguntas Frecuentes (FAQ)</a>
+      </nav>
+    </aside>
+
+    <!-- ÁREA DE CONTENIDO -->
+    <main class="main-content" id="mainContent">
+
+      <!-- PORTADA HERO -->
+      <section id="inicio" class="hero-dossier guide-section">
+        <div class="hero-badge-row">
+          <span class="hero-badge badge-sovereignty">Soberanía Tecnológica Nacional</span>
+          <span class="hero-badge badge-audit">Auditoría Integral DOC-03</span>
+          <span class="hero-badge badge-gov">Sector Oficial Colombiano</span>
+        </div>
+        <h2 class="hero-title">Guía Institucional Integral &amp; Demostración Operativa</h2>
+        <p class="hero-subtitle">
+          Documento técnico-pedagógico y operativo de la Plataforma Educativa Virtual Nacional (PEVN).
+          Diseñado para el Ministerio de Educación Nacional (MEN), Secretarías de Educación Departamentales y Municipales,
+          líderes escolares y comunidades educativas de Colombia.
+        </p>
+
+        <div class="hero-kpis">
+          <div class="kpi-card">
+            <span class="kpi-num">33 / 33</span>
+            <span class="kpi-label">Departamentos DIVIPOLA</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-num">1.119</span>
+            <span class="kpi-label">Municipios Cobertura</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-num">18.031</span>
+            <span class="kpi-label">Planteles Catálogo DUE</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-num">100%</span>
+            <span class="kpi-label">Aislamiento Multitenant</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-num">v2.4.0</span>
+            <span class="kpi-label">Versión de Producción</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECCIÓN 2: SOBERANÍA Y DECLARACIONES OFICIALES -->
+      <section id="gobernanza" class="guide-section">
+        <div class="section-header">
+          <div class="section-title-wrap">
+            <span class="section-num">2</span>
+            <h3 class="section-title">Soberanía, Relación con el MEN e Interoperabilidad</h3>
+          </div>
+          <span class="section-badge">Marco Legal y Arquitectura</span>
+        </div>
+
+        <p style="font-size: 1rem; line-height: 1.7; color: var(--text-main); margin-bottom: 1rem;">
+          La Plataforma Educativa Virtual Nacional (<strong>PEVN</strong>) es una solución soberana e independiente desarrollada para
+          modernizar la gestión académica, pedagógica y de convivencia del sector oficial de Colombia.
+          Para efectos de transparencia institucional y rigor técnico ante autoridades de control y entes gubernamentales,
+          se establecen con absoluta precisión los siguientes principios rectores:
+        </p>
+
+        <div class="alert-box alert-info">
+          <span class="alert-icon">ℹ️</span>
+          <div class="alert-content">
+            <h4>Propuesta Independiente — No sustituye al SIMAT ni al DUE</h4>
+            <p>
+              PEVN <strong>no reemplaza el Sistema Integrado de Matrícula (SIMAT)</strong> ni el Directorio Único de Establecimientos Educativos (DUE) del MEN.
+              SIMAT es el registro civil y oficial de matrícula del Estado colombiano para asignación de recursos SGP.
+              PEVN opera como la plataforma integral de <em>gestión de aula, convivencia (Ley 1620), evaluación institucional (Decreto 1290 / SIEE)
+              y virtualidad pedagógica</em>, ofreciendo interfaces de importación y exportación normalizadas con los estándares del MEN.
+            </p>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem; margin-top: 1.5rem;">
+          <div style="background: #FFFFFF; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.25rem;">
+            <h4 style="color: var(--primary); margin-bottom: 0.5rem;">🏢 Establecimiento vs. Sede Física</h4>
+            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.55;">
+              PEVN respeta la jerarquía institucional colombiana: una Institución Educativa (código DANE 11 o 12 dígitos)
+              es el inquilino administrativo superior gobernado por el Rector, mientras que sus Sedes físicas (código DANE 13 dígitos)
+              son asignadas operativamente a Coordinadores de Sede sin cruce de jurisdicciones.
+            </p>
+          </div>
+
+          <div style="background: #FFFFFF; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.25rem;">
+            <h4 style="color: var(--secondary); margin-bottom: 0.5rem;">🏛️ Catálogo DUE vs. Tenant Aprovisionado</h4>
+            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.55;">
+              El catálogo nacional almacena los 18.031 establecimientos oficiales del país como universo de referencia inmutable.
+              Un colegio no se convierte en inquilino operativo (tenant) hasta que el MEN o la SED autorizan su solicitud de apertura
+              y se vincula al Rector formalmente posesionado.
+            </p>
+          </div>
+
+          <div style="background: #FFFFFF; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.25rem;">
+            <h4 style="color: var(--accent); margin-bottom: 0.5rem;">🔒 Aislamiento Multitenant &amp; Anti-IDOR</h4>
+            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.55;">
+              Cada institución cuenta con aislamiento lógico estricto por <code>institution_id</code> en base de datos.
+              Los usuarios institucionales (rectores, coordinadores, docentes, estudiantes y acudientes) jamás pueden consultar ni
+              mutar registros de otros colegios, garantizado por validadores de soberanía territorial en el backend (HTTP 403 / 404).
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECCIÓN 3: MATRIZ DE CAPACIDADES -->
+      <section id="capacidades" class="guide-section">
+        <div class="section-header">
+          <div class="section-title-wrap">
+            <span class="section-num">3</span>
+            <h3 class="section-title">Matriz Integral de Capacidades PEVN</h3>
+          </div>
+          <span class="section-badge">Inventario Basado en Código</span>
+        </div>
+
+        <p style="font-size: 0.95rem; line-height: 1.6; color: var(--text-main); margin-bottom: 1.25rem;">
+          La siguiente matriz resume la totalidad de módulos implementados en el repositorio, auditados funcionalmente y
+          reconciliados con la suite de pruebas automatizadas.
+        </p>
+
+        <div class="table-container">
+          <table class="data-table" aria-label="Matriz de capacidades de la plataforma">
+            <thead>
+              <tr>
+                <th>Módulo / Capacidad</th>
+                <th>Rol Principal</th>
+                <th>Propósito &amp; Qué Hace</th>
+                <th>Ruta / Entry Point</th>
+                <th>Backend &amp; Dependencias</th>
+                <th>Evidencia de Verificación</th>
+                <th>Estado Actual</th>
+                <th>Demostrabilidad Gobierno</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Acceso e Identidad</strong></td>
+                <td>Todos los roles</td>
+                <td>Login JWT seguro, refresco silencioso en memoria (Single-Flight), recuperación de contraseña y cierre de sesión.</td>
+                <td><code>/login</code>, <code>/forgot-password</code></td>
+                <td><code>/api/v1/auth/login</code>, <code>/refresh</code>, <code>tokens.py</code></td>
+                <td><code>test_auth_security_hardening.py</code> (100% pass)</td>
+                <td><span class="status-pill status-verified">IMPLEMENTED AND VERIFIED</span></td>
+                <td>Apta para demostración en vivo</td>
+              </tr>
+              <tr>
+                <td><strong>Centro de Mando Territorial</strong></td>
+                <td>SuperAdmin / MEN / SED</td>
+                <td>Monitoreo en 4 capas de los 33 departamentos, 1.119 municipios, 18.031 planteles y 38 tenants operativos.</td>
+                <td><code>/analytics/territorial</code></td>
+                <td><code>/api/v1/analytics/territorial/control-center</code></td>
+                <td><code>test_nta05_territorial_control_center.py</code> (15 pass)</td>
+                <td><span class="status-pill status-verified">IMPLEMENTED AND VERIFIED</span></td>
+                <td>Apta — Muestra datos consolidados de Colombia</td>
+              </tr>
+              <tr>
+                <td><strong>Diagnóstico Operacional SA-02</strong></td>
+                <td>SuperAdmin Técnico</td>
+                <td>Inspección de salud de inquilinos, auditoría inmutable en PostgreSQL (3.084 registros) y telemetría de cola.</td>
+                <td><code>/operations/diagnostics</code></td>
+                <td><code>/api/v1/operations/tenant-diagnostics</code>, <code>audit_logs</code></td>
+                <td><code>test_sa02_technical_operations_portal.py</code> (100% pass)</td>
+                <td><span class="status-pill status-verified">IMPLEMENTED AND VERIFIED</span></td>
+                <td>Apta — Auditoría real en base de datos</td>
+              </tr>
+              <tr>
+                <td><strong>Aprovisionamiento Territorial</strong></td>
+                <td>Admin Municipal / SED</td>
+                <td>Generación y entrega de enlaces de invitación para Rectores y Administradores Municipales con single-origin seguro.</td>
+                <td><code>/municipality-admins</code>, <code>/coordinators</code></td>
+                <td><code>/api/v1/territory/municipality-admins</code></td>
+                <td><code>MunicipalityAdminInvitationUrl.test.tsx</code></td>
+                <td><span class="status-pill status-verified">IMPLEMENTED AND VERIFIED</span></td>
+                <td>Apta — Flujo de copia de link seguro</td>
+              </tr>
+              <tr>
+                <td><strong>Dashboard Rectoral</strong></td>
+                <td>Rector / Directivo</td>
+                <td>KPIs en tiempo real de sedes, matrículas, docentes y acceso a configuración institucional.</td>
+                <td><code>/rector-dashboard</code></td>
+                <td><code>/api/v1/institutions/my-institution</code></td>
+                <td>Captura 05, <code>test_academic_workflows_rector.py</code></td>
+                <td><span class="status-pill status-verified">IMPLEMENTED AND VERIFIED</span></td>
+                <td>Apta — Interfaz principal del colegio</td>
+              </tr>
+              <tr>
+                <td><strong>Configuración Académica (Años/Períodos)</strong></td>
+                <td>Rector / Coordinador</td>
+                <td>Apertura de calendarios anuales (A/B), gestión de períodos académicos y ponderaciones porcentuales.</td>
+                <td><code>/academic</code> (Pestaña Períodos)</td>
+                <td><code>/api/v1/academic/academic-years</code>, <code>academic-periods</code></td>
+                <td><code>RectorAcademicButtons.test.tsx</code></td>
+                <td><span class="status-pill status-verified">IMPLEMENTED AND VERIFIED</span></td>
+                <td>Apta — Creación interactiva de períodos</td>
+              </tr>
+              <tr>
+                <td><strong>Matrícula y Carga SIMAT</strong></td>
+                <td>Rector / Coordinador</td>
+                <td>Matriculación de estudiantes con código SIMAT, asignación a grupos y control de cupos.</td>
+                <td><code>/academic/enrollments</code></td>
+                <td><code>/api/v1/academic/enrollments</code>, <code>students</code></td>
+                <td><code>test_enrollments_and_assignments.py</code></td>
+                <td><span class="status-pill status-verified">IMPLEMENTED AND VERIFIED</span></td>
+                <td>Apta — Registro de matrícula institucional</td>
+              </tr>
+              <tr>
+                <td><strong>Vinculación Familiar (Acudientes)</strong></td>
+                <td>Coordinador / Rector</td>
+                <td>Asociación de acudientes legales (parentesco madre/padre/tutor) a estudiantes para seguimiento escolar.</td>
+                <td><code>/academic/guardians</code></td>
+                <td><code>/api/v1/academic/guardians</code></td>
+                <td><code>test_guardian_onboarding.py</code></td>
+                <td><span class="status-pill status-verified">IMPLEMENTED AND VERIFIED</span></td>
+                <td>Apta — Cuentas sintéticas verificadas</td>
+              </tr>
+              <tr>
+                <td><strong>Planeación Curricular y Asignaturas</strong></td>
+                <td>Docente</td>
+                <td>Diseño pedagógico por unidades temáticas, DBA (Derechos Básicos de Aprendizaje) y cronogramas.</td>
+                <td><code>/teacher/planning</code></td>
+                <td><code>/api/v1/teacher/planning</code></td>
+                <td>Captura 10, <code>test_teacher_portal_api.py</code></td>
+                <td><span class="status-pill status-verified">IMPLEMENTED AND VERIFIED</span></td>
+                <td>Apta — Edición y guardado de unidades</td>
+              </tr>
+              <tr>
+                <td><strong>Evaluación SIEE y Calificaciones</strong></td>
+                <td>Docente</td>
+                <td>Planilla de notas periódicas con escala nacional (Bajo, Básico, Alto, Superior) y justificación de ajustes.</td>
+                <td><code>/teacher/siee</code>, <code>/grading</code></td>
+                <td><code>/api/v1/evaluations/grades</code></td>
+                <td><code>TeacherSieeEvaluation.test.tsx</code></td>
+                <td><span class="status-pill status-verified">IMPLEMENTED AND VERIFIED</span></td>
+                <td>Apta — Cálculo automático de desempeño</td>
+              </tr>
+              <tr>
+                <td><strong>Portal Estudiante: Tareas y Entregas</strong></td>
+                <td>Estudiante</td>
+                <td>Consulta de actividades pendientes, entrega multimodal (texto/archivo), control de fechas y retroalimentación.</td>
+                <td><code>/student-portal</code></td>
+                <td><code>/api/v1/student/activities</code>, <code>submissions</code></td>
+                <td><code>test_student_submissions_api.py</code></td>
+                <td><span class="status-pill status-verified">IMPLEMENTED AND VERIFIED</span></td>
+                <td>Apta con usuario estudiante activo vinculado</td>
+              </tr>
+              <tr>
+                <td><strong>Comunicados y Noticias Escolares</strong></td>
+                <td>Rector, Docente, Estudiante</td>
+                <td>Circulares oficiales obligatorias con acuse de recibo inmutable y periódico escolar estudiantil.</td>
+                <td><code>/student/communications</code></td>
+                <td><code>/api/v1/student/communications</code>, <code>news</code></td>
+                <td><code>test_institutional_communications_api.py</code></td>
+                <td><span class="status-pill status-verified">IMPLEMENTED AND VERIFIED</span></td>
+                <td>Apta — Requiere datos QA sembrados</td>
+              </tr>
+              <tr>
+                <td><strong>Aulas Virtuales BigBlueButton</strong></td>
+                <td>Docente, Estudiante</td>
+                <td>Integración con servidor BBB: creación de salas, firma criptográfica de URLs y asistencia automática.</td>
+                <td><code>/virtual-classrooms</code></td>
+                <td><code>/api/v1/virtual-classrooms</code>, BBB Adapter</td>
+                <td><code>test_virtual_classroom_e2e.py</code></td>
+                <td><span class="status-pill status-external">DEPENDIENTE DE INFRAESTRUCTURA EXTERNA</span></td>
+                <td>Requiere servidor BBB activo o simulación</td>
+              </tr>
+              <tr>
+                <td><strong>Servicio de Correo SMTP</strong></td>
+                <td>Sistema</td>
+                <td>Envío de correos para restablecimiento de contraseña y activación de cuentas.</td>
+                <td>Servicio en segundo plano</td>
+                <td><code>app/services/email_service.py</code></td>
+                <td>Modo dev habilitado (enlace directo)</td>
+                <td><span class="status-pill status-external">DEPENDIENTE DE INFRAESTRUCTURA EXTERNA</span></td>
+                <td>Demostrable mediante link de fallback local</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- SECCIÓN 4: 10 RECORRIDOS PRODUCT TOUR -->
+      <section id="tour-demostracion" class="guide-section">
+        <div class="section-header">
+          <div class="section-title-wrap">
+            <span class="section-num">4</span>
+            <h3 class="section-title">Tour Guiado Institucional: 10 Recorridos de Demostración</h3>
+          </div>
+          <span class="section-badge">Jornadas de Usuario de Extremo a Extremo</span>
+        </div>
+
+        <p style="font-size: 0.95rem; line-height: 1.6; color: var(--text-main); margin-bottom: 2rem;">
+          Esta sección detalla los 10 flujos principales que permiten presentar la plataforma a ministros, gobernadores,
+          secretarios de educación y comunidades académicas con absoluta credibilidad técnica.
+        </p>
+
+        <!-- RECORRIDO 1 -->
+        <article class="tour-journey-card" data-role="all">
+          <div class="tour-journey-header">
+            <div class="tour-journey-title-wrap">
+              <span class="tour-badge">Recorrido 01</span>
+              <h4 class="tour-journey-title">Ingreso al Ecosistema PEVN y Autenticación Centralizada</h4>
+            </div>
+            <span class="status-pill status-verified">IMPLEMENTADO &amp; VERIFICADO</span>
+          </div>
+
+          <div class="tour-meta-grid">
+            <div class="tour-meta-item"><strong>Objetivo:</strong><span>Iniciar sesión segura con credenciales institucionales y resolución automática de rol.</span></div>
+            <div class="tour-meta-item"><strong>Rol Inicial:</strong><span>Cualquier usuario (SuperAdmin, Rector, Docente, Estudiante)</span></div>
+            <div class="tour-meta-item"><strong>Ruta de Acceso:</strong><span><code>/login</code></span></div>
+            <div class="tour-meta-item"><strong>Prerrequisito:</strong><span>Cuenta activa con contraseña configurada o link de activación.</span></div>
+          </div>
+
+          <div class="steps-container">
+            <div class="step-card">
+              <span class="step-num">1</span>
+              <div class="step-body">
+                <div class="step-header">
+                  <h5 class="step-title">Ingreso a la Pantalla de Identidad Nacional</h5>
+                  <span class="step-role-badge">Público</span>
+                </div>
+                <p class="step-desc">El usuario navega al portal de acceso y observa los distintivos oficiales de la plataforma.</p>
+                <div class="step-io-grid">
+                  <div class="step-io-item"><strong>Acción:</strong>Digitar correo institucional y contraseña en el formulario accesible.</div>
+                  <div class="step-io-item"><strong>Resultado Esperado:</strong>Validación en cliente y envío de solicitud HTTPS POST a <code>/api/v1/auth/login</code>.</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="step-card">
+              <span class="step-num">2</span>
+              <div class="step-body">
+                <div class="step-header">
+                  <h5 class="step-title">Generación de Token en Memoria y Redirección</h5>
+                  <span class="step-role-badge">Sistema</span>
+                </div>
+                <p class="step-desc">El backend emite un JWT Access Token que se almacena exclusivamente en memoria RAM (Zero LocalStorage) y una cookie HttpOnly para refresco.</p>
+                <div class="step-io-grid">
+                  <div class="step-io-item"><strong>Resultado Técnico:</strong>Código HTTP 200 con payload de usuario y permisos canónicos.</div>
+                  <div class="step-io-item"><strong>Próximo Paso Lógico:</strong>Redirección automática al panel correspondiente según el nivel jerárquico.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="figure-card">
+            <div class="figure-img-container" onclick="openLightbox('assets/screenshots/02_autenticacion_login.png', 'Pantalla de Autenticación Centralizada PEVN', '/login')">
+              <img src="assets/screenshots/02_autenticacion_login.png" alt="Pantalla de Autenticación Centralizada PEVN" class="figure-img">
+              <span class="figure-zoom-hint">🔍 Clic para ampliar</span>
+            </div>
+            <div class="figure-meta-bar">
+              <span class="figure-caption"><strong>Figura 1.1:</strong> Formulario de autenticación segura con diseño responsivo y contraste de alta accesibilidad.</span>
+              <span class="figure-route-tag">/login</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- RECORRIDO 2 -->
+        <article class="tour-journey-card" data-role="men sed">
+          <div class="tour-journey-header">
+            <div class="tour-journey-title-wrap">
+              <span class="tour-badge">Recorrido 02</span>
+              <h4 class="tour-journey-title">Gobierno Territorial y Centro de Mando NTA-05</h4>
+            </div>
+            <span class="status-pill status-verified">IMPLEMENTADO &amp; VERIFICADO</span>
+          </div>
+
+          <div class="tour-meta-grid">
+            <div class="tour-meta-item"><strong>Objetivo:</strong><span>Auditar la cobertura territorial en 4 capas (DIVIPOLA, DUE, Matrículas y Tenancy).</span></div>
+            <div class="tour-meta-item"><strong>Rol Inicial:</strong><span>SuperAdmin / Administrador Nacional (MEN) / Admin Departamental (SED)</span></div>
+            <div class="tour-meta-item"><strong>Ruta de Acceso:</strong><span><code>/analytics/territorial</code></span></div>
+            <div class="tour-meta-item"><strong>Evidencia de Código:</strong><span><code>test_nta05_territorial_control_center.py</code> (15 pruebas unitarias passing)</span></div>
+          </div>
+
+          <div class="steps-container">
+            <div class="step-card">
+              <span class="step-num">1</span>
+              <div class="step-body">
+                <div class="step-header">
+                  <h5 class="step-title">Consulta de la Matriz Consolidada de 33 Departamentos</h5>
+                  <span class="step-role-badge">MEN / SuperAdmin</span>
+                </div>
+                <p class="step-desc">El funcionario nacional visualiza la desagregación de colegios oficiales catalogados frente a inquilinos activos en el sistema.</p>
+                <div class="step-io-grid">
+                  <div class="step-io-item"><strong>Datos Expuestos:</strong>33 departamentos, 1.119 municipios, 18.031 planteles DUE y 38 colegios operativos.</div>
+                  <div class="step-io-item"><strong>Regla Anti-IDOR:</strong>Si ingresa un Admin Departamental, solo visualiza la fila de su propio departamento (HTTP 403 en otros).</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- RECORRIDO 3 -->
+        <article class="tour-journey-card" data-role="men">
+          <div class="tour-journey-header">
+            <div class="tour-journey-title-wrap">
+              <span class="tour-badge">Recorrido 03</span>
+              <h4 class="tour-journey-title">Diagnóstico Técnico Operacional y Auditoría Inmutable</h4>
+            </div>
+            <span class="status-pill status-verified">IMPLEMENTADO &amp; VERIFICADO</span>
+          </div>
+
+          <div class="tour-meta-grid">
+            <div class="tour-meta-item"><strong>Objetivo:</strong><span>Monitorear la salud de las bases de datos de inquilinos y consultar el log de auditoría.</span></div>
+            <div class="tour-meta-item"><strong>Rol Inicial:</strong><span>SuperAdmin Técnico</span></div>
+            <div class="tour-meta-item"><strong>Ruta de Acceso:</strong><span><code>/operations/diagnostics</code></span></div>
+            <div class="tour-meta-item"><strong>Evidencia Backend:</strong><span>Tabla PostgreSQL <code>audit_logs</code> con 3.084 registros inmutables.</span></div>
+          </div>
+
+          <div class="figure-card">
+            <div class="figure-img-container" onclick="openLightbox('assets/screenshots/03_operaciones_diagnostico_inquilino.png', 'Centro de Operaciones Técnicas y Diagnóstico de Inquilinos', '/operations/diagnostics')">
+              <img src="assets/screenshots/03_operaciones_diagnostico_inquilino.png" alt="Centro de Operaciones Técnicas" class="figure-img">
+              <span class="figure-zoom-hint">🔍 Clic para ampliar</span>
+            </div>
+            <div class="figure-meta-bar">
+              <span class="figure-caption"><strong>Figura 3.1:</strong> Consola técnica de soporte donde el SuperAdmin audita latencia, integridad relacional y estado de conectividad.</span>
+              <span class="figure-route-tag">/operations/diagnostics</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- RECORRIDO 4 -->
+        <article class="tour-journey-card" data-role="rector">
+          <div class="tour-journey-header">
+            <div class="tour-journey-title-wrap">
+              <span class="tour-badge">Recorrido 04</span>
+              <h4 class="tour-journey-title">Gestión Rectoral y Configuración del Calendario Académico</h4>
+            </div>
+            <span class="status-pill status-verified">IMPLEMENTADO &amp; VERIFICADO</span>
+          </div>
+
+          <div class="tour-meta-grid">
+            <div class="tour-meta-item"><strong>Objetivo:</strong><span>Aperturar el año lectivo y definir los períodos académicos con sus porcentajes de evaluación.</span></div>
+            <div class="tour-meta-item"><strong>Rol Inicial:</strong><span>Rector / Director Rural</span></div>
+            <div class="tour-meta-item"><strong>Ruta de Acceso:</strong><span><code>/academic</code></span></div>
+            <div class="tour-meta-item"><strong>Normativa MEN:</strong><span>Decreto 1290 de 2009 (Sistema Institucional de Evaluación de Estudiantes - SIEE)</span></div>
+          </div>
+
+          <div class="figure-card">
+            <div class="figure-img-container" onclick="openLightbox('assets/screenshots/05_rectoria_dashboard.png', 'Tablero Principal de Rectoría PEVN', '/rector-dashboard')">
+              <img src="assets/screenshots/05_rectoria_dashboard.png" alt="Tablero Principal de Rectoría" class="figure-img">
+              <span class="figure-zoom-hint">🔍 Clic para ampliar</span>
+            </div>
+            <div class="figure-meta-bar">
+              <span class="figure-caption"><strong>Figura 4.1:</strong> Panel ejecutivo del Rector con métricas de matrícula, plantas físicas y accesos rápidos a gestión curricular.</span>
+              <span class="figure-route-tag">/rector-dashboard</span>
+            </div>
+          </div>
+
+          <div class="figure-card">
+            <div class="figure-img-container" onclick="openLightbox('assets/screenshots/06_gestion_academica_periodos.png', 'Configuración de Períodos Académicos y Ponderaciones', '/academic')">
+              <img src="assets/screenshots/06_gestion_academica_periodos.png" alt="Configuración de Períodos Académicos" class="figure-img">
+              <span class="figure-zoom-hint">🔍 Clic para ampliar</span>
+            </div>
+            <div class="figure-meta-bar">
+              <span class="figure-caption"><strong>Figura 4.2:</strong> Configuración de períodos académicos (I, II, III y IV período) con validación automática de sumatoria al 100%.</span>
+              <span class="figure-route-tag">/academic?tab=periods</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- RECORRIDO 5 -->
+        <article class="tour-journey-card" data-role="coord rector">
+          <div class="tour-journey-header">
+            <div class="tour-journey-title-wrap">
+              <span class="tour-badge">Recorrido 05</span>
+              <h4 class="tour-journey-title">Organización Escolar: Grados, Grupos y Asignación Docente</h4>
+            </div>
+            <span class="status-pill status-verified">IMPLEMENTADO &amp; VERIFICADO</span>
+          </div>
+
+          <div class="tour-meta-grid">
+            <div class="tour-meta-item"><strong>Objetivo:</strong><span>Crear aulas/grupos (p. ej. 6-1, 10-A) y asignar docentes a asignaturas y sedes.</span></div>
+            <div class="tour-meta-item"><strong>Rol Inicial:</strong><span>Coordinador Académico</span></div>
+            <div class="tour-meta-item"><strong>Ruta de Acceso:</strong><span><code>/academic/groups</code>, <code>/academic/assignments</code></span></div>
+            <div class="tour-meta-item"><strong>Verificación:</strong><span>Exclusividad de directores de grupo y validación de sede física.</span></div>
+          </div>
+
+          <p style="font-size: 0.875rem; color: var(--text-main); margin-bottom: 1rem;">
+            El coordinador estructura la oferta educativa por sedes, garantizando que los docentes solo tengan acceso a calificar
+            y gestionar los grupos formalmente asignados bajo el principio de menor privilegio pedagógico.
+          </p>
+        </article>
+
+        <!-- RECORRIDO 6 -->
+        <article class="tour-journey-card" data-role="rector coord">
+          <div class="tour-journey-header">
+            <div class="tour-journey-title-wrap">
+              <span class="tour-badge">Recorrido 06</span>
+              <h4 class="tour-journey-title">Matrícula Estudiantil (SIMAT) y Vinculación Familiar</h4>
+            </div>
+            <span class="status-pill status-verified">IMPLEMENTADO &amp; VERIFICADO</span>
+          </div>
+
+          <div class="tour-meta-grid">
+            <div class="tour-meta-item"><strong>Objetivo:</strong><span>Registrar estudiantes con código SIMAT y asociar acudientes con patria potestad.</span></div>
+            <div class="tour-meta-item"><strong>Rol Inicial:</strong><span>Secretaría Académica / Coordinador</span></div>
+            <div class="tour-meta-item"><strong>Ruta de Acceso:</strong><span><code>/academic/enrollments</code>, <code>/academic/guardians</code></span></div>
+            <div class="tour-meta-item"><strong>Privacidad:</strong><span>Datos 100% sintéticos en capturas (cero PII real, validado en DOC-02-R1).</span></div>
+          </div>
+
+          <div class="figure-card">
+            <div class="figure-img-container" onclick="openLightbox('assets/screenshots/07_gestion_academica_estudiantes_simat.png', 'Padrón de Estudiantes y Matrícula SIMAT', '/academic/enrollments')">
+              <img src="assets/screenshots/07_gestion_academica_estudiantes_simat.png" alt="Padrón de Estudiantes y Matrícula SIMAT" class="figure-img">
+              <span class="figure-zoom-hint">🔍 Clic para ampliar</span>
+            </div>
+            <div class="figure-meta-bar">
+              <span class="figure-caption"><strong>Figura 6.1:</strong> Registro de matrícula con código SIMAT, estado activo y filtros de búsqueda por documento y nombre.</span>
+              <span class="figure-route-tag">/academic/enrollments</span>
+            </div>
+          </div>
+
+          <div class="figure-card">
+            <div class="figure-img-container" onclick="openLightbox('assets/screenshots/08_gestion_academica_acudientes.png', 'Vinculación Legal de Acudientes y Tutores', '/academic/guardians')">
+              <img src="assets/screenshots/08_gestion_academica_acudientes.png" alt="Vinculación Legal de Acudientes" class="figure-img">
+              <span class="figure-zoom-hint">🔍 Clic para ampliar</span>
+            </div>
+            <div class="figure-meta-bar">
+              <span class="figure-caption"><strong>Figura 6.2:</strong> Registro y asociación de acudientes legales demostrando vinculación efectiva con estudiantes tutorados.</span>
+              <span class="figure-route-tag">/academic/guardians</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- RECORRIDO 7 -->
+        <article class="tour-journey-card" data-role="docente">
+          <div class="tour-journey-header">
+            <div class="tour-journey-title-wrap">
+              <span class="tour-badge">Recorrido 07</span>
+              <h4 class="tour-journey-title">Gestión Pedagógica y Planeación Curricular Docente</h4>
+            </div>
+            <span class="status-pill status-verified">IMPLEMENTADO &amp; VERIFICADO</span>
+          </div>
+
+          <div class="tour-meta-grid">
+            <div class="tour-meta-item"><strong>Objetivo:</strong><span>Acceder a la carga académica, formular unidades didácticas y registrar objetivos pedagógicos.</span></div>
+            <div class="tour-meta-item"><strong>Rol Inicial:</strong><span>Docente de Aula</span></div>
+            <div class="tour-meta-item"><strong>Ruta de Acceso:</strong><span><code>/teacher-portal</code>, <code>/teacher/planning</code></span></div>
+            <div class="tour-meta-item"><strong>Contraste:</strong><span>Tipografía y colores optimizados bajo estándares WCAG 2.1 AA en DOC-02.</span></div>
+          </div>
+
+          <div class="figure-card">
+            <div class="figure-img-container" onclick="openLightbox('assets/screenshots/09_portal_docente_dashboard.png', 'Portal y Tablero del Docente PEVN', '/teacher-portal')">
+              <img src="assets/screenshots/09_portal_docente_dashboard.png" alt="Portal del Docente" class="figure-img">
+              <span class="figure-zoom-hint">🔍 Clic para ampliar</span>
+            </div>
+            <div class="figure-meta-bar">
+              <span class="figure-caption"><strong>Figura 7.1:</strong> Tablero del docente con alta legibilidad, asignaturas asignadas y resumen de entregas pendientes por calificar.</span>
+              <span class="figure-route-tag">/teacher-portal</span>
+            </div>
+          </div>
+
+          <div class="figure-card">
+            <div class="figure-img-container" onclick="openLightbox('assets/screenshots/10_portal_docente_planeacion.png', 'Módulo de Planeación Curricular y Unidades Temáticas', '/teacher/planning')">
+              <img src="assets/screenshots/10_portal_docente_planeacion.png" alt="Planeación Curricular del Docente" class="figure-img">
+              <span class="figure-zoom-hint">🔍 Clic para ampliar</span>
+            </div>
+            <div class="figure-meta-bar">
+              <span class="figure-caption"><strong>Figura 7.2:</strong> Planeador curricular por asignaturas con formulación de desempeños, estándares DBA y fechas de ejecución.</span>
+              <span class="figure-route-tag">/teacher/planning</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- RECORRIDO 8 -->
+        <article class="tour-journey-card" data-role="docente">
+          <div class="tour-journey-header">
+            <div class="tour-journey-title-wrap">
+              <span class="tour-badge">Recorrido 08</span>
+              <h4 class="tour-journey-title">Creación de Actividades, Calificación y Evaluación SIEE</h4>
+            </div>
+            <span class="status-pill status-verified">IMPLEMENTADO &amp; VERIFICADO</span>
+          </div>
+
+          <div class="tour-meta-grid">
+            <div class="tour-meta-item"><strong>Objetivo:</strong><span>Crear tareas multimodales, calificar con retroalimentación y asentar notas periódicas.</span></div>
+            <div class="tour-meta-item"><strong>Rol Inicial:</strong><span>Docente de Aula</span></div>
+            <div class="tour-meta-item"><strong>Ruta de Acceso:</strong><span><code>/teacher/activities</code>, <code>/teacher/siee</code></span></div>
+            <div class="tour-meta-item"><strong>Validación Backend:</strong><span>Rango 1.0 a 5.0, topes de recuperación y auditoría de cambios de nota.</span></div>
+          </div>
+
+          <p style="font-size: 0.875rem; color: var(--text-main); margin-bottom: 1rem;">
+            El docente publica actividades especificando si la entrega es en texto, archivo adjunto o mixta.
+            Al calificar, puede devolver el trabajo para corrección, habilitando un nuevo intento al estudiante con trazabilidad histórica.
+          </p>
+        </article>
+
+        <!-- RECORRIDO 9 -->
+        <article class="tour-journey-card" data-role="estudiante">
+          <div class="tour-journey-header">
+            <div class="tour-journey-title-wrap">
+              <span class="tour-badge">Recorrido 09</span>
+              <h4 class="tour-journey-title">Experiencia del Estudiante: Tareas, Entregas y Comunicados</h4>
+            </div>
+            <span class="status-pill status-verified">IMPLEMENTADO &amp; VERIFICADO</span>
+          </div>
+
+          <div class="tour-meta-grid">
+            <div class="tour-meta-item"><strong>Objetivo:</strong><span>Consultar tareas pendientes, subir evidencias, revisar notas y leer circulares oficiales.</span></div>
+            <div class="tour-meta-item"><strong>Rol Inicial:</strong><span>Estudiante Activo (p. ej. Ramiro Rey)</span></div>
+            <div class="tour-meta-item"><strong>Ruta de Acceso:</strong><span><code>/student-portal</code>, <code>/student/communications</code>, <code>/student/news</code></span></div>
+            <div class="tour-meta-item"><strong>Condición de Demostración:</strong><span>El usuario debe contar con un registro activo en <code>students</code> y matrícula vigente.</span></div>
+          </div>
+
+          <div class="figure-card">
+            <div class="figure-img-container" onclick="openLightbox('assets/screenshots/11_portal_estudiante_comunicados.png', 'Muro Oficial de Comunicados y Circulares del Estudiante', '/student/communications')">
+              <img src="assets/screenshots/11_portal_estudiante_comunicados.png" alt="Comunicados del Estudiante" class="figure-img">
+              <span class="figure-zoom-hint">🔍 Clic para ampliar</span>
+            </div>
+            <div class="figure-meta-bar">
+              <span class="figure-caption"><strong>Figura 9.1:</strong> Módulo de comunicados institucionales con categorías oficiales y botón de confirmación de lectura.</span>
+              <span class="figure-route-tag">/student/communications</span>
+            </div>
+          </div>
+
+          <div class="figure-card">
+            <div class="figure-img-container" onclick="openLightbox('assets/screenshots/12_portal_estudiante_noticias.png', 'Periódico Escolar y Novedades de la Comunidad', '/student/news')">
+              <img src="assets/screenshots/12_portal_estudiante_noticias.png" alt="Periódico Escolar" class="figure-img">
+              <span class="figure-zoom-hint">🔍 Clic para ampliar</span>
+            </div>
+            <div class="figure-meta-bar">
+              <span class="figure-caption"><strong>Figura 9.2:</strong> Periódico institucional y logros extracurriculares con categorización temática.</span>
+              <span class="figure-route-tag">/student/news</span>
+            </div>
+          </div>
+
+          <div class="figure-card">
+            <div class="figure-img-container" onclick="openLightbox('assets/screenshots/13_portal_estudiante_entrega_tarea.png', 'Modal Interactivo de Entrega de Tareas y Retroalimentación', '/student-portal')">
+              <img src="assets/screenshots/13_portal_estudiante_entrega_tarea.png" alt="Modal de Entrega de Tareas" class="figure-img">
+              <span class="figure-zoom-hint">🔍 Clic para ampliar</span>
+            </div>
+            <div class="figure-meta-bar">
+              <span class="figure-caption"><strong>Figura 9.3:</strong> Interfaz de entrega de tareas con soporte de archivos adjuntos, borrador previo y advertencia de entrega tardía.</span>
+              <span class="figure-route-tag">Modal de Actividad</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- RECORRIDO 10 -->
+        <article class="tour-journey-card" data-role="acudiente">
+          <div class="tour-journey-header">
+            <div class="tour-journey-title-wrap">
+              <span class="tour-badge">Recorrido 10</span>
+              <h4 class="tour-journey-title">Portal de Acudientes y Acompañamiento Familiar</h4>
+            </div>
+            <span class="status-pill status-verified">IMPLEMENTADO &amp; VERIFICADO</span>
+          </div>
+
+          <div class="tour-meta-grid">
+            <div class="tour-meta-item"><strong>Objetivo:</strong><span>Monitorear calificaciones, asistencia, observador de convivencia y circulares de los hijos.</span></div>
+            <div class="tour-meta-item"><strong>Rol Inicial:</strong><span>Acudiente / Padre de Familia (p. ej. Alberto Mercado)</span></div>
+            <div class="tour-meta-item"><strong>Ruta de Acceso:</strong><span><code>/guardian-portal</code></span></div>
+            <div class="tour-meta-item"><strong>Resiliencia:</strong><span>Carga concurrente con <code>Promise.allSettled</code> para evitar caídas en cascada.</span></div>
+          </div>
+
+          <p style="font-size: 0.875rem; color: var(--text-main); margin-bottom: 1rem;">
+            El acudiente dispone de un selector dinámico en caso de tener varios hijos matriculados en la institución.
+            Visualiza en tiempo real las fallas de asistencia, reportes de convivencia escolar (Ley 1620) y boletines de notas del período.
+          </p>
+        </article>
+      </section>
+
+      <!-- SECCIÓN 5: CAPÍTULOS DETALLADOS POR ROL -->
+      <section id="modulo-identidad" class="guide-section">
+        <div class="section-header">
+          <div class="section-title-wrap">
+            <span class="section-num">5</span>
+            <h3 class="section-title">Manual Operativo: Identidad, Seguridad y Control de Acceso</h3>
+          </div>
+          <span class="section-badge">Para Todos los Usuarios</span>
+        </div>
+
+        <p style="font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.25rem;">
+          La seguridad de PEVN está estructurada bajo el estándar de <strong>Control de Acceso Basado en Roles Canónicos (RBAC)</strong>.
+          Cada usuario posee una identidad soberana vinculada a su documento de identidad y un conjunto cerrado de permisos.
+        </p>
+
+        <div class="steps-container">
+          <div class="step-card">
+            <span class="step-num">1</span>
+            <div class="step-body">
+              <h5 class="step-title">Recuperación de Contraseña</h5>
+              <p class="step-desc">
+                Si un usuario olvida su clave, accede a <code>/forgot-password</code>. Digita su correo electrónico institucional.
+                En producción se despacha un correo cifrado con token de un solo uso válido por 30 minutos.
+                En ambientes de desarrollo local sin servidor SMTP, el sistema expone un panel seguro con el enlace de contingencia.
+              </p>
+            </div>
+          </div>
+
+          <div class="step-card">
+            <span class="step-num">2</span>
+            <div class="step-body">
+              <h5 class="step-title">Activación por Invitación (Token Criptográfico)</h5>
+              <p class="step-desc">
+                Los rectores, administradores municipales y coordinadores reciben un enlace de activación de origen único (Single-Origin).
+                Al ingresar, el sistema valida la vigencia del token y solicita definir la contraseña personal sin exponer secretos al operador emisor.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECCIÓN 6: GOBIERNO TERRITORIAL -->
+      <section id="modulo-territorial" class="guide-section">
+        <div class="section-header">
+          <div class="section-title-wrap">
+            <span class="section-num">6</span>
+            <h3 class="section-title">Manual Operativo: Gobierno Territorial (MEN, SED y SEM)</h3>
+          </div>
+          <span class="section-badge">Para Autoridades Educativas</span>
+        </div>
+
+        <p style="font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.25rem;">
+          Las Secretarías de Educación Departamentales y Municipales certificadas gestionan su jurisdicción a través del
+          Centro de Control NTA-05. Sus funciones principales incluyen:
+        </p>
+
+        <ul style="margin-left: 1.5rem; font-size: 0.9rem; line-height: 1.8; color: var(--text-main); margin-bottom: 1.5rem;">
+          <li><strong>Supervisión de Cobertura:</strong> Comparar la matrícula activa de PEVN frente al censo DANE de la entidad territorial.</li>
+          <li><strong>Aprovisionamiento de Rectores:</strong> Crear y vincular rectores a establecimientos reconocidos en el DUE sin duplicidad de sedes.</li>
+          <li><strong>Auditoría de Inactividad:</strong> Identificar colegios sin consolidación académica periódica para alertas tempranas de deserción.</li>
+        </ul>
+      </section>
+
+      <!-- SECCIÓN 7: LIDERAZGO INSTITUCIONAL (RECTORÍA) -->
+      <section id="modulo-rectoria" class="guide-section">
+        <div class="section-header">
+          <div class="section-title-wrap">
+            <span class="section-num">7</span>
+            <h3 class="section-title">Manual Operativo: Liderazgo y Administración Institucional</h3>
+          </div>
+          <span class="section-badge">Para Rectores y Directores Rurales</span>
+        </div>
+
+        <p style="font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.25rem;">
+          El Rector es la máxima autoridad del inquilino (tenant). Sus procedimientos clave comprenden:
+        </p>
+
+        <div class="steps-container">
+          <div class="step-card">
+            <span class="step-num">1</span>
+            <div class="step-body">
+              <h5 class="step-title">Apertura del Año Lectivo y SIEE</h5>
+              <p class="step-desc">
+                En <code>/academic</code>, crear el año escolar activo (p. ej. 2026), definir el calendario (A o B)
+                y fijar la escala de valoración institucional cumpliendo el Decreto 1290 (Desempeño Bajo: 1.0 - 2.9, Básico: 3.0 - 3.9, Alto: 4.0 - 4.5, Superior: 4.6 - 5.0).
+              </p>
+            </div>
+          </div>
+          <div class="step-card">
+            <span class="step-num">2</span>
+            <div class="step-body">
+              <h5 class="step-title">Emisión de Resoluciones Rectorales y Circulares</h5>
+              <p class="step-desc">
+                Redactar y publicar comunicados oficiales a toda la comunidad escolar con opción de acuse de recibo legal obligatorio.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECCIÓN 8: COORDINACIÓN ACADÉMICA -->
+      <section id="modulo-coordinacion" class="guide-section">
+        <div class="section-header">
+          <div class="section-title-wrap">
+            <span class="section-num">8</span>
+            <h3 class="section-title">Manual Operativo: Coordinación Académica y Operativa de Sedes</h3>
+          </div>
+          <span class="section-badge">Para Coordinadores Académicos y de Sede</span>
+        </div>
+
+        <p style="font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.25rem;">
+          El Coordinador ejecuta la logística escolar diaria:
+        </p>
+        <div class="steps-container">
+          <div class="step-card">
+            <span class="step-num">1</span>
+            <div class="step-body">
+              <h5 class="step-title">Creación de Cursos y Grupos por Sede</h5>
+              <p class="step-desc">
+                Asignar cada grupo a una sede física válida, definir el grado curricular y seleccionar al docente director de grupo.
+              </p>
+            </div>
+          </div>
+          <div class="step-card">
+            <span class="step-num">2</span>
+            <div class="step-body">
+              <h5 class="step-title">Asignación de Carga Académica</h5>
+              <p class="step-desc">
+                Vincular a los docentes de aula con sus asignaturas e intensidad horaria semanal respectiva.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECCIÓN 9: TRABAJO DOCENTE Y EVALUACIÓN -->
+      <section id="modulo-docente" class="guide-section">
+        <div class="section-header">
+          <div class="section-title-wrap">
+            <span class="section-num">9</span>
+            <h3 class="section-title">Manual Operativo: Gestión Pedagógica y Evaluación SIEE</h3>
+          </div>
+          <span class="section-badge">Para Docentes de Aula y Titulares</span>
+        </div>
+
+        <p style="font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.25rem;">
+          Guía de trabajo en el aula y calificación:
+        </p>
+        <div class="steps-container">
+          <div class="step-card">
+            <span class="step-num">1</span>
+            <div class="step-body">
+              <h5 class="step-title">Control de Asistencia Diaria</h5>
+              <p class="step-desc">
+                En <code>/teacher/attendance</code>, seleccionar fecha, grupo y registrar asistencia (Presente, Ausente, Excusa o Retardo) con guardado atómico.
+              </p>
+            </div>
+          </div>
+          <div class="step-card">
+            <span class="step-num">2</span>
+            <div class="step-body">
+              <h5 class="step-title">Planilla SIEE y Cierre de Período</h5>
+              <p class="step-desc">
+                En <code>/teacher/siee</code>, ingresar notas de actividades. El sistema calcula la nota definitiva ponderada.
+                Permite registrar notas de nivelación/recuperación con tope máximo configurable por la institución.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECCIÓN 10: PORTAL ESTUDIANTE -->
+      <section id="modulo-estudiante" class="guide-section">
+        <div class="section-header">
+          <div class="section-title-wrap">
+            <span class="section-num">10</span>
+            <h3 class="section-title">Manual Operativo: Portal del Estudiante</h3>
+          </div>
+          <span class="section-badge">Para Estudiantes Matriculados</span>
+        </div>
+
+        <p style="font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.25rem;">
+          El estudiante encuentra en un solo lugar sus responsabilidades escolares:
+        </p>
+        <ul style="margin-left: 1.5rem; font-size: 0.9rem; line-height: 1.8; color: var(--text-main); margin-bottom: 1.5rem;">
+          <li><strong>Cronograma de Tareas:</strong> Filtro por estado (Pendiente, En Borrador, Entregada, Calificada o Tardía).</li>
+          <li><strong>Descarga de Recursos:</strong> Guías de aprendizaje, lecturas y archivos multimedia subidos por los profesores.</li>
+          <li><strong>Observador del Estudiante:</strong> Consulta de anotaciones formativas de convivencia escolar (Ley 1620) registradas por coordinación.</li>
+        </ul>
+      </section>
+
+      <!-- SECCIÓN 11: PORTAL ACUDIENTE -->
+      <section id="modulo-acudiente" class="guide-section">
+        <div class="section-header">
+          <div class="section-title-wrap">
+            <span class="section-num">11</span>
+            <h3 class="section-title">Manual Operativo: Portal de Acudientes y Tutores Legales</h3>
+          </div>
+          <span class="section-badge">Para Madres, Padres y Acudientes</span>
+        </div>
+
+        <p style="font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.25rem;">
+          Fomenta la corresponsabilidad familiar en el proceso educativo:
+        </p>
+        <ul style="margin-left: 1.5rem; font-size: 0.9rem; line-height: 1.8; color: var(--text-main); margin-bottom: 1.5rem;">
+          <li><strong>Selector Multihijo:</strong> Visualización individualizada de cada tutorado sin mezcla de registros académicos.</li>
+          <li><strong>Reporte de Inasistencias:</strong> Notificación inmediata de ausencias a clase no justificadas.</li>
+          <li><strong>Confirmación de Acuses:</strong> Firma digital y acuse de recibo de citaciones a reuniones de entrega de informes.</li>
+        </ul>
+      </section>
+
+      <!-- SECCIÓN 12: AULAS VIRTUALES BBB -->
+      <section id="modulo-aulas-bbb" class="guide-section">
+        <div class="section-header">
+          <div class="section-title-wrap">
+            <span class="section-num">12</span>
+            <h3 class="section-title">Aulas Virtuales y Servicios Externos de Videoconferencia</h3>
+          </div>
+          <span class="section-badge">Integración BigBlueButton (BBB)</span>
+        </div>
+
+        <p style="font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.25rem;">
+          PEVN incorpora un adaptador nativo de extremo a extremo para servidores de clase virtual <strong>BigBlueButton (BBB)</strong>:
+        </p>
+
+        <div class="alert-box alert-warning">
+          <span class="alert-icon">⚠️</span>
+          <div class="alert-content">
+            <h4>Dependencia de Infraestructura de Streaming</h4>
+            <p>
+              El código del adaptador backend (creación de salas, control de moderadores, firma SHA-1 de parámetros y asistencia)
+              está completamente implementado y verificado (<code>test_virtual_classroom_e2e.py</code>).
+              Sin embargo, para audio y video en vivo se requiere aprovisionar un servidor dedicado BBB o clúster Scalelite con certificados SSL.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECCIÓN 13: PREPARACIÓN DE DEMOSTRACIÓN -->
+      <section id="diagnostico-demo" class="guide-section">
+        <div class="section-header">
+          <div class="section-title-wrap">
+            <span class="section-num">13</span>
+            <h3 class="section-title">Guía de Preparación para Demostraciones ante el Gobierno</h3>
+          </div>
+          <span class="section-badge">Protocolo de Demostración en Vivo</span>
+        </div>
+
+        <p style="font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.25rem;">
+          Para garantizar una sesión de demostración 100% fluida y libre de alertas inesperadas, siga este procedimiento:
+        </p>
+
+        <div class="steps-container">
+          <div class="step-card">
+            <span class="step-num">1</span>
+            <div class="step-body">
+              <h5 class="step-title">Verificación de Base de Datos PostgreSQL</h5>
+              <p class="step-desc">
+                Asegúrese de que el servicio PostgreSQL esté activo en el puerto 5433 (<code>pevn_db</code>).
+                La base de datos contiene los 38 inquilinos y 18.031 colegios de catálogo.
+              </p>
+            </div>
+          </div>
+
+          <div class="step-card">
+            <span class="step-num">2</span>
+            <div class="step-body">
+              <h5 class="step-title">Sembrado de Datos Sintéticos para Estudiantes y Acudientes</h5>
+              <p class="step-desc">
+                Si va a presentar los módulos de comunicados y noticias estudiantiles, ejecute:
+                <br><code>python backend/scratch/qa_seed_phase15.py --action seed</code>
+                <br>Esto vincula a los usuarios de prueba (Ramiro Rey y Alberto Mercado) con una matrícula activa, eliminando cualquier aviso de perfil no encontrado.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECCIÓN 14: GLOSARIO -->
+      <section id="glosario" class="guide-section">
+        <div class="section-header">
+          <div class="section-title-wrap">
+            <span class="section-num">14</span>
+            <h3 class="section-title">Glosario Técnico y Regulatorio del Sector Educativo</h3>
+          </div>
+          <span class="section-badge">Términos Clave en Español</span>
+        </div>
+
+        <div class="accordion-item">
+          <details>
+            <summary class="accordion-summary">DANE — Departamento Administrativo Nacional de Estadística <span>▼</span></summary>
+            <div class="accordion-content">Entidad gubernamental que asigna la codificación territorial (DIVIPOLA) y el código de identificación único de 12 dígitos para los establecimientos educativos en Colombia.</div>
+          </details>
+        </div>
+
+        <div class="accordion-item">
+          <details>
+            <summary class="accordion-summary">DUE — Directorio Único de Establecimientos Educativos <span>▼</span></summary>
+            <div class="accordion-content">Registro oficial del Ministerio de Educación Nacional que consolida la información legal, sede principal, sedes anexas, estado de funcionamiento y rectoría de todos los colegios del país.</div>
+          </details>
+        </div>
+
+        <div class="accordion-item">
+          <details>
+            <summary class="accordion-summary">SIMAT — Sistema Integrado de Matrícula <span>▼</span></summary>
+            <div class="accordion-content">Herramienta oficial del MEN para la inscripción, asignación de cupos y seguimiento de estudiantes del sector oficial. Es la fuente para la distribución de recursos del Sistema General de Participaciones (SGP).</div>
+          </details>
+        </div>
+
+        <div class="accordion-item">
+          <details>
+            <summary class="accordion-summary">SIEE — Sistema Institucional de Evaluación de los Estudiantes <span>▼</span></summary>
+            <div class="accordion-content">Reglamento interno de cada colegio que define criterios de calificación, escala de valoración, promoción y estrategias de apoyo pedagógico conforme al Decreto 1290 de 2009.</div>
+          </details>
+        </div>
+
+        <div class="accordion-item">
+          <details>
+            <summary class="accordion-summary">Inquilino / Tenant Multitenancy <span>▼</span></summary>
+            <div class="accordion-content">Unidad lógica y autónoma que representa a una Institución Educativa dentro del software. Garantiza que sus datos nunca puedan ser vistos ni modificados por usuarios de otra institución.</div>
+          </details>
+        </div>
+
+        <div class="accordion-item">
+          <details>
+            <summary class="accordion-summary">Anti-IDOR (Insecure Direct Object Reference) <span>▼</span></summary>
+            <div class="accordion-content">Control de seguridad que impide que un atacante consulte datos de otro usuario o colegio cambiando manualmente los identificadores en la URL o solicitud HTTP.</div>
+          </details>
+        </div>
+      </section>
+
+      <!-- SECCIÓN 15: FAQ -->
+      <section id="faq" class="guide-section">
+        <div class="section-header">
+          <div class="section-title-wrap">
+            <span class="section-num">15</span>
+            <h3 class="section-title">Preguntas Frecuentes y Solución de Problemas (FAQ)</h3>
+          </div>
+          <span class="section-badge">Resolución de Incidentes</span>
+        </div>
+
+        <div class="accordion-item">
+          <details>
+            <summary class="accordion-summary">¿Qué ocurre si el docente no ve a sus estudiantes en la planilla de notas? <span>▼</span></summary>
+            <div class="accordion-content">Verifique con Coordinación que la Asignación Académica de la materia y el grupo esté formalizada y que los estudiantes tengan matrícula activa en el año lectivo en curso.</div>
+          </details>
+        </div>
+
+        <div class="accordion-item">
+          <details>
+            <summary class="accordion-summary">¿Puede un rector de un colegio ver la información de otra institución del mismo municipio? <span>▼</span></summary>
+            <div class="accordion-content">No. Las políticas de aislamiento multitenant y los validadores de permisos devuelven HTTP 403 Forbidden inmediatamente si se intenta acceder a un recurso ajeno.</div>
+          </details>
+        </div>
+
+        <div class="accordion-item">
+          <details>
+            <summary class="accordion-summary">¿La plataforma funciona sin conexión a internet? <span>▼</span></summary>
+            <div class="accordion-content">Este manual HTML es 100% autónomo y offline. La aplicación web PEVN requiere conectividad a la red del colegio o a internet, pero está optimizada para bajo consumo de ancho de banda.</div>
+          </details>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- MODAL LIGHTBOX PARA AMPLIAR IMÁGENES -->
+  <div id="lightboxModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle" onclick="closeLightbox(event)">
+    <div class="modal-dialog" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3 id="modalTitle" class="modal-title">Vista Ampliada</h3>
+        <button class="modal-close-btn" onclick="closeLightbox()" aria-label="Cerrar modal">✕</button>
+      </div>
+      <div class="modal-body">
+        <img id="modalImg" src="" alt="Captura ampliada" class="modal-img">
+      </div>
+      <div class="modal-footer">
+        <span id="modalCaption">Captura de pantalla de la interfaz de PEVN</span>
+        <span id="modalRoute" class="figure-route-tag">/</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCRIPT INTERACTIVO OFFLINE -->
+  <script>
+    // Lightbox modal logic
+    function openLightbox(src, caption, route) {
+      const modal = document.getElementById('lightboxModal');
+      const img = document.getElementById('modalImg');
+      const title = document.getElementById('modalTitle');
+      const cap = document.getElementById('modalCaption');
+      const rt = document.getElementById('modalRoute');
+
+      img.src = src;
+      title.textContent = caption || 'Detalle de la Interfaz';
+      cap.textContent = caption || '';
+      rt.textContent = route || '';
+      modal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeLightbox(e) {
+      if (!e || e.target.id === 'lightboxModal' || e.target.classList.contains('modal-close-btn')) {
+        const modal = document.getElementById('lightboxModal');
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+    }
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closeLightbox();
+    });
+
+    // Real-time Search Filter
+    const searchInput = document.getElementById('manualSearch');
+    if (searchInput) {
+      searchInput.addEventListener('input', function(e) {
+        const term = e.target.value.toLowerCase().trim();
+        const sections = document.querySelectorAll('.guide-section, .tour-journey-card, .step-card');
+
+        sections.forEach(sec => {
+          if (!term) {
+            sec.style.display = '';
+            return;
+          }
+          const text = sec.textContent.toLowerCase();
+          sec.style.display = text.includes(term) ? '' : 'none';
+        });
+      });
+    }
+
+    // Role-based Filters
+    const rolePills = document.querySelectorAll('.role-pill');
+    rolePills.forEach(pill => {
+      pill.addEventListener('click', function() {
+        rolePills.forEach(p => p.classList.remove('active'));
+        this.classList.add('active');
+        const filter = this.getAttribute('data-filter');
+
+        const journeyCards = document.querySelectorAll('.tour-journey-card');
+        journeyCards.forEach(card => {
+          if (filter === 'all') {
+            card.style.display = '';
+          } else {
+            const cardRoles = card.getAttribute('data-role') || '';
+            card.style.display = cardRoles.includes(filter) ? '' : 'none';
+          }
+        });
+      });
+    });
+
+    // Active TOC link on scroll
+    window.addEventListener('scroll', () => {
+      const sections = document.querySelectorAll('.guide-section');
+      const scrollPos = window.scrollY + 120;
+
+      sections.forEach(section => {
+        const top = section.offsetTop;
+        const height = section.offsetHeight;
+        const id = section.getAttribute('id');
+        if (scrollPos >= top && scrollPos < top + height) {
+          document.querySelectorAll('.toc-item').forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('href') === '#' + id) {
+              link.classList.add('active');
+            }
+          });
+        }
+      });
+    });
+  </script>
+</body>
+</html>
+"""
+    os.makedirs(os.path.dirname(OUTPUT_FILE), exist_ok=True)
+    with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
+        f.write(html)
+    print(f"HTML generado exitosamente en: {OUTPUT_FILE} ({len(html)} bytes)")
+
+if __name__ == "__main__":
+    build_html()

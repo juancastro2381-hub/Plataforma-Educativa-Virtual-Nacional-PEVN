@@ -290,10 +290,10 @@ export const StudentVirtualClassModal: React.FC<StudentVirtualClassModalProps> =
                       }}
                     >
                       <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>🎬</div>
-                      <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1rem', fontWeight: 700 }}>
+                      <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1.05rem', fontWeight: 700, color: '#FFFFFF' }}>
                         Reproductor de Grabación de Clase
                       </h4>
-                      <p style={{ margin: '0 0 1rem 0', fontSize: '0.85rem', color: '#94A3B8' }}>
+                      <p style={{ margin: '0 0 1rem 0', fontSize: '0.875rem', color: '#CBD5E1' }}>
                         Grabación oficial almacenada en el servidor seguro de PEVN.
                       </p>
                       <a

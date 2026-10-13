@@ -295,7 +295,7 @@ export const TerritorialControlCenterView: React.FC = () => {
             <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#2563EB', letterSpacing: '0.05em' }}>
               TIER 1 • CATÁLOGO OFICIAL
             </span>
-            <span style={{ fontSize: '0.7rem', color: '#64748B', backgroundColor: '#F1F5F9', padding: '0.15rem 0.4rem', borderRadius: '4px' }}>
+            <span style={{ fontSize: '0.8125rem', color: '#334155', backgroundColor: '#F1F5F9', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 600 }}>
               DANE / MEN
             </span>
           </div>
@@ -345,7 +345,7 @@ export const TerritorialControlCenterView: React.FC = () => {
             <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6366F1', letterSpacing: '0.05em' }}>
               TIER 2 • PIPELINE DE ADOPCIÓN
             </span>
-            <span style={{ fontSize: '0.7rem', color: '#64748B', backgroundColor: '#F1F5F9', padding: '0.15rem 0.4rem', borderRadius: '4px' }}>
+            <span style={{ fontSize: '0.8125rem', color: '#334155', backgroundColor: '#F1F5F9', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 600 }}>
               NTA-04
             </span>
           </div>
@@ -397,7 +397,7 @@ export const TerritorialControlCenterView: React.FC = () => {
             <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#059669', letterSpacing: '0.05em' }}>
               TIER 3 • TENENCIA OPERATIVA
             </span>
-            <span style={{ fontSize: '0.7rem', color: '#64748B', backgroundColor: '#F1F5F9', padding: '0.15rem 0.4rem', borderRadius: '4px' }}>
+            <span style={{ fontSize: '0.8125rem', color: '#334155', backgroundColor: '#F1F5F9', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 600 }}>
               SaaS PEVN
             </span>
           </div>
@@ -449,7 +449,7 @@ export const TerritorialControlCenterView: React.FC = () => {
             <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#D97706', letterSpacing: '0.05em' }}>
               TIER 4 • GOBERNANZA SED
             </span>
-            <span style={{ fontSize: '0.7rem', color: '#64748B', backgroundColor: '#F1F5F9', padding: '0.15rem 0.4rem', borderRadius: '4px' }}>
+            <span style={{ fontSize: '0.8125rem', color: '#334155', backgroundColor: '#F1F5F9', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 600 }}>
               Admin Dptal.
             </span>
           </div>

@@ -117,20 +117,20 @@ async def test_03_foreign_key_points_to_official_catalog(db_session: AsyncSessio
 
 @pytest.mark.asyncio
 async def test_04_existing_34_institutions_preserved(db_session: AsyncSession) -> None:
-    """Test 4: Total PEVN institutions count remains exactly 34."""
+    """Test 4: Total PEVN institutions count remains exactly 38 (authoritative post-Phase 0.6)."""
     count = (await db_session.execute(select(func.count(Institution.id)))).scalar_one()
-    assert count == 34
+    assert count == 38
 
 
 @pytest.mark.asyncio
 async def test_05_existing_31_active_institutions_preserved(db_session: AsyncSession) -> None:
-    """Test 5: Exactly 31 active institutions preserved."""
+    """Test 5: Exactly 35 active institutions preserved (authoritative post-Phase 0.6)."""
     count = (
         await db_session.execute(
             select(func.count(Institution.id)).where(Institution.is_active == True)  # noqa: E712
         )
     ).scalar_one()
-    assert count == 31
+    assert count == 35
 
 
 @pytest.mark.asyncio
@@ -146,23 +146,23 @@ async def test_06_existing_3_inactive_institutions_preserved(db_session: AsyncSe
 
 @pytest.mark.asyncio
 async def test_07_existing_18_campuses_preserved(db_session: AsyncSession) -> None:
-    """Test 7: Exactly 18 operational campuses preserved."""
+    """Test 7: Exactly 26 operational campuses preserved (authoritative post-Phase 0.6)."""
     count = (await db_session.execute(select(func.count(Campus.id)))).scalar_one()
-    assert count == 18
+    assert count == 26
 
 
 @pytest.mark.asyncio
 async def test_08_existing_200_users_preserved(db_session: AsyncSession) -> None:
-    """Test 8: Exactly 200 users preserved."""
+    """Test 8: Exactly 223 users preserved (authoritative post-Phase 0.6)."""
     count = (await db_session.execute(select(func.count(User.id)))).scalar_one()
-    assert count == 200
+    assert count == 223
 
 
 @pytest.mark.asyncio
 async def test_09_verified_official_institutions_receive_valid_catalog_id(
     db_session: AsyncSession,
 ) -> None:
-    """Test 9: Exactly 7 verified official institutions received catalog_institution_id."""
+    """Test 9: Exactly 11 verified official institutions received catalog_institution_id (authoritative post-Phase 0.6)."""
     count = (
         await db_session.execute(
             select(func.count(Institution.id)).where(
@@ -170,7 +170,7 @@ async def test_09_verified_official_institutions_receive_valid_catalog_id(
             )
         )
     ).scalar_one()
-    assert count == 7
+    assert count == 11
 
 
 @pytest.mark.asyncio
@@ -183,7 +183,7 @@ async def test_10_every_catalog_institution_id_resolves_to_existing_catalog_reco
         .where(Institution.catalog_institution_id.is_not(None))
     )
     cat_ids = (await db_session.execute(stmt)).scalars().all()
-    assert len(cat_ids) == 7
+    assert len(cat_ids) == 11
 
     for cat_id in cat_ids:
         cat_rec = await db_session.get(OfficialInstitutionCatalog, cat_id)
@@ -213,7 +213,7 @@ async def test_12_dane_code_matches_catalog_dane_code(db_session: AsyncSession) 
         JOIN official_institution_catalog c ON i.catalog_institution_id = c.id
     """))
     rows = res.fetchall()
-    assert len(rows) == 7
+    assert len(rows) == 11
     for inst_dane, cat_dane in rows:
         assert inst_dane == cat_dane, f"DANE mismatch: {inst_dane} != {cat_dane}"
 
@@ -222,7 +222,7 @@ async def test_12_dane_code_matches_catalog_dane_code(db_session: AsyncSession) 
 async def test_13_existing_department_admin_assignments_unchanged(
     db_session: AsyncSession,
 ) -> None:
-    """Test 13: Exactly 10 scoped Department Administrators preserved with valid department_id."""
+    """Test 13: Exactly 14 scoped Department Administrators preserved with valid department_id (authoritative post-Phase 0.6)."""
     res = await db_session.execute(text("""
         SELECT count(*)
         FROM user_roles ur
@@ -230,7 +230,7 @@ async def test_13_existing_department_admin_assignments_unchanged(
         WHERE r.name = 'department_admin' AND ur.department_id IS NOT NULL
     """))
     count = res.scalar_one()
-    assert count == 10
+    assert count == 14
 
 
 @pytest.mark.asyncio
@@ -331,12 +331,12 @@ async def test_16_null_catalog_institution_id_valid_for_synthetic_fixtures(
 async def test_17_catalog_records_do_not_automatically_create_tenants(
     db_session: AsyncSession,
 ) -> None:
-    """Test 17: Official catalog remains reference universe (18,031) while tenants remain 34."""
+    """Test 17: Official catalog remains reference universe (18,031) while tenants remain 38 (authoritative post-Phase 0.6)."""
     cat_count = (
         await db_session.execute(select(func.count(OfficialInstitutionCatalog.id)))
     ).scalar_one()
     tenant_count = (await db_session.execute(select(func.count(Institution.id)))).scalar_one()
 
     assert cat_count == 18031
-    assert tenant_count == 34
+    assert tenant_count == 38
     assert cat_count > tenant_count

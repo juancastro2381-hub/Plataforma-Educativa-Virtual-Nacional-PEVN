@@ -205,11 +205,11 @@ export const TeacherCommunicationsView: React.FC<Props> = ({ teacherName: _teach
             {unreadCount > 0 && (
               <span
                 style={{
-                  backgroundColor: '#EF4444',
+                  backgroundColor: '#DC2626',
                   color: '#FFFFFF',
-                  fontSize: '0.75rem',
+                  fontSize: '0.8125rem',
                   fontWeight: 700,
-                  padding: '0.2rem 0.55rem',
+                  padding: '0.2rem 0.6rem',
                   borderRadius: '9999px',
                 }}
               >
@@ -454,11 +454,11 @@ export const TeacherCommunicationsView: React.FC<Props> = ({ teacherName: _teach
                       {isUnread && (
                         <span
                           style={{
-                            backgroundColor: '#3B82F6',
+                            backgroundColor: '#1D4ED8',
                             color: '#FFFFFF',
-                            fontSize: '0.6875rem',
+                            fontSize: '0.75rem',
                             fontWeight: 800,
-                            padding: '0.2rem 0.5rem',
+                            padding: '0.2rem 0.55rem',
                             borderRadius: '9999px',
                             textTransform: 'uppercase',
                           }}
@@ -556,7 +556,7 @@ export const TeacherCommunicationsView: React.FC<Props> = ({ teacherName: _teach
                       style={{
                         marginTop: '0.25rem',
                         width: '100%',
-                        backgroundColor: '#16A34A',
+                        backgroundColor: '#15803D',
                         color: '#FFFFFF',
                         border: 'none',
                         borderRadius: '8px',
@@ -758,7 +758,7 @@ export const TeacherCommunicationsView: React.FC<Props> = ({ teacherName: _teach
                   disabled={acknowledgingId === selectedItem.id}
                   style={{
                     width: '100%',
-                    backgroundColor: '#16A34A',
+                    backgroundColor: '#15803D',
                     color: '#FFFFFF',
                     border: 'none',
                     borderRadius: '10px',

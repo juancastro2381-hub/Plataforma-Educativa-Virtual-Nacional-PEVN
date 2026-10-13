@@ -390,7 +390,7 @@ async def test_student_and_guardian_service_operations(
         )
 
     # 4. Create Guardian without mandatory email (per OPEN-DECISION-3A-01)
-    guardian = await guardian_service.create_guardian(
+    guardian, _ = await guardian_service.create_guardian(
         institution_id=inst1.id,
         first_name="Patricia",
         last_name="Gómez",

@@ -19,7 +19,7 @@ Mitiga la dispersión tecnológica en las instituciones públicas, donde coexist
 - **Aulas Virtuales:** Capa de software BigBlueButton (`BBBAdapter`), firma SHA-1/256 y telemetría de conexión mediante mock verificado.
 
 ### 4. ¿Qué está técnicamente verificado?
-- **Pruebas Automatizadas:** 704 pruebas en backend aprobadas (100% de éxito) y 196 pruebas en frontend aprobadas (100% en 29 suites).
+- **Pruebas Automatizadas:** 704 pruebas de backend colectadas (suites unitarias y de API ejecutadas con 100% de éxito) y 196 pruebas de frontend ejecutadas (100% en 29 suites; 242 pruebas dinámicas verificadas).
 - **Base de Datos y Calidad:** 32 migraciones lineales Alembic en PostgreSQL 16 y tipado estricto al 100% en TypeScript y Python.
 - **Controles de Seguridad:** Hashing Argon2id (64 MB), tokens JWT volátiles exclusivamente en memoria de React (mitigación frente a XSS), cookies HttpOnly con rotación de familia y aislamiento multi-tenant con respuestas `Blind 404` (Anti-IDOR). No se identificaron vulnerabilidades críticas en el alcance auditado.
 

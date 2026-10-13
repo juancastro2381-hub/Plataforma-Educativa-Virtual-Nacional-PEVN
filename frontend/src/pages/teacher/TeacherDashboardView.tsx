@@ -49,23 +49,23 @@ export const TeacherDashboardView: React.FC<Props> = ({ summary, loading, onTabC
             <div
               style={{
                 display: 'inline-block',
-                fontSize: '0.75rem',
+                fontSize: '0.8125rem',
                 fontWeight: 700,
                 textTransform: 'uppercase',
                 letterSpacing: '0.05em',
-                backgroundColor: 'rgba(252, 209, 22, 0.2)',
-                color: '#FCD116',
-                padding: '0.25rem 0.75rem',
+                backgroundColor: '#FCD116',
+                color: '#0F172A',
+                padding: '0.3rem 0.85rem',
                 borderRadius: '9999px',
                 marginBottom: '0.75rem',
               }}
             >
               Espacio Operativo Docente
             </div>
-            <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: '0 0 0.5rem 0' }}>
+            <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: '0 0 0.5rem 0', color: '#FFFFFF' }}>
               ¡Bienvenido, {summary.teacher_name}!
             </h1>
-            <p style={{ fontSize: '0.9375rem', color: '#E2E8F0', margin: 0 }}>
+            <p style={{ fontSize: '1rem', color: '#F1F5F9', margin: 0, fontWeight: 500 }}>
               {summary.institution_name} • {summary.specialty_area || 'Área Pedagógica'}
             </p>
           </div>
@@ -78,7 +78,7 @@ export const TeacherDashboardView: React.FC<Props> = ({ summary, loading, onTabC
               textAlign: 'right',
             }}
           >
-            <div style={{ fontSize: '0.75rem', color: '#94A3B8', textTransform: 'uppercase', fontWeight: 600 }}>
+            <div style={{ fontSize: '0.8125rem', color: '#E2E8F0', textTransform: 'uppercase', fontWeight: 600 }}>
               Año Escolar Vigente
             </div>
             <div style={{ fontSize: '1.125rem', fontWeight: 700, color: '#FCD116' }}>
@@ -110,13 +110,13 @@ export const TeacherDashboardView: React.FC<Props> = ({ summary, loading, onTabC
             transition: 'transform 150ms, box-shadow 150ms',
           }}
         >
-          <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
+          <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#334155', textTransform: 'uppercase' }}>
             Asignaciones de Carga
           </div>
           <div style={{ fontSize: '2rem', fontWeight: 800, color: '#1E3A8A', marginTop: '0.25rem' }}>
             {summary.total_active_assignments}
           </div>
-          <div style={{ fontSize: '0.8125rem', color: '#3B82F6', marginTop: '0.25rem' }}>
+          <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#1D4ED8', marginTop: '0.25rem' }}>
             {summary.total_assigned_subjects} materias asignadas →
           </div>
         </div>
@@ -134,13 +134,13 @@ export const TeacherDashboardView: React.FC<Props> = ({ summary, loading, onTabC
             transition: 'transform 150ms, box-shadow 150ms',
           }}
         >
-          <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
+          <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#334155', textTransform: 'uppercase' }}>
             Grupos / Salones
           </div>
           <div style={{ fontSize: '2rem', fontWeight: 800, color: '#0F766E', marginTop: '0.25rem' }}>
             {summary.total_assigned_groups}
           </div>
-          <div style={{ fontSize: '0.8125rem', color: '#0D9488', marginTop: '0.25rem' }}>
+          <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#0F766E', marginTop: '0.25rem' }}>
             {summary.total_enrolled_students} estudiantes a cargo →
           </div>
         </div>
@@ -158,13 +158,13 @@ export const TeacherDashboardView: React.FC<Props> = ({ summary, loading, onTabC
             transition: 'transform 150ms, box-shadow 150ms',
           }}
         >
-          <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
+          <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#334155', textTransform: 'uppercase' }}>
             Actividades Publicadas
           </div>
           <div style={{ fontSize: '2rem', fontWeight: 800, color: '#6D28D9', marginTop: '0.25rem' }}>
             {summary.total_active_activities}
           </div>
-          <div style={{ fontSize: '0.8125rem', color: '#7C3AED', marginTop: '0.25rem' }}>
+          <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#6D28D9', marginTop: '0.25rem' }}>
             Tareas y evaluaciones activas →
           </div>
         </div>
@@ -182,13 +182,13 @@ export const TeacherDashboardView: React.FC<Props> = ({ summary, loading, onTabC
             transition: 'transform 150ms, box-shadow 150ms',
           }}
         >
-          <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
+          <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#334155', textTransform: 'uppercase' }}>
             Pendientes por Calificar
           </div>
           <div style={{ fontSize: '2rem', fontWeight: 800, color: '#C2410C', marginTop: '0.25rem' }}>
             {summary.total_pending_grades}
           </div>
-          <div style={{ fontSize: '0.8125rem', color: '#EA580C', marginTop: '0.25rem' }}>
+          <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#C2410C', marginTop: '0.25rem' }}>
             Abrir planilla de notas →
           </div>
         </div>
@@ -226,7 +226,7 @@ export const TeacherDashboardView: React.FC<Props> = ({ summary, loading, onTabC
           >
             <div style={{ fontSize: '1.25rem', marginBottom: '0.25rem' }}>📝</div>
             <div style={{ fontWeight: 700, color: '#0F172A', fontSize: '0.9375rem' }}>Crear / Publicar Actividad</div>
-            <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.8125rem', color: '#64748B' }}>
+            <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.875rem', color: '#475569' }}>
               Registrar tareas, talleres o exámenes para sus grupos asignados.
             </p>
           </div>
@@ -243,7 +243,7 @@ export const TeacherDashboardView: React.FC<Props> = ({ summary, loading, onTabC
           >
             <div style={{ fontSize: '1.25rem', marginBottom: '0.25rem' }}>📋</div>
             <div style={{ fontWeight: 700, color: '#0F172A', fontSize: '0.9375rem' }}>Tomar Asistencia Diaria</div>
-            <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.8125rem', color: '#64748B' }}>
+            <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.875rem', color: '#475569' }}>
               Marcar asistencia de la sesión escolar por grupo y fecha.
             </p>
           </div>
@@ -260,7 +260,7 @@ export const TeacherDashboardView: React.FC<Props> = ({ summary, loading, onTabC
           >
             <div style={{ fontSize: '1.25rem', marginBottom: '0.25rem' }}>📊</div>
             <div style={{ fontWeight: 700, color: '#0F172A', fontSize: '0.9375rem' }}>Planilla de Calificaciones</div>
-            <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.8125rem', color: '#64748B' }}>
+            <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.875rem', color: '#475569' }}>
               Evaluar y asignar retroalimentación pedagógica a los estudiantes.
             </p>
           </div>
@@ -277,7 +277,7 @@ export const TeacherDashboardView: React.FC<Props> = ({ summary, loading, onTabC
           >
             <div style={{ fontSize: '1.25rem', marginBottom: '0.25rem' }}>🎯</div>
             <div style={{ fontWeight: 700, color: '#0F172A', fontSize: '0.9375rem' }}>Planeación Curricular</div>
-            <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.8125rem', color: '#64748B' }}>
+            <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.875rem', color: '#475569' }}>
               Documentar unidades, competencias y evidencias de aprendizaje.
             </p>
           </div>
@@ -294,7 +294,7 @@ export const TeacherDashboardView: React.FC<Props> = ({ summary, loading, onTabC
           >
             <div style={{ fontSize: '1.25rem', marginBottom: '0.25rem' }}>🛡️</div>
             <div style={{ fontWeight: 700, color: '#0F172A', fontSize: '0.9375rem' }}>Observador / Convivencia</div>
-            <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.8125rem', color: '#64748B' }}>
+            <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.875rem', color: '#475569' }}>
               Registrar observaciones, reconocimientos y faltas Tipo I, II o III (Ley 1620).
             </p>
           </div>
@@ -311,7 +311,7 @@ export const TeacherDashboardView: React.FC<Props> = ({ summary, loading, onTabC
           >
             <div style={{ fontSize: '1.25rem', marginBottom: '0.25rem' }}>📢</div>
             <div style={{ fontWeight: 700, color: '#0F172A', fontSize: '0.9375rem' }}>Circulares / Comunicados</div>
-            <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.8125rem', color: '#64748B' }}>
+            <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.875rem', color: '#475569' }}>
               Consultar circulares oficiales de Rectoría y registrar acuse de recibo.
             </p>
           </div>
@@ -328,7 +328,7 @@ export const TeacherDashboardView: React.FC<Props> = ({ summary, loading, onTabC
           >
             <div style={{ fontSize: '1.25rem', marginBottom: '0.25rem' }}>📰</div>
             <div style={{ fontWeight: 700, color: '#0F172A', fontSize: '0.9375rem' }}>Periódico Escolar</div>
-            <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.8125rem', color: '#64748B' }}>
+            <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.875rem', color: '#475569' }}>
               Leer crónicas, eventos y logros de la comunidad pedagógica.
             </p>
           </div>

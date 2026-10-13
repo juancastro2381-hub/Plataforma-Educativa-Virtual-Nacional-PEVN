@@ -103,7 +103,7 @@ export const GroupConsolidationMatrix: React.FC<Props> = ({
             <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: '#0F172A' }}>
               Sábana de Notas Consolidada — {group.name} ({period.name})
             </h3>
-            <div style={{ fontSize: '0.75rem', color: '#64748B' }}>
+            <div style={{ fontSize: '0.8125rem', color: '#475569' }}>
               {total_students} estudiantes registrados • {subjects.length} asignaturas evaluadas
             </div>
           </div>
@@ -115,7 +115,7 @@ export const GroupConsolidationMatrix: React.FC<Props> = ({
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '0.35rem',
-                backgroundColor: '#059669',
+                backgroundColor: '#047857',
                 color: '#FFFFFF',
                 border: 'none',
                 borderRadius: '8px',

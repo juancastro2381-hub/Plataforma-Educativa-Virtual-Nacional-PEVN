@@ -739,9 +739,9 @@ export const InstitutionsView: React.FC = () => {
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
-                  padding: '0.2rem 0.6rem',
+                  padding: '0.25rem 0.65rem',
                   borderRadius: '9999px',
-                  fontSize: '0.75rem',
+                  fontSize: '0.8125rem',
                   fontWeight: 600,
                   backgroundColor: rectorInstitution.is_active ? '#064E3B' : '#7F1D1D',
                   color: rectorInstitution.is_active ? '#6EE7B7' : '#FCA5A5',
@@ -750,10 +750,10 @@ export const InstitutionsView: React.FC = () => {
                 {rectorInstitution.is_active ? '● Estado: Activa' : '○ Estado: Inactiva'}
               </span>
             </div>
-            <h1 style={{ fontSize: '1.875rem', fontWeight: 800, margin: '0 0 0.5rem 0', letterSpacing: '-0.025em' }}>
+            <h1 style={{ fontSize: '1.875rem', fontWeight: 800, margin: '0 0 0.5rem 0', letterSpacing: '-0.025em', color: '#FFFFFF' }}>
               {rectorInstitution.name}
             </h1>
-            <p style={{ margin: 0, color: '#94A3B8', fontSize: '0.95rem', maxWidth: '700px' }}>
+            <p style={{ margin: 0, color: '#CBD5E1', fontSize: '0.95rem', maxWidth: '700px' }}>
               Gestión directiva e institucional del establecimiento educativo oficial bajo la jurisdicción de la Secretaría de Educación correspondiente.
             </p>
           </div>
@@ -1689,7 +1689,7 @@ export const InstitutionsView: React.FC = () => {
                                 disabled={isInviting}
                                 onClick={() => void handleResendInviteFromCatalog(item)}
                                 title="Reenviar enlace de activación al Rector"
-                                style={{ color: '#D97706', borderColor: '#FDE68A' }}
+                                style={{ color: '#92400E', borderColor: '#FDE68A' }}
                               >
                                 🔄 Reenviar
                               </Button>
@@ -1698,9 +1698,9 @@ export const InstitutionsView: React.FC = () => {
                             {item.lifecycle_status === 'RECTOR_ACTIVO' && (
                               <span
                                 style={{
-                                  fontSize: '0.75rem',
+                                  fontSize: '0.8125rem',
                                   fontWeight: 600,
-                                  color: '#16A34A',
+                                  color: '#14532D',
                                   padding: '0.25rem 0.5rem',
                                   backgroundColor: '#DCFCE7',
                                   borderRadius: '4px',
@@ -2016,7 +2016,7 @@ export const InstitutionsView: React.FC = () => {
                                       disabled={isInviting}
                                       onClick={() => void handleResendInvite(inst)}
                                       title="Reenviar enlace de activación al Rector pendiente"
-                                      style={{ color: '#D97706', borderColor: '#FDE68A' }}
+                                      style={{ color: '#92400E', borderColor: '#FDE68A' }}
                                     >
                                       🔄 Reenviar
                                     </Button>
@@ -2024,9 +2024,9 @@ export const InstitutionsView: React.FC = () => {
                                   {inst.has_active_rector && (
                                     <span
                                       style={{
-                                        fontSize: '0.75rem',
+                                        fontSize: '0.8125rem',
                                         fontWeight: 600,
-                                        color: '#16A34A',
+                                        color: '#14532D',
                                         padding: '0.25rem 0.5rem',
                                         backgroundColor: '#DCFCE7',
                                         borderRadius: '4px',
