@@ -109,6 +109,41 @@ vi.mock('@/services/academic', () => ({
   },
 }))
 
+vi.mock('@/services/institution', () => ({
+  institutionApi: {
+    getMyInstitution: vi.fn().mockResolvedValue({
+      id: 'inst-001',
+      name: 'Institución Educativa Prueba',
+      dane_code: '123456789012',
+      is_active: true,
+      campuses: [],
+    }),
+    getInstitutionById: vi.fn().mockResolvedValue({
+      id: 'inst-001',
+      name: 'Institución Educativa Prueba',
+      dane_code: '123456789012',
+      is_active: true,
+      campuses: [],
+    }),
+  },
+  default: {
+    getMyInstitution: vi.fn().mockResolvedValue({
+      id: 'inst-001',
+      name: 'Institución Educativa Prueba',
+      dane_code: '123456789012',
+      is_active: true,
+      campuses: [],
+    }),
+    getInstitutionById: vi.fn().mockResolvedValue({
+      id: 'inst-001',
+      name: 'Institución Educativa Prueba',
+      dane_code: '123456789012',
+      is_active: true,
+      campuses: [],
+    }),
+  },
+}))
+
 vi.mock('@/services/users', () => ({
   usersApi: {
     searchUsers: vi.fn().mockImplementation(({ search }) => {

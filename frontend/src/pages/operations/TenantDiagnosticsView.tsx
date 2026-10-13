@@ -20,6 +20,8 @@ export const TenantDiagnosticsView: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<InstitutionResponse[]>([])
   const [isSearching, setIsSearching] = useState(false)
+  const [hasSearched, setHasSearched] = useState(false)
+  const [searchError, setSearchError] = useState<string | null>(null)
 
   const [diagnostics, setDiagnostics] = useState<TenantDiagnosticsResponse | null>(null)
   const [isLoadingDiagnostics, setIsLoadingDiagnostics] = useState(false)
@@ -51,15 +53,24 @@ export const TenantDiagnosticsView: React.FC = () => {
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!searchQuery.trim()) return
+    const trimmedQuery = searchQuery.trim()
+    if (!trimmedQuery) {
+      setSearchError('Por favor ingrese un nombre o código DANE para buscar.')
+      return
+    }
     setIsSearching(true)
-    setError(null)
+    setSearchError(null)
+    setSearchResults([])
+    setHasSearched(false)
     try {
-      const res = await institutionApi.listInstitutions({ search: searchQuery.trim(), page_size: 10 })
+      const res = await institutionApi.listInstitutions({ search: trimmedQuery, page_size: 10 })
       setSearchResults(res.items || [])
+      setHasSearched(true)
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error al buscar instituciones.'
-      setError(msg)
+      setSearchError(msg)
+      setSearchResults([])
+      setHasSearched(true)
     } finally {
       setIsSearching(false)
     }
@@ -69,11 +80,17 @@ export const TenantDiagnosticsView: React.FC = () => {
     setActiveInstitutionContext(inst.id, inst.name)
     setSearchResults([])
     setSearchQuery('')
+    setHasSearched(false)
+    setSearchError(null)
   }
 
   const handleExitContext = () => {
     setActiveInstitutionContext(null)
     setDiagnostics(null)
+    setSearchResults([])
+    setSearchQuery('')
+    setHasSearched(false)
+    setSearchError(null)
   }
 
   return (
@@ -211,13 +228,51 @@ export const TenantDiagnosticsView: React.FC = () => {
               type="text"
               placeholder="Buscar por nombre o código DANE..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value)
+                if (searchError) setSearchError(null)
+              }}
+              aria-label="Buscar por nombre o código DANE"
               style={{ flex: 1, padding: '0.6rem 1rem', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '0.875rem' }}
             />
             <Button variant="primary" type="submit" disabled={isSearching}>
               {isSearching ? 'Buscando...' : 'Buscar'}
             </Button>
           </form>
+
+          {searchError && (
+            <div
+              role="alert"
+              style={{
+                padding: '0.875rem 1rem',
+                backgroundColor: '#FEF2F2',
+                border: '1px solid #FCA5A5',
+                borderRadius: '8px',
+                color: '#991B1B',
+                fontSize: '0.875rem',
+                marginBottom: '1rem',
+              }}
+            >
+              <strong>Error de búsqueda:</strong> {searchError}
+            </div>
+          )}
+
+          {hasSearched && searchResults.length === 0 && !isSearching && !searchError && (
+            <div
+              role="status"
+              style={{
+                padding: '1.25rem',
+                backgroundColor: '#F8FAFC',
+                border: '1px solid #E2E8F0',
+                borderRadius: '8px',
+                color: '#64748B',
+                fontSize: '0.875rem',
+                textAlign: 'center',
+              }}
+            >
+              No se encontraron instituciones para el criterio ingresado.
+            </div>
+          )}
 
           {searchResults.length > 0 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '0.75rem' }}>

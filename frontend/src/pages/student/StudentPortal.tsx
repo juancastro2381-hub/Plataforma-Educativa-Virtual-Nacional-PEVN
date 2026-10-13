@@ -84,12 +84,12 @@ export const StudentPortal: React.FC = () => {
     setSearchParams({ tab: newTab })
   }
 
-  // Load all student portal data concurrently
+  // Load student portal data resiliently with non-blocking fallbacks
   const loadStudentData = async () => {
     setLoading(true)
     setError(null)
     try {
-      const [dash, subjList, actList, gradeList, attList, vcList] = await Promise.all([
+      const [dashRes, subjRes, actRes, gradeRes, attRes, vcRes] = await Promise.allSettled([
         studentApi.getDashboard(),
         studentApi.listSubjects(),
         studentApi.listActivities(),
@@ -98,14 +98,52 @@ export const StudentPortal: React.FC = () => {
         studentApi.listVirtualClassrooms(),
       ])
 
-      setDashboardData(dash)
-      setSubjects(subjList.items)
-      setAllActivities(actList.items)
-      setAllGrades(gradeList.items)
-      setAttendanceData(attList)
-      setVirtualClassrooms(vcList.items)
+      let loadedCount = 0
+
+      if (dashRes.status === 'fulfilled') {
+        setDashboardData(dashRes.value)
+        loadedCount++
+      }
+
+      if (subjRes.status === 'fulfilled') {
+        setSubjects(subjRes.value.items || [])
+        loadedCount++
+      }
+
+      if (actRes.status === 'fulfilled') {
+        setAllActivities(actRes.value.items || [])
+        loadedCount++
+      }
+
+      if (gradeRes.status === 'fulfilled') {
+        setAllGrades(gradeRes.value.items || [])
+        loadedCount++
+      }
+
+      if (attRes.status === 'fulfilled') {
+        setAttendanceData(attRes.value)
+        loadedCount++
+      } else if (dashRes.status === 'fulfilled' && dashRes.value.attendance_summary) {
+        // Safe fallback from consolidated dashboard summary if detail endpoint timed out
+        setAttendanceData({
+          items: [],
+          summary: dashRes.value.attendance_summary,
+        })
+      }
+
+      if (vcRes.status === 'fulfilled') {
+        setVirtualClassrooms(vcRes.value.items || [])
+        loadedCount++
+      }
+
+      // If nothing could be loaded and dashboard failed, show explicit error
+      if (loadedCount === 0) {
+        const errorReason = dashRes.status === 'rejected' ? dashRes.reason : null
+        const msg = errorReason instanceof Error ? errorReason.message : 'Error al cargar los datos del portal estudiantil.'
+        setError(msg)
+      }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error al cargar los datos del portal estudiantil.'
+      const msg = err instanceof Error ? err.message : 'Error inesperado al cargar el portal estudiantil.'
       setError(msg)
     } finally {
       setLoading(false)

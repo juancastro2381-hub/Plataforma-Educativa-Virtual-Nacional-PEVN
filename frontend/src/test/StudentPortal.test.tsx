@@ -16,6 +16,12 @@ vi.mock('@/services/student', () => ({
     listSubjects: vi.fn(),
     listActivities: vi.fn(),
     getActivity: vi.fn(),
+    listActivityResources: vi.fn().mockResolvedValue({ items: [] }),
+    getSubmissionDetail: vi.fn().mockResolvedValue({
+      activity_id: 'act-1',
+      status: 'PENDING',
+      attempts: [],
+    }),
     listGrades: vi.fn(),
     listAttendance: vi.fn(),
     listVirtualClassrooms: vi.fn(),

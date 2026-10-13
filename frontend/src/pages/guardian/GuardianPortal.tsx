@@ -96,14 +96,20 @@ export const GuardianPortal: React.FC = () => {
     setGlobalError(null)
 
     try {
-      const [profileRes, studentsRes] = await Promise.all([
+      const [profileRes, studentsRes] = await Promise.allSettled([
         guardianApi.getProfile(),
         guardianApi.listStudents(),
       ])
 
-      setProfile(profileRes)
-      const fetchedStudents = studentsRes.items || []
-      setStudents(fetchedStudents)
+      if (profileRes.status === 'fulfilled') {
+        setProfile(profileRes.value)
+      }
+
+      let fetchedStudents: typeof students = []
+      if (studentsRes.status === 'fulfilled') {
+        fetchedStudents = studentsRes.value.items || []
+        setStudents(fetchedStudents)
+      }
 
       // Anti-IDOR validation: ensure initial selectedStudentId belongs to authorized children
       if (fetchedStudents.length > 0) {
@@ -113,6 +119,10 @@ export const GuardianPortal: React.FC = () => {
         setSelectedStudentId(activeId)
       } else {
         setSelectedStudentId(null)
+      }
+
+      if (profileRes.status === 'rejected' || studentsRes.status === 'rejected') {
+        setGlobalError('No fue posible cargar la información institucional del acudiente.')
       }
     } catch (err: any) {
       console.error('Error fetching guardian portal initial data:', err)
@@ -138,7 +148,7 @@ export const GuardianPortal: React.FC = () => {
 
     try {
       const [overviewRes, activitiesRes, gradesRes, attendanceRes, virtualClassesRes] =
-        await Promise.all([
+        await Promise.allSettled([
           guardianApi.getChildOverview(studentId),
           guardianApi.listChildActivities(studentId),
           guardianApi.listChildGrades(studentId),
@@ -146,14 +156,35 @@ export const GuardianPortal: React.FC = () => {
           guardianApi.listChildVirtualClassrooms(studentId),
         ])
 
-      setOverview(overviewRes)
-      setActivities(activitiesRes)
-      setGrades(gradesRes)
-      setAttendance(attendanceRes)
-      setVirtualClasses(virtualClassesRes)
+      let loadedChild = false
+
+      if (overviewRes.status === 'fulfilled') {
+        setOverview(overviewRes.value)
+        loadedChild = true
+      }
+
+      if (activitiesRes.status === 'fulfilled') {
+        setActivities(activitiesRes.value)
+      }
+
+      if (gradesRes.status === 'fulfilled') {
+        setGrades(gradesRes.value)
+      }
+
+      if (attendanceRes.status === 'fulfilled') {
+        setAttendance(attendanceRes.value)
+      }
+
+      if (virtualClassesRes.status === 'fulfilled') {
+        setVirtualClasses(virtualClassesRes.value)
+      }
+
+      if (!loadedChild && overviewRes.status === 'rejected') {
+        console.error(`Error fetching data for student ${studentId}:`, overviewRes.reason)
+        setOverview(null)
+      }
     } catch (err: any) {
       console.error(`Error fetching data for student ${studentId}:`, err)
-      // Anti-IDOR safe fallback
       setOverview(null)
     } finally {
       setChildLoading(false)

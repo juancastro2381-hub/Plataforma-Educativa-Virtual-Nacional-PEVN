@@ -14,7 +14,7 @@ import React, {
 } from 'react'
 import authApi from '@/services/auth'
 import { institutionApi } from '@/services/institution'
-import { setOnAuthFailure } from '@/services/api/client'
+import { setOnAuthFailure, clearClientSessionState } from '@/services/api/client'
 import { AuthContext, type AuthContextValue } from '@/context/authContextDef'
 import type {
   ChangePasswordRequest,
@@ -67,14 +67,34 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const syncInstitutionalContext = useCallback(async (u: User) => {
     const instId = u.institution_id || u.scope?.institution_id
     if (!instId) {
-      // Clear any prior active context for global or unassigned accounts
+      // For territorial/national/superadmin roles, preserve manually selected active context from localStorage
+      const isTerritorialOrGlobal = u.roles?.some(r =>
+        ['superadmin', 'super_admin', 'national_admin', 'department_admin', 'municipality_admin'].includes(r)
+      )
+      if (isTerritorialOrGlobal) {
+        try {
+          const savedId = localStorage.getItem('pevn_active_institution_id')
+          const savedName = localStorage.getItem('pevn_active_institution_name')
+          if (savedId) {
+            setActiveInstitutionIdState(savedId)
+            setActiveInstitutionNameState(savedName || null)
+            return
+          }
+        } catch {
+          // Non-blocking fallback
+        }
+      }
+      // Clear any prior active context for unassigned accounts
       setActiveInstitutionContext(null)
       return
     }
 
     let instName = ''
     try {
-      instName = localStorage.getItem('pevn_active_institution_name') || ''
+      const savedId = localStorage.getItem('pevn_active_institution_id')
+      if (savedId === instId) {
+        instName = localStorage.getItem('pevn_active_institution_name') || ''
+      }
     } catch {
       instName = ''
     }
@@ -94,6 +114,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Register callback for when token refresh fails in API interceptor
   useEffect(() => {
     setOnAuthFailure(() => {
+      clearClientSessionState()
       setUser(null)
       setActiveInstitutionContext(null)
     })
@@ -116,6 +137,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
       } catch {
         if (isMounted) {
+          clearClientSessionState()
           setUser(null)
           setActiveInstitutionContext(null)
         }
@@ -136,7 +158,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = useCallback(async (credentials: LoginRequest) => {
     setIsLoading(true)
     try {
-      // Reset institutional context upon explicit login before binding new user
+      // Hard reset previous identity and institutional context before binding new session
+      clearClientSessionState()
       setActiveInstitutionContext(null)
       const data = await authApi.login(credentials)
       setUser(data.user)
@@ -151,6 +174,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       await authApi.logout()
     } finally {
+      clearClientSessionState()
       setUser(null)
       setActiveInstitutionContext(null)
       setIsLoading(false)

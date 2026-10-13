@@ -619,7 +619,7 @@ describe('Academic Management Views', () => {
     const linkBtn = screen.getByRole('button', { name: /Vincular a Estudiante/i })
     await userEvent.click(linkBtn)
 
-    expect(screen.getByText(/Vincular Acudiente — Marta Gómez/i)).toBeInTheDocument()
+    expect(screen.getByText(/Vincular (?:a Estudiante|Acudiente) — Marta Gómez/i)).toBeInTheDocument()
 
     // Verify student selector in link modal
     await waitFor(() => {

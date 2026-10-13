@@ -48,7 +48,7 @@ export function RootLayout() {
   const canAccessAcademic =
     !isSuperAdmin && (
       isInstitutionalDirective ||
-      hasRole(['national_admin', 'department_admin']) ||
+      hasRole(['national_admin', 'department_admin', 'municipality_admin']) ||
       hasPermission('academic_years:read')
     )
 
@@ -77,10 +77,7 @@ export function RootLayout() {
     !isSuperAdmin && hasRole('national_admin')
 
   const canAccessMunicipalityAdmins =
-    !isSuperAdmin && (
-      hasRole(['national_admin', 'department_admin']) ||
-      hasPermission('municipality_admins:read')
-    )
+    !isSuperAdmin && hasRole(['national_admin', 'department_admin'])
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: '#F8FAFC' }}>
@@ -431,7 +428,7 @@ export function RootLayout() {
                     }}
                     title="Supervisión e Inspección Territorial"
                   >
-                    Analítica
+                    Analítica Territorial
                   </Link>
                 )}
 

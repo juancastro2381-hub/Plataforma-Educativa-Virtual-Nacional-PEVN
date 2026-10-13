@@ -90,6 +90,7 @@ class StudentPortalService:
     ) -> None:
         self._session = session
         self._audit = audit
+        self._enrollment_cache: dict[uuid.UUID, Enrollment | None] = {}
 
     async def get_student_by_user_id(
         self,
@@ -121,6 +122,9 @@ class StudentPortalService:
         student_id: uuid.UUID,
     ) -> Enrollment | None:
         """Retrieve the current active group enrollment for the student."""
+        if student_id in self._enrollment_cache:
+            return self._enrollment_cache[student_id]
+
         stmt = (
             select(Enrollment)
             .where(
@@ -134,7 +138,9 @@ class StudentPortalService:
             )
             .order_by(Enrollment.created_at.desc())
         )
-        return (await self._session.execute(stmt)).scalar_one_or_none()
+        enrollment = (await self._session.execute(stmt)).scalar_one_or_none()
+        self._enrollment_cache[student_id] = enrollment
+        return enrollment
 
     async def get_profile(
         self,

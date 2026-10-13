@@ -447,7 +447,7 @@ export const StudentTaskDetailModal: React.FC<StudentTaskDetailModalProps> = ({
           {activity.instructions && (
             <div>
               <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.875rem', fontWeight: 700, color: '#334155' }}>
-                Instrucciones Detalladas
+                📝 Instrucciones de la Actividad
               </h4>
               <div
                 style={{
@@ -995,7 +995,7 @@ export const StudentTaskDetailModal: React.FC<StudentTaskDetailModalProps> = ({
             )}
 
             {/* Past Attempts History (if multi-attempt exists) */}
-            {submission && submission.history.length > 1 && (
+            {submission && submission.history && submission.history.length > 1 && (
               <div style={{ marginTop: '0.5rem', borderTop: '1px solid #E2E8F0', paddingTop: '0.75rem' }}>
                 <button
                   onClick={() => setShowHistory(!showHistory)}

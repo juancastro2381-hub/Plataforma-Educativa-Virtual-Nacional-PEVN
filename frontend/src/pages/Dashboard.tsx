@@ -11,6 +11,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { institutionApi } from '@/services/institution'
+import { resolveCanonicalScopeLabel } from '@/utils'
 import {
   operationsApi,
   type PlatformOverviewResponse,
@@ -189,10 +190,26 @@ export const Dashboard: React.FC = () => {
               border: hasRole('superadmin') ? '1px solid rgba(252, 209, 22, 0.4)' : 'none',
             }}
           >
-            {hasRole('superadmin')
+            {hasRole(['superadmin', 'super_admin'])
               ? '🌐 Operador Técnico Global • SUPER_ADMIN (Nivel 100)'
               : hasRole('national_admin')
               ? '🇨🇴 Gobernanza Educativa Nacional • NATIONAL_ADMIN (Nivel 90)'
+              : hasRole('department_admin')
+              ? '📍 Administración Departamental • DEPARTMENT_ADMIN (Nivel 80)'
+              : hasRole('municipality_admin')
+              ? '🏛️ Administración Municipal • MUNICIPALITY_ADMIN (Nivel 70)'
+              : hasRole(['rector', 'institution_admin'])
+              ? '🏛️ Rectoría y Gobierno Escolar • RECTOR (Nivel 60)'
+              : hasRole(['coordinator', 'academic_coordinator'])
+              ? '📋 Coordinación Académica • COORDINATOR (Nivel 50)'
+              : hasRole('teacher')
+              ? '🎓 Gestión Docente • TEACHER (Nivel 30)'
+              : hasRole('auditor')
+              ? '🔍 Auditoría y Control • AUDITOR (Nivel 25)'
+              : hasRole('student')
+              ? '📚 Portal Estudiante • STUDENT (Nivel 10)'
+              : hasRole('guardian')
+              ? '👨‍👩‍👧‍👦 Portal Acudiente • GUARDIAN (Nivel 10)'
               : 'Sesión Activa • PEVN Colombia'}
           </div>
           <h1
@@ -207,7 +224,27 @@ export const Dashboard: React.FC = () => {
             Bienvenido, {user.full_name || user.username}
           </h1>
           <p style={{ color: '#E2E8F0', fontSize: '0.875rem', margin: 0, fontWeight: 400 }}>
-            {user.email} • Rol Canónico: <strong style={{ color: '#FDE047' }}>{user.roles.join(', ')}</strong> • Nivel: {hasRole('superadmin') ? '100 (Global)' : user.scope.is_national ? '90 (Nacional)' : 'Territorial/Institucional'} • Documento: {user.document_type} {user.document_number || 'N/A'}
+            {user.email} • Rol Canónico: <strong style={{ color: '#FDE047' }}>{user.roles.join(', ')}</strong> • Nivel:{' '}
+            {hasRole(['superadmin', 'super_admin'])
+              ? '100 (Global)'
+              : hasRole('national_admin') || user.scope.is_national
+              ? '90 (Nacional)'
+              : hasRole('department_admin')
+              ? '80 (Departamental)'
+              : hasRole('municipality_admin')
+              ? '70 (Municipal)'
+              : hasRole(['rector', 'institution_admin'])
+              ? '60 (Institucional)'
+              : hasRole(['coordinator', 'academic_coordinator'])
+              ? '50 (Coordinación)'
+              : hasRole('teacher')
+              ? '30 (Docente)'
+              : hasRole('auditor')
+              ? '25 (Auditor)'
+              : hasRole(['student', 'guardian'])
+              ? '10 (Educativo)'
+              : 'Territorial/Institucional'}{' '}
+            • Documento: {user.document_type} {user.document_number || 'N/A'}
           </p>
         </div>
 
@@ -291,15 +328,7 @@ export const Dashboard: React.FC = () => {
             <div>
               <span style={{ color: '#64748B' }}>Nivel de Alcance: </span>
               <strong>
-                {hasRole('superadmin')
-                  ? '🌐 Global (Operador Técnico del Estado / Plataforma)'
-                  : user.scope.is_national
-                  ? '🇨🇴 Nacional (Todo el Territorio)'
-                  : user.scope.is_municipality
-                  ? 'Municipal'
-                  : user.scope.is_department || user.scope.department_id
-                  ? 'Departamental'
-                  : 'Institucional'}
+                {resolveCanonicalScopeLabel(user)}
               </strong>
             </div>
             {hasRole('superadmin') && (
@@ -431,7 +460,7 @@ export const Dashboard: React.FC = () => {
                   >
                     📚 Gestión Académica
                   </Link>
-                  {hasRole(['rector', 'superadmin']) && (
+                  {hasRole(['rector', 'institution_admin']) && (
                     <Link
                       to="/academic?tab=settings"
                       style={{

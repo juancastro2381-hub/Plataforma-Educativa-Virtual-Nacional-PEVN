@@ -556,6 +556,7 @@ export const GuardiansView: React.FC = () => {
                             variant="secondary"
                             size="sm"
                             title="Vincular a estudiante"
+                            aria-label="Vincular a Estudiante"
                             onClick={() => {
                               setLinkModal({
                                 isOpen: true,

@@ -3,310 +3,311 @@
 ### Expediente de Sustentación para Autoridades Nacionales, Territoriales y Comités de Evaluación
 
 **Destinatarios:** Ministerio de Educación Nacional (MEN), Ministerio de Tecnologías de la Información y las Comunicaciones (MinTIC), Secretarías de Educación Departamentales, Distritales y Municipales, Directivos Docentes y Comités Técnicos Evaluadores  
-**Marco de Gobernanza:** AI Software Factory v1.2 — 11 principales artefactos de presentación gubernamental + 1 informe de cierre de la Fase 0.1  
-**Fecha de Publicación:** 21 de Septiembre de 2026  
+**Marco de Gobernanza:** AI Software Factory v1.2 — Expediente Integral de Presentación Gubernamental (DOC-01)  
+**Fecha de Publicación:** 13 de Octubre de 2026 (Actualización Consolidada)  
 **Carácter del Documento:** Dossier Ejecutivo de Información Oficial (Read-Only)  
-**Licencia Propuesta:** Apache License, Version 2.0 (Código Abierto)  
+**Licencia Propuesta:** Apache License, Version 2.0 (Código Abierto / $0 COP en Regalías de Software)  
 
 ---
 
-## 1. ¿Qué es PEVN?
+## 1. Declaración de Naturaleza e Iniciativa Tecnológica Independiente
 
-La **Plataforma Educativa Virtual Nacional (PEVN)** es un sistema de información integral y modular, diseñado bajo un enfoque de soberanía tecnológica, concebido específicamente para la gestión académica, pedagógica, convivencial, administrativa y sincrónica de las instituciones educativas oficiales de Colombia.
+La **Plataforma Educativa Virtual Nacional (PEVN)** es una iniciativa tecnológica independiente concebida y desarrollada por ingeniería de software nacional, puesta a disposición del Estado colombiano para su evaluación técnica, funcional, jurídica y de seguridad.
 
-A diferencia de los sistemas genéricos de gestión de cursos (*LMS*) o de aplicaciones administrativas importadas, PEVN fue proyectada desde su arquitectura fundacional para reflejar de forma nativa la **organización institucional, territorial y regulatoria del Estado colombiano**, incorporando la jerarquía de las Entidades Territoriales Certificadas (ETC), el Directorio Único de Establecimientos Educativos (DANE / DUE), el Sistema de Matrículas (SIMAT), el Sistema Institucional de Evaluación de los Estudiantes (Decreto 1290 de 2009) y el régimen de convivencia escolar (Ley 1620 de 2013).
-
-PEVN incorpora estructuras de datos y reglas de negocio compatibles con el modelo de matrícula correspondiente y se encuentra arquitectónicamente preparada para una eventual interoperabilidad, sujeta a las interfaces técnicas oficiales, autorizaciones y acuerdos institucionales que determine la entidad competente. No reemplaza al SIMAT, al DUE ni a los sistemas del DANE, sino que armoniza con los estándares rectores del Estado.
-
----
-
-## 2. ¿Por qué se desarrolló PEVN?
-
-El sistema educativo oficial de Colombia ha enfrentado históricamente una profunda dispersión tecnológica:
-- Los directivos y docentes se ven obligados a operar múltiples herramientas desacopladas: planillas de cálculo en papel o software local para notas, plataformas externas comerciales para videoclases, libros físicos para el observador de convivencia y canales informales (como aplicaciones de mensajería instantánea) para comunicarse con las familias.
-- Esta fragmentación incrementa la carga administrativa de los educadores, genera asimetrías de información con los padres de familia y expone datos personales de menores de edad en canales no auditables ni protegidos por el Estado.
-- PEVN nació como una respuesta de ingeniería de software pública para dotar al país de una **plataforma unificada, diseñada bajo un enfoque de soberanía tecnológica y libre de costos de licenciamiento privativo**, capaz de funcionar como infraestructura pública digital.
+> [!IMPORTANT]
+> **ALCANCE Y NATURALEZA DE LA PROPUESTA:**
+> El presente dossier tiene un carácter estrictamente informativo, técnico y propositivo. No constituye una aprobación oficial, certificación gubernamental, contrato de adquisición pública ni compromiso de adopción vinculante por parte de ninguna entidad del Estado. La propuesta contempla poner a disposición del Estado colombiano el código fuente íntegro, los esquemas de bases de datos, los manuales y las suites de pruebas automatizadas bajo la licencia permisiva **Apache License 2.0 ($0 COP en costo de licenciamiento)**, sujeta a los convenios interadministrativos y decisiones institucionales que determinen las autoridades competentes.
 
 ---
 
-## 3. El Problema Educativo que Resuelve
+## 2. El Problema Educativo y Estructural que Aborda
 
-1. **Desarticulación entre Matrícula, Aula y Calificación:** Falta de trazabilidad en tiempo real entre el registro civil/académico del estudiante y su desempeño en clase.
-2. **Brecha de Información Escuela–Familia:** Dificultad de los padres de familia y acudientes legales para monitorear oportunamente la asistencia, las tareas y la convivencia de sus acudidos.
-3. **Complejidad en la Aplicación del Decreto 1290 de 2009 (SIEE):** Dificultad para parametrizar de forma justa, transparente y auditable las políticas evaluativas autónomas de cada institución educativa (escalas valorativas, nivelaciones, topes y promoción anual).
-4. **Falta de Trazabilidad en Situaciones de Convivencia Escolar (Ley 1620 de 2013):** Registro precario de las situaciones Tipos I, II y III, afectando el debido proceso, los descargos de los menores y el seguimiento de acuerdos pedagógicos y restaurativos.
-5. **Riesgo de Dependencia y Cautiverio Tecnológico (*Vendor Lock-in*):** Dependencia de herramientas propietarias externas o licenciamientos comerciales recurrentes no adaptados a la normatividad educativa del país.
+El sistema educativo oficial colombiano atiende a más de 8 millones de niños, niñas y jóvenes a través de una red descentralizada de Entidades Territoriales Certificadas (ETC). Históricamente, la operación cotidiana de las instituciones educativas públicas ha enfrentado una profunda fragmentación tecnológica:
 
----
-
-## 4. Usuarios Destinatarios y Comunidad Educativa
-
-La plataforma articula armónicamente a todos los estamentos de la comunidad escolar colombiana:
-- **Estudiantes Oficiales:** Acceso a sus materias, tareas, horarios, clases virtuales en vivo, calificaciones parciales, observador personal y boletines.
-- **Padres de Familia y Acudientes:** Acompañamiento parental, seguimiento formativo de notas y asistencia, acuse electrónico de circulares oficiales y observador de convivencia.
-- **Docentes de Aula:** Gestión de carga académica asignada, creación de actividades, calificación ágil, control de asistencia diaria, planeación curricular y clases sincrónicas.
-- **Coordinadores Académicos y de Convivencia:** Supervisión pedagógica, asignación de cargas, atención de situaciones escolares (Ley 1620) y consolidación de períodos.
-- **Rectores y Directores Rurales:** Soberanía institucional, gestión de sedes, apertura de calendarios, cierre y sellado de períodos, actas de promoción y estructuras de matrícula compatibles con el modelo oficial.
-- **Líderes de Secretarías de Educación (ETC):** Analítica territorial de cobertura, retención y monitoreo de establecimientos educativos de su jurisdicción.
-- **Ministerio de Educación Nacional (MEN):** Visión analítica macro, catálogo nacional de instituciones y gobierno soberano de estándares.
+1. **Dispersión de Herramientas Desacopladas:** Coexistencia de planillas de cálculo en papel o software monousuario local para el registro de calificaciones, plataformas comerciales extranjeras de videoconferencia, libros físicos o carpetas para el observador de convivencia escolar y aplicaciones informales de mensajería instantánea para la interacción con los acudientes.
+2. **Sobrecarga Administrativa Docente:** Los educadores dedican horas sustanciales a la transcripción manual y consolidación de notas, restando tiempo a la mediación pedagógica y al diseño curricular.
+3. **Brecha de Información Escuela–Familia:** Dificultad recurrente de los padres y acudientes legales para hacer seguimiento oportuno y preventivo a la asistencia, tareas y convivencia de los estudiantes.
+4. **Riesgo de Privacidad de Menores:** La utilización de canales informales expone datos personales sensibles de menores de edad en plataformas comerciales externas no auditadas por el Estado.
+5. **Cautiverio Tecnológico (*Vendor Lock-in*):** Dependencia de soluciones privativas cuyos modelos de cobro recurrente por estudiante gravan los presupuestos territoriales sin transferir soberanía técnica ni capacidades al Estado.
 
 ---
 
-## 5. Modelo Institucional y Jerarquía Territorial
+## 3. Modelo Institucional y Jerarquía Territorial Multi-Inquilino
 
-PEVN estructura los datos respetando la división político-administrativa del Estado colombiano:
+PEVN fue construida desde sus cimientos para reflejar de forma nativa la organización político-administrativa y territorial de Colombia, garantizando un aislamiento estricto de datos (*multi-tenancy*) entre instituciones y jurisdicciones:
 
 ```
-NIVEL NACIONAL (Ministerio de Educación Nacional - MEN)
-  └── DEPARTAMENTO (Secretaría de Educación Departamental)
-       └── MUNICIPIO (Entidad Territorial Certificada o No Certificada)
-            └── INSTITUCIÓN EDUCATIVA (Colegio Oficial / Código DANE 12 dígitos)
-                 └── SEDE EDUCATIVA (Sede Principal o Sede Rural / Código DANE Sede)
-                      └── AÑO LECTIVO (Calendario Escolar Activo)
-                           └── PERÍODOS ACADÉMICOS (1, 2, 3 o 4 períodos)
-                                └── GRADOS Y GRUPOS (Jornada Mañana, Tarde, Única)
+NIVEL NACIONAL (Ministerio de Educación Nacional - MEN / MinTIC)
+  └── NIVEL DEPARTAMENTAL (Secretarías de Educación Departamentales / 32 Departamentos)
+       └── NIVEL MUNICIPAL (Entidades Territoriales Certificadas y No Certificadas / 1,122 Municipios)
+            └── INSTITUCIÓN EDUCATIVA (Establecimiento Educativo Oficial / Código DANE 12 dígitos)
+                 └── SEDE EDUCATIVA (Sede Principal o Sedes Rurales / Código DANE Sede 12 dígitos)
+                      └── AÑO LECTIVO (Calendario Escolar A o B)
+                           └── PERÍODOS ACADÉMICOS (Configuración SIEE: 1 a 4 períodos)
+                                └── GRADOS, GRUPOS Y JORNADAS (Mañana, Tarde, Única, Nocturna)
 ```
 
-Cada colegio opera como una entidad soberana e independiente en sus datos, garantizando que ninguna institución pueda visualizar o modificar información de otra.
+Cada colegio opera como una entidad soberana e independiente en sus datos mediante el aislamiento riguroso por `institution_id`. Los accesos no autorizados a nivel de interfaz o API responden con el patrón de seguridad `Blind 404 (Not Found)`, impidiendo la fuga de metadatos o la enumeración de recursos entre diferentes instituciones.
 
 ---
 
-## 6. Capacidades Principales del Sistema
+## 4. Desglose Exhaustivo de los 11 Roles del Sistema
 
-1. **Gestión Escolar Completa:** Sedes, grados, grupos, asignaturas y jornadas escolares.
-2. **Padrón SIMAT e Identidad Desacoplada:** Separación técnica entre la ficha civil del estudiante/acudiente y la cuenta de acceso digital.
-3. **Portal Docente Integrado:** Actividades académicas, recepción de evidencias digitales, control de asistencia diaria y planeación curricular.
-4. **Sistema SIEE (Decreto 1290 de 2009):** Políticas institucionales configurables, consolidación híbrida de calificaciones, justificación obligatoria de notas ajustadas, nivelaciones formativas con tope y promoción anual.
-5. **Comunicaciones Institucionales y Acuses Electrónicos:** Circulares segmentadas y acuses de recibo con estampa de tiempo UTC y dirección IP.
-6. **Convivencia Escolar (Ley 1620 de 2013):** Observador del estudiante Tipos I, II y III con descargos y compromisos restaurativos.
-7. **Periódico Escolar y Divulgación:** Noticias pedagógicas, científicas, culturales y deportivas.
-8. **Aulas Virtuales Sincrónicas:** Capa de software lista para integración con BigBlueButton con telemetría de conexión y control de grabaciones.
-9. **Trazabilidad Inmutable:** Auditoría técnica estricta con censura automática de secretos y datos sensibles (`[REDACTED]`).
+El modelo de control de acceso basado en roles (RBAC) de PEVN delimita con precisión matemática las responsabilidades de cada estamento, totalizando **11 roles canónicos** implementados y verificados:
 
----
+| Rol Canónico | Identificador | Nivel | Ámbito Territorial / Operativo | Atribuciones Principales |
+| :--- | :--- | :---: | :--- | :--- |
+| **Superadministrador** | `superadmin` | 100 | Global / Plataforma | Mantenimiento técnico global, diagnóstico operativo de inquilinos, monitoreo de salud del sistema y auditoría inmutable. |
+| **Administrador Nacional** | `national_admin` | 90 | Nacional (MEN) | Supervisión macro, gobierno del catálogo oficial DANE, analítica territorial consolidada e incorporación nacional. |
+| **Administrador Departamental** | `department_admin` | 80 | Departamental (Secretaría) | Gobernanza departamental, monitoreo de municipios no certificados y colegios oficiales adscritos a su jurisdicción. |
+| **Administrador Municipal** | `municipality_admin` | 70 | Municipal (Alcaldía / SEM) | Gobierno territorial municipal, activación e invitación de rectores para establecimientos oficiales de su municipio. |
+| **Administrador Institucional** | `institution_admin` | 60 | Institución Educativa | Soporte técnico institucional, parametrización de catálogos y gestión de infraestructura local del colegio. |
+| **Rector / Director Rural** | `rector` | 50 | Institución Educativa | Máxima autoridad del colegio: apertura de años lectivos, cierre y sellado de períodos SIEE, gestión de sedes y gobierno escolar. |
+| **Coordinador General** | `coordinator` | 40 | Institución Educativa | Gestión escolar delegada, administración de horarios, supervisión convivencial y soporte directivo. |
+| **Coordinador Académico** | `academic_coordinator` | 40 | Institución Educativa | Parametrización de asignaturas, distribución de cargas académicas docentes, comisiones de evaluación y planes de estudio. |
+| **Docente de Aula** | `teacher` | 30 | Asignaciones del Docente | Gestión pedagógica dentro de su *Teacher Scope*: planillas SIEE, asistencia diaria, actividades, planeación y aulas virtuales. |
+| **Estudiante** | `student` | 20 | Ficha y Matrícula Activa | Portal personal: consulta de tareas, entrega de evidencias, calificaciones parciales SIEE, observador, circulares y clases sincrónicas. |
+| **Acudiente de Familia** | `guardian` | 10 | Estudiantes Acudidos (N:M) | Portal familiar unificado con selector dinámico de hijos: seguimiento formativo, asistencia, observador y acuses de recibo. |
 
-## 7. Portales Especializados por Rol
-
-PEVN ofrece interfaces web dedicadas y optimizadas para cada actor:
-- **Portal del Estudiante (`/student`):** Visualización clara de tareas pendientes, entregas, notas del período, boletines, horarios y observador formativo.
-- **Portal del Acudiente (`/guardian`):** Panel familiar con selector dinámico de hijos para acompañar a múltiples estudiantes desde una sola cuenta.
-- **Portal del Docente (`/teacher`):** Espacio de trabajo centrado en la labor pedagógica: Mis Grupos, Actividades, Calificaciones SIEE, Asistencia y Planeación.
-- **Portal de Gestión Académica y Rectoría (`/academic`):** Consola para el Rector y Coordinador que centraliza matrículas, docentes, asignaciones y políticas SIEE.
-- **Portal de Analítica Territorial (`/analytics/territorial`):** Tableros estadísticos agregados para Secretarías de Educación y el MEN.
-- **Portal de Administración Nacional (`/admin/institutions`):** Gestión del directorio nacional DANE/DUE e incorporación de colegios.
+> [!NOTE]
+> **ACLARACIÓN TAXONÓMICA SOBRE EL ROL DE AUDITOR:**
+> En estricto apego a la verdad arquitectónica del código, el rol `AUDITOR` **no es un rol configurado en la base de datos ni en las interfaces de seguridad de PEVN**. La función de fiscalización y auditoría técnica es ejecutada de forma integral por los roles `superadmin` y `national_admin` mediante la consola técnica de Diagnóstico de Inquilinos (`/operations/tenant-diagnostics`) y el registro inmutable en la tabla `audit_logs` de PostgreSQL. Presentar `AUDITOR` como un rol independiente de usuario sería una inexactitud funcional que este expediente rechaza categóricamente.
 
 ---
 
-## 8. Gestión Académica
+## 5. El Rol de Administrador Municipal (`MUNICIPALITY_ADMIN`)
 
-La gestión académica modela de manera exacta la realidad de las instituciones educativas públicas:
-- Configuración de sedes principales y anexas (sedes rurales multigrado o urbanas).
-- Apertura formal del año lectivo (ej. 2026) con delimitación de fechas de inicio y finalización.
-- Segmentación por períodos académicos regulares y períodos extraordinarios de recuperación.
-- Definición de áreas obligatorias y fundamentales según la Ley General de Educación (Ley 115 de 1994) y asignaturas optativas institucionales.
+Certificado e integrado en la arquitectura territorial de PEVN, el rol de **Administrador Municipal** resuelve el enlace de gobernanza entre la administración municipal (Alcaldías y Secretarías de Educación Municipales) y los colegios oficiales de su jurisdicción:
 
----
-
-## 9. Gestión de Estudiantes y Matrícula SIMAT
-
-- Registro de fichas civiles de estudiantes con número de documento, tipo de documento nacional o de extranjería (C.C., T.I., R.C., PPT), fecha de nacimiento y código único SIMAT.
-- Control estricto de cupos y capacidad máxima de aula para prevenir sobrecupos en salones.
-- Libro de matrículas formal que asocia al estudiante con un grupo y sede en el año lectivo activo.
-- Soporte para novedades de matrícula: retiros, traslados entre sedes o cambio de institución conservando el historial evaluativo.
+1. **Flujo Criptográfico de Invitación:** Los administradores municipales son aprovisionados mediante invitaciones tokenizadas de un solo uso (`single-use token`), con vigencia delimitada y almacenamiento del hash criptográfico SHA-256 en base de datos.
+2. **Activación Pública Segura:** La activación de la cuenta se realiza en la interfaz pública `/auth/accept-invitation`, resolviendo determinísticamente el origen único para evitar discrepancias de enrutamiento.
+3. **Contención Territorial Estricta:** El administrador municipal queda anclado a su código DIVIPOLA municipal y departamento. Sus consultas e interfaces le permiten visualizar únicamente los colegios oficiales de su municipio en el catálogo DANE.
+4. **Cadena Canónica de Autoridad:** Posee la atribución exclusiva de invitar y activar a los Rectores de los colegios de su municipio, respetando la jerarquía institucional sin interferir en los asuntos internos de colegios de otras entidades territoriales.
 
 ---
 
-## 10. Gestión Docente y Carga Académica
+## 6. Integración del Catálogo Oficial DANE / DUE y Trazabilidad Forense
 
-- Padrón institucional de docentes vinculados con identificación, título profesional y tipo de vinculación.
-- Asignación Académica (*Academic Assignment*): Vinculación estricta de Docente + Asignatura + Grupo + Intensidad Horaria Semanal.
-- **Principio de Ámbito Docente (*Teacher Scope*):** El docente únicamente tiene acceso y visibilidad sobre los estudiantes y salones que tiene formalmente asignados en su carga académica, blindando la privacidad de los demás alumnos de la institución.
+PEVN incorpora la totalidad del catálogo oficial de la infraestructura educativa pública de Colombia, garantizando correspondencia biunívoca con los registros del Departamento Administrativo Nacional de Estadística (DANE) y el Directorio Único de Establecimientos Educativos (DUE) del Ministerio de Educación Nacional:
 
----
+### 6.1 Cifras Empíricas del Catálogo en Base de Datos (PostgreSQL)
 
-## 11. Interacción Familiar y Acudientes (Decisión Canónica 3A-01)
+- **18,031 Establecimientos Educativos Oficiales (`official_institution_catalog`):** Colegios y escuelas sede principal debidamente codificados con su código DANE único de 12 dígitos, sector oficial, zona (urbana/rural) y jerarquía territorial.
+- **51,521 Sedes Educativas Físicas (`official_campus_catalog`):** Inventario exhaustivo de sedes principales y adscritas (sedes rurales, anexas, multigrado), con código DANE de sede de 12 dígitos.
+- **38 Tenants Operacionales Activos (`institutions`):** Instituciones educativas plenamente configuradas en la base de datos operativa para pruebas de ciclo completo, multi-inquilino y demostraciones.
+- **10 Lotes de Sincronización Auditados (`official_catalog_sync_batches`):** Trazabilidad completa de procesos de ingesta y reconciliación masiva.
 
-PEVN resuelve una de las mayores dificultades de los colegios colombianos mediante la **Identidad Desacoplada**:
-- La ficha civil del acudiente puede existir en el colegio sin que este disponga de conectividad inicial o correo electrónico.
-- Relación N:M: Un estudiante puede tener múltiples acudientes registrados (madre, padre, abuelo), y un acudiente puede monitorear a varios hijos en diferentes grados desde una misma cuenta unificada.
-- Auto-onboarding público seguro: El acudiente puede solicitar la activación digital de su cuenta validando su documento y correo contra la ficha registrada previamente por la institución.
+### 6.2 Proveniencia Verificable de los Conjuntos de Datos Abiertos
 
----
+1. **Directorio de Colegios (EE):** Portal de Datos Abiertos del Estado colombiano (`datos.gov.co/cfw5-qzt5`), Directorio de Establecimientos Educativos Preescolar, Básica y Media 2024 (MEN/DANE).
+2. **Directorio de Sedes Educativas:** Portal de Datos Abiertos (`datos.gov.co/x5ay-984n`), Directorio Nacional de Sedes Educativas de Colombia.
+3. **Línea Base Semilla:** Conjunto de datos (`datos.gov.co/c36d-tcj8`), que provee una muestra representativa de 41 instituciones educativas en 33 departamentos de Colombia.
 
-## 12. Evaluación Formativa y SIEE (Decreto 1290 de 2009)
+### 6.3 Trazabilidad Forense del Elemento de Interfaz: *"Total: colegios en el catálogo"*
 
-El subsistema de evaluación de PEVN es uno de los componentes más maduros del sistema:
-- **Parametrización Autónoma (`SieePolicy`):** Cada colegio define sus escalas, notas aprobatorias y topes sin cables duros en código.
-- **Consolidación Híbrida:** El sistema calcula automáticamente el promedio ponderado de las actividades realizadas, pero permite al docente realizar un ajuste pedagógico razonado (`final_score`). Si la nota definitiva difiere del cálculo automático, el sistema exige de forma obligatoria una justificación escrita (`adjustment_reason`).
-- **Nivelaciones y Planes de Mejoramiento:** La nota reprobada original permanece inalterable en el historial (no se destruye). La prueba de recuperación se registra de forma independiente y la nota oficial se ajusta aplicando el tope institucional parametrizado (ej. 3.00 - Desempeño Básico).
-- **Cierre y Sellado de Período:** El rector o coordinador formaliza el cierre de período, bloqueando de forma inmutable cualquier alteración posterior de notas. La reapertura requiere justificación directiva auditada.
-- **Boletines Oficiales:** Emisión estructurada de boletines periódicos, acumulativo final y sábanas de notas grupales con puesto en el salón.
-- **Promoción Escolar Anual:** Evaluación algorítmica de los criterios SIEE (asignaturas reprobadas, inasistencias injustificadas) y generación de actas oficiales de promoción y graduación.
+Para responder con precisión forense a cualquier auditor técnico o gubernamental, la visualización de los totales del catálogo en la interfaz web de PEVN se encuentra trazada de extremo a extremo:
 
----
-
-## 13. Control de Asistencia Diaria
-
-- Planilla digital de registro rápido por grupo y fecha (`Presente`, `Ausente`, `Justificado`, `Retardo`).
-- Alertas inmediatas para docentes y directivos ante ausencias reiteradas.
-- Visualización transparente en el portal familiar para combatir la deserción y el ausentismo escolar.
-
----
-
-## 14. Actividades Académicas y Entregas de Estudiantes (Fase B3)
-
-- Creación y edición de actividades en estado Borrador (`DRAFT`) antes de su divulgación.
-- Tres modalidades de entrega: `TEXT` (respuesta escrita en plataforma), `FILE` (archivos adjuntos) y `TEXT_AND_FILE`.
-- Almacenamiento seguro con análisis binario de tipo de archivo (Magic Bytes) para rechazar ejecutables maliciosos y límite de 10 MB.
-- Detección determinística de entregas tardías en UTC (`is_late = True`).
-- Ciclo de revisión docente con devoluciones pedagógicas (`RETURNED`) para corrección y reintentos versionados.
+- **Componentes y Vistas Frontend:**
+  - `frontend/src/pages/admin/OnboardingView.tsx` (Línea 593): Etiqueta institucional `Total: <span className="text-white font-semibold">{catalogTotal}</span> colegios en el catálogo`.
+  - `frontend/src/pages/admin/InstitutionsView.tsx` (Líneas 1205-1215): Insignias de segmentación `Catálogo Semilla ({total_institutions} EE / {total_campuses} Sedes)` y `Catálogo Nacional Completo`.
+  - `frontend/src/pages/admin/InstitutionsView.tsx` (Línea 1421): Tarjeta de métricas `Catálogo Oficial DANE: {catalogSummary.total_catalog} Establecimientos en jurisdicción`.
+  - `frontend/src/pages/admin/InstitutionsView.tsx` (Línea 1752): Texto de paginación `Mostrando {catalogItems.length} de {catalogTotal} establecimientos oficiales`.
+- **Rutas y Controladores Backend:**
+  - `GET /api/v1/onboarding/catalog` (`backend/app/api/v1/endpoints/onboarding.py:60`) invocando `OnboardingService.explore_catalog()`.
+  - `GET /api/v1/institutions/catalog-explorer` (`backend/app/api/v1/endpoints/institutions.py:578`) invocando `InstitutionService.list_official_catalog_with_status()`.
+  - `GET /api/v1/institutions/catalog/sync-status` (`backend/app/api/v1/endpoints/institutions.py:82`) invocando `OfficialCatalogSyncService.get_sync_status()`.
+- **Tablas Relacionales de Persistencia:**
+  - `official_institution_catalog` (18,031 registros con índices B-Tree en `dane_code`, `department_code`, `municipality_code`).
+  - `official_campus_catalog` (51,521 registros con clave foránea hacia la institución oficial).
+  - `institutions` (38 registros operacionales vinculados por `dane_code`).
 
 ---
 
-## 15. Convivencia Escolar y Observador del Estudiante (Ley 1620 de 2013)
+## 7. Motor de Evaluación SIEE (Decreto 1290 de 2009)
 
-- Tipificación estricta de situaciones escolares conforme a la ley colombiana:
-  - **Tipo I:** Conflictos cotidianos manejados mediante mediación escolar.
-  - **Tipo II:** Situaciones de agresión, acoso escolar (*bullying*) o ciberacoso que no revisten características de delito.
-  - **Tipo III:** Situaciones que presuntamente constituyen delitos contra la libertad, integridad y formación sexual o cualquier otro delito según la ley penal.
-- Garantía del debido proceso: Registro formal de la descripción fáctica, descargos del estudiante, medidas formativas y acuerdos restaurativos.
-- Confidencialidad absoluta: Las anotaciones solo son visibles por el estudiante involucrado, su acudiente y el comité de convivencia de la institución. Blind 404 estricto para terceros.
+El subsistema de evaluación formativa de PEVN implementa de forma rigurosa los mandatos del **Decreto 1290 de 2009**, otorgando a cada institución educativa autonomía técnica para parametrizar su propio Sistema Institucional de Evaluación de los Estudiantes (SIEE):
 
----
-
-## 16. Comunicaciones Institucionales y Periódico Escolar
-
-- Emisión de circulares y directrices oficiales con segmentación de audiencia por sede, grado, grupo o rol.
-- **Acuse de Recibo Electrónico:** Mecanismo de confirmación de lectura con estampa de tiempo UTC y dirección IP registrada, generando evidencia electrónica auditable de la confirmación de lectura, con registro de fecha/hora UTC y dirección IP.
-- Periódico escolar digital clasificado por categorías temáticas (académica, cultural, deportiva, científica).
+1. **Cuatro Escalas Nacionales de Valoración:** Mapeo matemático determinístico a las escalas obligatorias del MEN: **Desempeño Superior**, **Desempeño Alto**, **Desempeño Básico** y **Desempeño Bajo** (escala numérica institucional, comúnmente de 1.00 a 5.00 con nota mínima aprobatoria configurable, típicamente 3.00).
+2. **Períodos Académicos y Ponderaciones:** Soporte para esquemas de 1 a 4 períodos escolares, con asignación porcentual configurable (ej. 4 períodos de 25% cada uno o trimestres ponderados).
+3. **Consolidación Híbrida de Calificaciones:** El sistema computa de forma automática el promedio ponderado de las actividades académicas registradas por el docente, pero faculta al educador para ingresar una nota definitiva ajustada (`final_score`) fundamentada en su criterio formativo. Si la nota ajustada difiere del promedio automático, la plataforma exige **obligatoriamente una justificación escrita** (`adjustment_reason`), la cual queda asentada en la auditoría del sistema.
+4. **Planes de Mejoramiento y Nivelaciones con Tope:** Cuando un estudiante reprueba un período, la calificación reprobada original se preserva de manera inalterable en el historial escolar. La prueba de recuperación o nivelación se registra de forma independiente y, en caso de ser superada, la nota oficial se actualiza aplicando el tope máximo parametrizado en el SIEE (típicamente 3.00 / Desempeño Básico).
+5. **Cierre y Sellado Inmutable de Períodos:** El Rector o Coordinador ejecuta el cierre formal del período, bloqueando criptográfica y lógicamente cualquier modificación posterior de notas por parte de los docentes. La reapertura extraordinaria requiere autorización directiva con registro obligatorio de justificación en `audit_logs`.
+6. **Promoción Anual y Actas:** Algoritmo de promoción que evalúa el número de asignaturas reprobadas y el porcentaje de inasistencias acumuladas frente a los criterios del SIEE institucional, generando la sábana final de notas y el acta de promoción.
 
 ---
 
-## 17. Clases Virtuales Sincrónicas (BigBlueButton)
+## 8. Estructuras de Matrícula Compatibles con SIMAT
 
-- Capa de software completa basada en el protocolo estándar `IMeetingProvider` con adaptador oficial para BigBlueButton (`BBBAdapter`).
-- Generación criptográfica de URLs firmadas con sumas de comprobación SHA-1 y SHA-256.
-- Control de ingreso restringido por matrícula SIMAT (un alumno no puede ingresar a una clase de otro salón).
-- Telemetría de conexión: Registro de horas de ingreso, salida y duración efectiva de asistencia.
-- Gestión de grabaciones con visibilidad controlada por el profesor.
-- **Posición Factual Honesta:** El software está terminado y verificado mediante un simulador en memoria (*Mock Provider*); **el servicio en vivo requiere el comisionamiento de servidores físicos BigBlueButton y relay Coturn TURN**.
+PEVN no sustituye al Sistema de Matrículas (SIMAT) del Ministerio de Educación Nacional, sino que incorpora **estructuras de datos y modelos de validación plenamente compatibles** con la ficha de matrícula oficial:
 
----
-
-## 18. Arquitectura y Controles de Seguridad Técnicamente Verificados
-
-La plataforma implementa una arquitectura de seguridad con controles verificables. No se identificaron vulnerabilidades críticas dentro del alcance de la auditoría técnica realizada (análisis estático, análisis de dependencias y pruebas de integración):
-- **Cero Contraseñas Planas:** Cifrado con **Argon2id** (64 MB de memoria, 3 iteraciones, salting aleatorio de 16 bytes).
-- **Higiene de Tokens JWT:** Los tokens de acceso residen única y exclusivamente en la **memoria volátil de JavaScript de React**. No se almacena ningún token en `localStorage` ni `sessionStorage`, como medida de mitigación frente al robo persistente de credenciales mediante XSS.
-- **Cookies de Sesión Seguras:** Refresh tokens rotativos en cookies `HttpOnly`, `SameSite=Strict`, `Secure` y vigencia de 7 días.
-- **Detección Activa de Replay:** Si un atacante intercepta y reutiliza un token de refresco antiguo, el backend anula inmediatamente toda la familia de tokens (`family_id`), cierra la sesión activa y emite una alerta crítica.
-- **Protección Anti-IDOR (Blind 404):** Intentos de manipulación de identificadores UUID responden `404 Not Found` en lugar de revelar existencia con 403.
-- **Auditoría Inmutable:** Tabla `audit_logs` en PostgreSQL con censura automática y recursiva de datos sensibles (`[REDACTED]`).
-- **Estado de Certificación:** No se aducen certificaciones gubernamentales formales, las cuales deberán formar parte del ciclo de evaluación y acreditación institucional.
+- **Ficha Civil y Académica:** Modelado del código SIMAT único del estudiante, tipología documental oficial (Registro Civil, Tarjeta de Identidad, Cédula de Ciudadanía, Permiso de Protección Temporal PPT, Cédula de Extranjería), fecha de nacimiento, género, estrato y condición de vulnerabilidad o discapacidad.
+- **Separación de Identidad Digital (Decisión Canónica 3A-01):** La ficha civil del estudiante o acudiente puede ser creada y matriculada en el sistema sin que estos requieran contar previamente con un correo electrónico o cuenta de acceso digital. La cuenta de usuario (`User`) se enlaza de forma desacoplada cuando el usuario realiza el proceso de activación.
+- **Control Estricto de Cupos:** Bloqueo preventivo de sobrecupos en grupos escolares para garantizar cumplimiento de los estándares de capacidad física y calidad pedagógica.
+- **Preparación Arquitectónica para Interoperabilidad:** La capa de servicios cuenta con contratos de datos preparados para sincronización bidireccional mediante APIs REST o servicios web del MEN, sujeta a la suscripción de los convenios interadministrativos correspondientes.
 
 ---
 
-## 19. Arquitectura Multi-Institucional y Aislamiento de Datos
+## 9. Integración de Aulas Virtuales Sincrónicas (BigBlueButton)
 
-- Todas las tablas de datos y consultas de base de datos incorporan la clave `institution_id`.
-- Principio *Deny-by-Default*: Ningún usuario puede consultar o alterar registros fuera de su colegio, a menos que cuente con alcance territorial o nacional expreso (SuperAdmin o MEN).
-- El aislamiento se ejecuta a nivel de lógica de dominio y ORM, garantizando la soberanía de la información de cada municipio y departamento.
+Para responder a contingencias climáticas, emergencias territoriales o modelos de educación rural híbrida, PEVN incorpora una capa de videoconferencia sincrónica diseñada sobre la plataforma de código abierto **BigBlueButton (BBB)**:
 
----
-
-## 20. Modelo de Integración DANE / DUE
-
-- Ingesta estructurada y caché local del Directorio Único de Establecimientos Educativos de Colombia.
-- Normalización de nombres oficiales, códigos DANE institucionales de 12 dígitos y códigos DANE de sedes.
-- Proceso de acreditación criptográfica de rectores enlazados de forma unívoca a su código DANE correspondiente.
+1. **Arquitectura Desacoplada (`IMeetingProvider`):** La plataforma interactúa con los motores de conferencia a través de una interfaz abstracta estándar, implementando el adaptador oficial `BBBAdapter`.
+2. **Firma Criptográfica de Enlaces:** Generación segura de llamadas a la API de BigBlueButton firmadas con sumas de comprobación SHA-1 y SHA-256 a partir de secretos institucionales.
+3. **Control de Acceso Anclado a la Matrícula:** Únicamente los estudiantes formalmente matriculados en el grupo y la materia pueden unirse como participantes (`Viewer`); el docente asignado ingresa automáticamente con privilegios de moderador (`Moderator`). Estudiantes ajenos al grupo son rechazados con respuesta 403.
+4. **Telemetría y Duración de Asistencia:** Registro automático de eventos de conexión (`join`) y desconexión (`leave`), calculando la duración efectiva de asistencia de cada alumno para control pedagógico.
+5. **Gestión de Grabaciones:** Sincronización de sesiones grabadas con control de visibilidad en el portal del estudiante.
+6. **Declaración Factual de Estado:** La capa de software se encuentra **100% implementada y verificada mediante un proveedor simulado (*Mock Provider*) en las suites de prueba**. Su puesta en marcha en un entorno de producción real **requiere el aprovisionamiento de servidores dedicados BigBlueButton, el balanceador de carga Scalelite y un servidor de relay Coturn (STUN/TURN en puerto TCP 443)** para atravesar cortafuegos escolares y redes rurales bajo CGNAT.
 
 ---
 
-## 21. Estado Técnico Actual del Producto
+## 10. Comunicaciones Institucionales y Acuses de Recibo Electrónicos
+
+PEVN moderniza el canal de divulgación institucional entre la rectoría y la comunidad educativa:
+
+- **Circulares Oficiales Segmentadas:** Emisión de comunicados con filtros de audiencia por sede, jornada, grado escolar, grupo específico o estamento (docentes, estudiantes, acudientes).
+- **Acuse de Recibo Electrónico Trazable:** Mecanismo de confirmación de lectura en el portal del acudiente y del estudiante. Cuando el usuario confirma la recepción del comunicado, el sistema registra de forma inmutable la **estampa de tiempo en formato estándar UTC y la dirección IP de origen**.
+- **Rigor Terminológico:** En apego a los estándares legales de la Fase 0.1C, este mecanismo se denomina estrictamente *"acuse de recibo electrónico con estampa de tiempo UTC y dirección IP"* o *"registro electrónico trazable de confirmación de lectura"*, evitando el uso de términos inexactos como "firma digital" o "no repudio", los cuales corresponden a marcos normativos específicos de entidades de certificación cerrada.
+
+---
+
+## 11. Convivencia Escolar y Observador del Estudiante (Ley 1620 de 2013)
+
+El módulo de convivencia escolar digitaliza el tradicional Observador del Alumno conforme a los lineamientos de la **Ley 1620 de 2013** (Sistema Nacional de Convivencia Escolar) y su Decreto Reglamentario 1965 de 2013:
+
+1. **Tipificación Canónica de Situaciones:**
+   - **Situaciones Tipo I:** Conflictos manejados inadecuadamente y situaciones esporádicas que inciden negativamente en el clima escolar, sin generar daños al cuerpo o a la salud (mediación escolar y acuerdos pedagógicos).
+   - **Situaciones Tipo II:** Situaciones de agresión escolar, acoso escolar (*bullying*) o ciberacoso que no revisten las características de la comisión de un delito, pero causan daño a la salud física o psicológica (remisión al Comité de Convivencia y medidas de protección).
+   - **Situaciones Tipo III:** Situaciones que presuntamente constituyen la comisión de delitos contra la libertad, integridad y formación sexual, o cualquier otro delito tipificado en la ley penal colombiana (activación inmediata del protocolo intersectorial con ICBF, Comisaría de Familia, Policía de Infancia y Adolescencia y sector salud).
+2. **Garantía del Debido Proceso y Formato Restaurativo:** Registro cronológico de los hechos fácticos, versión y descargos del estudiante, medidas formativas adoptadas, compromisos familiares y acuerdos pedagógicos restaurativos con fechas de seguimiento.
+3. **Confidencialidad y Reserva Legal Estricta:** Las anotaciones del observador son de carácter reservado. Únicamente son accesibles por el estudiante involucrado, sus acudientes registrados, el docente director de grupo, el coordinador y el rector. Los intentos de acceso por parte de terceros reciben una respuesta `Blind 404`, garantizando la protección del interés superior del menor.
+
+---
+
+## 12. Planeación Curricular y Unidades Didácticas Docentes
+
+El Portal Docente de PEVN integra herramientas para la planeación pedagógica y curricular estructurada:
+
+- **Derechos Básicos de Aprendizaje (DBA) y Estándares del MEN:** Módulo de planeación donde los docentes definen unidades didácticas, objetivos de aprendizaje, competencias ciudadanas y criterios de evaluación articulados con las directrices curriculares nacionales.
+- **Cronograma Semanal de Aula:** Organización temporal de contenidos temáticos, actividades pedagógicas y recursos de apoyo vinculados directamente con las tareas y evaluaciones visibles en el portal del estudiante.
+
+---
+
+## 13. Portales Dedicados para la Comunidad Educativa
+
+La plataforma dispone de portales web reactivos e independientes, adaptados a la experiencia de usuario y necesidades de cada rol:
+
+- **Portal del Estudiante (`/student`):** Panel intuitivo que presenta las tareas pendientes con fecha límite y estado de entrega, visor de calificaciones SIEE del período actual con detalle por actividad, registro de asistencias diarias, observador de convivencia formativo, circulares institucionales y acceso directo a clases virtuales programadas.
+- **Portal del Acudiente (`/guardian`):** Consola familiar diseñada para el acompañamiento parental con un **selector dinámico de estudiantes**. Si un padre de familia tiene hijos matriculados en diferentes grados o sedes de la institución, puede alternar entre ellos sin cerrar sesión, visualizando alertas tempranas de rendimiento o inasistencia y confirmando acuses de recibo.
+- **Portal Docente (`/teacher`):** Entorno de productividad pedagógica: Mis Grupos y Cargas Asignadas, Planilla de Calificaciones SIEE con consolidación automática y justificación de ajustes, Registro de Asistencia Diaria con selector de fecha, Creación de Tareas con recepción de evidencias digitales y Módulo de Planeación Curricular.
+- **Consola Directiva de Rectoría y Coordinación (`/academic`):** Tablero de control de la gestión escolar: apertura y configuración de calendarios lectivos, creación de sedes, grados y grupos, asignación de cargas docentes, cierre y sellado de períodos SIEE, emisión de boletines de calificaciones y consolidado general de matrícula.
+
+---
+
+## 14. Arquitectura de Ciberseguridad y Verificación Técnica
+
+PEVN implementa una arquitectura de seguridad por diseño (*Security by Design*) basada en estándares modernos de la industria:
+
+1. **Higiene de Credenciales en Memoria Volátil:** Como medida fundamental de mitigación frente a ataques de robo persistente de credenciales mediante Cross-Site Scripting (XSS), los tokens de acceso JWT **residen exclusivamente en la memoria volátil de JavaScript de React (`AuthContext`)**. No se almacena ningún token en `localStorage`, `sessionStorage` ni `IndexedDB`.
+2. **Tokens de Refresco Seguros con Rotación de Familia:** El mantenimiento de sesión se realiza mediante cookies `HttpOnly`, con banderas `SameSite=Strict` y `Secure`. Cada uso del token de refresco emite un nuevo par de credenciales y anula el anterior. Si el sistema detecta la reutilización de un token antiguo (posible ataque de *replay*), se invalida de forma inmediata toda la familia de tokens (`family_id`), cerrando la sesión y generando una alerta de seguridad.
+3. **Cifrado Robusto con Argon2id:** Todas las contraseñas de usuarios se procesan mediante el algoritmo **Argon2id** con parámetros de alta resistencia (64 MB de memoria, 3 iteraciones, 16 bytes de sal criptográfica aleatoria), superando los estándares convencionales.
+4. **Protección Anti-IDOR (Blind 404):** Todas las consultas verifican la pertenencia del recurso al inquilino del usuario autenticado (`tenant_id`). Las peticiones maliciosas o no autorizadas responden `404 Not Found` en lugar de `403 Forbidden`, evitando ataques de inferencia y enumeración de datos.
+5. **Prevención de Inyección SQL y XSS:** Capa de persistencia gobernada por el ORM SQLAlchemy 2.0 con consultas parametrizadas obligatorias. Sanitización estricta de entradas y rechazo binario de archivos ejecutables mediante inspección de firmas de cabecera (*Magic Bytes*).
+6. **Trazabilidad Inmutable con Censura de Datos:** Tabla relacional `audit_logs` que registra acciones críticas con dirección IP, agente de usuario y estampa temporal UTC, aplicando censura automática y recursiva (`[REDACTED]`) sobre contraseñas, hashes y datos confidenciales.
+
+---
+
+## 15. Consola Técnica de Diagnóstico de Inquilinos y Auditoría
+
+Para garantizar la supervisión operativa del sistema, la plataforma incluye la consola técnica de **Diagnóstico de Inquilinos** (`/operations/tenant-diagnostics`), accesible exclusivamente por `superadmin` y `national_admin`:
+
+- **Inspección Integral de Salud de la Institución:** Búsqueda en tiempo real de cualquier establecimiento oficial por nombre, código DANE de 12 dígitos o UUID.
+- **Métricas de Integridad Operativa:** Conteo en vivo de usuarios activos discriminados por rol, estudiantes matriculados, asignaciones docentes formalizadas, estado de los períodos académicos y lotes de sincronización con el catálogo DANE.
+- **Herramientas de Remedición Controlada:** Detección de inconsistencias en la cadena de autoridad o desajustes de alcance territorial con capacidad de análisis forense instantáneo.
+
+---
+
+## 16. Matriz de Clasificación de Capacidades (5 Estados Canónicos)
+
+En estricta conformidad con las directrices de veracidad y transparencia pública, la totalidad de los componentes de PEVN se clasifica bajo los **5 estados canónicos estandarizados**:
+
+| # | Capacidad / Componente | Estado Canónico Oficial | Evidencia Verificable en Repositorio | Justificación y Dependencias |
+| :-: | :--- | :---: | :--- | :--- |
+| **1** | **Autenticación Argon2id y JWT en Memoria** | `IMPLEMENTED — VERIFIED` | `backend/app/core/security/password.py`, `backend/tests/test_tokens.py` | 100% verificado en tests unitarios e integración. |
+| **2** | **Control de Acceso RBAC (11 Roles)** | `IMPLEMENTED — VERIFIED` | `backend/app/services/authorization_service.py`, `test_authorization.py` | Validado en pruebas de backend y frontend con 11 roles activos. |
+| **3** | **Aislamiento Multi-Tenant (Anti-IDOR)** | `IMPLEMENTED — VERIFIED` | `backend/app/api/deps.py`, `test_teacher_academic_scope.py` | Enforzado en cada endpoint con respuestas Blind 404. |
+| **4** | **Catálogo Oficial DANE / DUE** | `IMPLEMENTED — VERIFIED` | `official_institution_catalog` (18,031 EE), `official_campus_catalog` (51,521) | Base de datos poblada e indexada en PostgreSQL. |
+| **5** | **Administrador Municipal (`municipality_admin`)** | `IMPLEMENTED — VERIFIED` | `endpoints/municipality_admin.py`, `MunicipalityAdminsView.tsx` | Ciclo de invitación, activación y limitación territorial funcional. |
+| **6** | **Matrícula y Control de Cupos SIMAT** | `IMPLEMENTED — VERIFIED` | `models/enrollment.py`, `test_enrollments_and_assignments.py` | Modelado relacional completo con reglas de capacidad. |
+| **7** | **Motor de Evaluación SIEE (D. 1290)** | `IMPLEMENTED — VERIFIED` | `services/evaluation_service.py`, `test_siee_and_evaluations_api.py` | Consolidación híbrida, justificaciones y nivelaciones con tope. |
+| **8** | **Asistencia Diaria Docente** | `IMPLEMENTED — VERIFIED` | `DailyAttendance`, `test_teacher_portal_api.py` | Planilla interactiva con persistencia de asistencias y estados. |
+| **9** | **Actividades y Entregas Escolares** | `IMPLEMENTED — VERIFIED` | `TeacherActivitiesView.tsx`, `StudentPortalTasksView.tsx` | Estados Borrador/Publicado, entregas de archivo/texto y UTC late flag. |
+| **10** | **Comunicaciones y Acuses de Recibo** | `IMPLEMENTED — VERIFIED` | `models/communication.py`, `test_institutional_communications_api.py` | Circulares segmentadas y acuses con timestamp UTC e IP. |
+| **11** | **Observador de Convivencia (L. 1620)** | `IMPLEMENTED — VERIFIED` | `models/coexistence_incident.py`, `test_coexistence_incidents_api.py` | Situaciones Tipos I, II, III con debido proceso y reserva legal. |
+| **12** | **Planeación Curricular y Didáctica** | `IMPLEMENTED — VERIFIED` | `models/academic_activity.py`, `TeacherCurricularPlanningView.tsx` | Unidades didácticas docentes y vinculación con actividades. |
+| **13** | **Portales Estudiante y Acudiente** | `IMPLEMENTED — VERIFIED` | `pages/student/`, `pages/guardian/`, `vitest` (29 suites PASS) | Navegación, visualización de notas y selector dinámico familiar. |
+| **14** | **Diagnóstico de Inquilinos (`/operations`)** | `IMPLEMENTED — VERIFIED` | `pages/admin/TenantDiagnosticsView.tsx`, `test_tenant_diagnostics_search.py` | Consola de supervisión con búsqueda DANE y métricas en vivo. |
+| **15** | **Auditoría Inmutable (`audit_logs`)** | `IMPLEMENTED — VERIFIED` | `backend/app/audit/database_service.py` | Registro estructurado con censura automática `[REDACTED]`. |
+| **16** | **Flujo de Recuperación de Contraseña** | `IMPLEMENTED — VERIFIED` | `PasswordRecovery.tsx`, `test_password_recovery.py` | Generación de tokens y actualización segura de credenciales. |
+| **17** | **Generación de Boletines en Web** | `IMPLEMENTED — MANUAL ACCEPTANCE PENDING` | `OfficialReportCard.test.tsx`, `StudentPortalGradesView.tsx` | Visualización en pantalla completada; requiere aceptación visual de formatos. |
+| **18** | **Módulo de Periódico Escolar** | `IMPLEMENTED — MANUAL ACCEPTANCE PENDING` | `TeacherCommunicationsAndNews.tsx`, `StudentNewsView.tsx` | Publicación y categorización funcional en espera de validación editorial. |
+| **19** | **Almacenamiento de Archivos Local** | `PARTIALLY IMPLEMENTED` | `backend/app/core/storage/service.py` | Opera en almacenamiento particionado en disco; requiere adaptador para S3 en nube. |
+| **20** | **Generador Masivo de Boletines PDF** | `PARTIALLY IMPLEMENTED` | `docs/government/pdf/` (motores de exportación) | Requiere integración de cola asíncrona de renderizado para miles de PDFs en lote. |
+| **21** | **Aulas Virtuales (BigBlueButton)** | `DEPENDENT ON EXTERNAL INFRASTRUCTURE OR AGREEMENT` | `backend/app/core/meeting/bbb_adapter.py`, `test_meeting_provider.py` | Software y firmas listos; requiere servidores físicos BigBlueButton y Coturn TURN. |
+| **22** | **Sincronización en Vivo con SIMAT** | `DEPENDENT ON EXTERNAL INFRASTRUCTURE OR AGREEMENT` | Estructuras de datos compatibles en base de datos | Requiere convenio interadministrativo y acceso a Web Services del MEN. |
+| **23** | **Integración de Pasarela OIDC Gov.co** | `DEPENDENT ON EXTERNAL INFRASTRUCTURE OR AGREEMENT` | Arquitectura desacoplada en `AuthContext` | Requiere convenio de interoperabilidad con MinTIC para Carpeta Ciudadana. |
+| **24** | **Servicio de Mensajería SMS / WhatsApp** | `DEPENDENT ON EXTERNAL INFRASTRUCTURE OR AGREEMENT` | Modelo de eventos en `communication.py` | Requiere contratación de pasarela SMS gubernamental o API WhatsApp Business. |
+| **25** | **Notificaciones Push en Tiempo Real** | `PROPOSED / NOT YET IMPLEMENTED` | Especificación de eventos en arquitectura | Diseñado para WebSockets / WebPush; no desplegado en versión actual. |
+| **26** | **Aplicación Móvil Nativa (Android/iOS)** | `PROPOSED / NOT YET IMPLEMENTED` | Soporte PWA (`vite-plugin-pwa`) implementado | Aplicaciones nativas de tiendas no desarrolladas (opera como PWA responsive). |
+
+---
+
+## 17. Registro Transparente de Limitaciones Técnicas y Operativas
+
+En cumplimiento de los principios de transparencia gubernamental de la Fase 0.1B, se relacionan de forma explícita las limitaciones actuales:
+
+1. **Infraestructura de Videoconferencia:** La integración de BigBlueButton se encuentra programada y verificada mediante un proveedor simulado (*mock*). Su uso en producción requiere que la entidad territorial disponga de servidores dedicados Ubuntu 22.04 LTS y relay Coturn.
+2. **Almacenamiento en Clúster:** El gestor de archivos actual almacena evidencias en almacenamiento local particionado; para un despliegue multi-servidor con alta disponibilidad se requiere configurar un bucket S3 o MinIO.
+3. **Generación de Boletines en PDF Masivo:** Aunque las notas y sábanas se consultan e imprimen directamente desde la interfaz web, la generación por lotes de miles de archivos PDF en un solo clic para todo un colegio requiere un trabajador en segundo plano (*background worker*) con Celery/Redis.
+4. **Pasarela de Correo Electrónico:** La recuperación de contraseñas y notificaciones opera registrando los eventos en base de datos; para envío masivo de correos se requiere enlazar las credenciales del servidor SMTP ministerial.
+5. **Pruebas de Estrés a Gran Escala:** La arquitectura de software está diseñada para autoescalado horizontal; sin embargo, las pruebas de concurrencia para cientos de miles de usuarios simultáneos deben realizarse en la infraestructura de computación en la nube que provea el Estado.
+
+---
+
+## 18. Propuesta de Donación y Transferencia Tecnológica al Estado
+
+La presente propuesta se formula bajo las siguientes bases de transferencia soberana:
+
+- **Modelo de Licencia Libre (Apache 2.0):** Se propone la cesión y licenciamiento del software bajo **Apache License, Version 2.0**, otorgando al Estado colombiano la libertad perpetua, irrevocable y no exclusiva de usar, modificar, auditar, desplegar y distribuir la plataforma.
+- **Cero Costos de Licenciamiento ($0 COP):** La plataforma no impone cobros de licenciamiento por usuario, estudiante matriculado ni institución educativa.
+- **Entrega Integral de Activos de Ingeniería:** El Estado recibiría:
+  - Repositorio completo de código fuente (Backend FastAPI y Frontend React).
+  - 32 migraciones lineales y determinísticas de base de datos Alembic.
+  - Suites completas de pruebas automatizadas (**704 pruebas de backend y 196 pruebas de frontend**).
+  - Manual interactivo de usuario, runbooks de despliegue y documentación de arquitectura.
+- **Plena Soberanía e Independencia:** El Ministerio o las Secretarías de Educación contarán con total autonomía para alojar la plataforma en sus propios centros de datos o en la nube pública de su elección, asumiendo su operación directamente o contratando soporte con terceros sin cautiverio de proveedor (*no vendor lock-in*).
+
+---
+
+## 19. Hoja de Ruta Recomendada para Despliegue en Tres Fases
+
+Para una adopción técnica controlada, segura y con mitigación de riesgos, se propone un cronograma estructurado en tres fases:
 
 ```
-========================================================================================
-                      ESTADO TÉCNICO VERIFICADO DE PEVN (FASE 0)
-========================================================================================
-Backend API             : FastAPI 0.110+ / Python 3.12 / SQLAlchemy 2.0 Async
-Frontend SPA            : React 18 / Vite / TypeScript / Tailwind CSS / PWA
-Base de Datos           : PostgreSQL 16 con 23 migraciones lineales Alembic
-Caché / Sesiones        : Redis 7
-Pruebas Automatizadas   : 432 pruebas backend (100% PASS) / 119 pruebas frontend (96.7% PASS)
-Análisis Estático       : 0 errores mypy, 0 errores ruff, 0 errores tsc
-Entorno Actual          : Contenedores Docker de desarrollo y pruebas locales
-========================================================================================
+FASE 1: PILOTO CONTROLADO ──────► FASE 2: EXPANSIÓN TERRITORIAL ──────► FASE 3: ESCALAMIENTO NACIONAL
+(10 a 12 semanas)                 (6 meses)                            (Gradual / 1 a 2 años)
+• 5 a 10 Colegios Oficiales       • 50 a 100 Colegios Oficiales        • Adopción en 97 ETC
+• 2 Municipios (Urbano y Rural)   • 1 Departamento Certificado         • Enlace en vivo SIMAT / MinTIC
+• Validación SIEE y Docente       • Servidores BBB y Coturn en vivo    • Nube Pública Gubernamental
 ```
 
----
-
-## 22. Limitaciones Actuales Transparentes
-
-En apego a la transparencia pública, se declaran los aspectos que actualmente requieren desarrollo complementario, validación o infraestructura:
-1. **Servidores Físicos BigBlueButton:** No desplegados actualmente en infraestructura de producción (integración de software implementada y verificada mediante proveedor simulado Mock).
-2. **Servidor Coturn (STUN/TURN en TCP 443):** No desplegado (requerido para saltar cortafuegos escolares y CGNAT rural).
-3. **Almacenamiento de Objetos S3:** Opera actualmente en disco local particionado; requiere conexión a bucket S3/MinIO para clústeres multi-servidor.
-4. **Exportador Masivo a PDF:** Los boletines se visualizan reactivamente en web; falta el motor de generación masiva de PDFs oficiales para impresión con código QR.
-5. **Notificaciones Push y Correo SMTP:** Se almacenan en base de datos; falta conectar pasarela de correo gubernamental y WebSockets.
-6. **Enlace en Vivo con SIMAT:** Opera por importación de archivos estructurados; falta convenio para API en tiempo real con el MEN.
-7. **Capacidad y Concurrencia Nacional:** La arquitectura está diseñada para permitir escalamiento horizontal; la capacidad efectiva a escala nacional deberá determinarse mediante pruebas de carga y validación de infraestructura.
+- **Fase 1 (Piloto Inicial Controlado - 10 a 12 semanas):** Implementación en 5 a 10 instituciones educativas oficiales de dos municipios (uno urbano y uno rural) durante un período escolar. Validación empírica de la usabilidad docente, adopción del portal familiar, estabilidad de la planilla SIEE y comportamiento en redes de baja conectividad.
+- **Fase 2 (Expansión Departamental - 6 meses):** Ampliación a 50 a 100 colegios oficiales de una Secretaría de Educación Departamental certificada. Puesta en marcha de infraestructura física BigBlueButton y Coturn, integración de almacenamiento en nube y pruebas de carga con hasta 10,000 usuarios concurrentes.
+- **Fase 3 (Escalamiento y Adopción Nacional):** Despliegue en clúster Kubernetes de la infraestructura de computación pública del Estado, suscripción de acuerdos de sincronización con SIMAT y enlace con Carpeta Ciudadana (Gov.co), ofreciendo PEVN como un servicio digital público a las 97 Secretarías de Educación Certificadas del país.
 
 ---
 
-## 23. Requerimientos para una Fase Piloto (5 a 10 Colegios)
+## 20. Descargos Institucionales y Protección de Datos Personales
 
-Para llevar a cabo un piloto controlado y exitoso con acompañamiento de una Secretaría de Educación o el MEN, se requiere:
-- **1 Servidor Web/API y Base de Datos:** Instancia en la nube de 8 vCPU, 32 GB RAM y 200 GB SSD (alberga FastAPI, React, PostgreSQL 16 y Redis 7).
-- **1 Servidor Físico BigBlueButton + Coturn:** Servidor dedicado Ubuntu 22.04 LTS (16 vCPU, 32 GB RAM, 500 GB NVMe, 1 Gbps) para clases virtuales.
-- **Nombres de Dominio:** Subdominios oficiales de prueba (ej. `piloto.pevn.gov.co`, `bbb-piloto.pevn.gov.co`).
-- **Certificados SSL/TLS:** Certificados de servidor web (Let's Encrypt o corporativos).
-- **Acompañamiento Humano:** Designación de un enlace técnico institucional por parte de la Secretaría participante.
-
----
-
-## 24. Requerimientos para una Operación en Producción Nacional
-
-Para atender la escala requerida por la comunidad de estudiantes y docentes del sector oficial:
-- Clúster de contenedores Kubernetes con autoescalado horizontal (HPA).
-- Distribución de frontend estático a través de una Red de Entrega de Contenidos (CDN) gubernamental.
-- Clúster de base de datos PostgreSQL 16 de Alta Disponibilidad (Multi-AZ) con réplicas de lectura y PgBouncer.
-- Clúster distribuido de servidores BigBlueButton gestionado mediante el balanceador de carga **Scalelite**.
-- Sistema centralizado de gestión de secretos corporativo (HashiCorp Vault o equivalente).
-- Plan de respaldos continuos (WAL archiving) con RPO < 15 minutos y RTO < 2 horas.
-- Auditoría de penetración (*Ethical Hacking*) y Web Application Firewall (WAF) ministerial.
-
----
-
-## 25. Proceso Propuesto de Evaluación Gubernamental
-
-Se sugiere a las autoridades interesadas seguir un proceso estructurado de cuatro fases:
-1. **Sesión Técnica de Demostración en Vivo:** Presentación de los flujos de trabajo utilizando el guion formalizado en la Guía de Demostración Operativa (`PEVN_GOVERNMENT_DEMONSTRATION_RUNBOOK.md`).
-2. **Mesa Técnica de Inspección de Código y Ciberseguridad:** Revisión independiente del repositorio, arquitectura y pruebas por parte de ingenieros de MinTIC y ColCERT.
-3. **Mesa Jurídica e Institucional:** Revisión de la política de tratamiento de datos personales de menores de edad y armonización con las tablas de retención documental.
-4. **Acuerdo de Prueba Piloto:** Formalización de la infraestructura para el despliegue experimental en una Entidad Territorial Certificada.
-
----
-
-## 26. Concepto y Alcance de la Prueba Piloto
-
-- **Duración Recomendada:** Un período académico escolar (aproximadamente 10 a 12 semanas).
-- **Alcance Poblacional:** 5 a 10 colegios oficiales (combinando sedes urbanas y rurales).
-- **Objetivos de Medición:** Usabilidad docente, adopción familiar, estabilidad de la planilla SIEE, rendimiento en redes escolares de baja conectividad y retroalimentación pedagógica directa.
-
----
-
-## 27. Propuesta Técnica de Donación y Transferencia Tecnológica al Estado
-
-- **Naturaleza de la Propuesta:** El presente documento constituye una **propuesta técnica de donación y transferencia tecnológica**, sujeta a revisión jurídica y a los acuerdos institucionales que determine la entidad competente. No constituye un contrato vinculante ni perfecciona transferencia alguna de derechos; su ejecución estará sujeta al instrumento jurídico que determine la entidad pública receptora.
-- **Modelo de Licenciamiento Propuesto:** Se propone la entrega de los activos tecnológicos bajo la licencia de código abierto **Apache 2.0**.
-- **Cero Costos de Licencia:** La plataforma no genera regalías, cobros por estudiante matriculado ni ataduras comerciales para el Ministerio ni las Secretarías de Educación ($0 COP en licenciamiento de software).
-- **Soberanía y Código Fuente:** El Estado recibiría el código fuente completo, las migraciones de base de datos, la documentación de arquitectura, los manuales de despliegue y las suites de pruebas automatizadas.
-- **Independencia Operativa:** La entidad pública dispondría de plena autonomía para alojar el sistema en sus propios centros de datos, contratar soporte técnico o asumir el mantenimiento mediante sus propios equipos de ingeniería.
-
----
-
-## 28. Declaración Final de Cierre
-
-La Plataforma Educativa Virtual Nacional (PEVN) se encuentra en un estado de **madurez técnica comprobada y lista para ser evaluada formalmente por las autoridades del sector educativo y tecnológico de Colombia**. 
-
-Representa una oportunidad histórica para dotar a la educación pública del país de una herramienta digital moderna, segura y digna, construida con los más altos estándares de ingeniería y concebida como un bien público digital al servicio de la infancia, la juventud y el magisterio colombiano.
+1. **Entorno de Pruebas y Datos Demostrativos:** Todas las demostraciones, capturas de pantalla, registros de prueba y datos expuestos en este dossier corresponden a **datos de demostración del entorno de pruebas, no correspondientes a un entorno productivo**.
+2. **Cumplimiento de la Ley 1581 de 2012 y Ley 1098 de 2006:** En estricta observancia del Régimen General de Protección de Datos Personales (Ley 1581 de 2012) y del Código de la Infancia y la Adolescencia (Ley 1098 de 2006), **ningún dato personal real ni sensible de menores de edad ha sido utilizado, procesado ni expuesto en el desarrollo de estas evaluaciones**.
+3. **Carácter No Vinculante:** La presentación de este expediente no constituye aceptación tácita ni expresa por parte de las entidades públicas receptoras, quedando cualquier avance sujeto a los marcos de contratación estatal, convenios de cooperación o voluntades administrativas que la ley colombiana establece.

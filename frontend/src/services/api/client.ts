@@ -57,6 +57,18 @@ export function setOnAuthFailure(callback: (() => void) | null): void {
   onAuthFailureCallback = callback
 }
 
+export function clearClientSessionState(): void {
+  setAccessToken(null)
+  try {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('pevn_active_institution_id')
+      localStorage.removeItem('pevn_active_institution_name')
+    }
+  } catch {
+    // Non-blocking
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Raw Non-Intercepted Client (For Auth Refresh Loop Prevention)
 // ---------------------------------------------------------------------------
@@ -144,15 +156,17 @@ apiClient.interceptors.request.use(
     try {
       const activeInstId = typeof window !== 'undefined' ? localStorage.getItem('pevn_active_institution_id') : null
       if (activeInstId) {
-        requestConfig.headers['X-Institution-Context'] = activeInstId
         const url = requestConfig.url || ''
         const isExcluded =
           url.includes('/api/v1/institutions') ||
           url.includes('/api/v1/department-admins') ||
           url.includes('/api/v1/auth') ||
-          url.includes('/api/v1/analytics/territorial')
+          url.includes('/api/v1/analytics/territorial') ||
+          url.includes('/api/v1/student') ||
+          url.includes('/api/v1/guardian')
 
         if (!isExcluded) {
+          requestConfig.headers['X-Institution-Context'] = activeInstId
           if (!requestConfig.params) {
             requestConfig.params = {}
           }

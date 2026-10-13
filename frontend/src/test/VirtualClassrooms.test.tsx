@@ -191,7 +191,9 @@ describe('Virtual Classrooms View & Actions', () => {
       screen.getByRole('button', { name: /programar nueva aula virtual/i })
     )
 
-    expect(screen.getByText('Programar Nueva Aula Virtual')).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getByText('Programar Nueva Aula Virtual')).toBeInTheDocument()
+    })
 
     const titleInput = screen.getByLabelText(/título de la sesión/i)
     await user.type(titleInput, 'Geometría Analítica')

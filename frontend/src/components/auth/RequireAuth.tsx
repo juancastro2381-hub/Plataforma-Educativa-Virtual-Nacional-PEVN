@@ -58,7 +58,8 @@ export const RequireAuth: React.FC<RequireAuthProps> = ({
     const hasContext = Boolean(user?.scope?.institution_id || activeInstitutionId)
     if (!hasContext) {
       if (hasPermission('institutions:read')) {
-        return <Navigate to="/admin/institutions?contextRequired=true" replace />
+        const returnTo = encodeURIComponent(location.pathname + location.search)
+        return <Navigate to={`/admin/institutions?contextRequired=true&returnTo=${returnTo}`} replace />
       }
       return <Navigate to="/dashboard" replace />
     }

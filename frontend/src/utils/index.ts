@@ -188,3 +188,5 @@ export function resolveInvitationUrl(
 
   return null
 }
+
+export { resolveCanonicalScopeLabel, type CanonicalScopeUser } from './scopeLabels'

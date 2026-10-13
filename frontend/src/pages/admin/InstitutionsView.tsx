@@ -11,7 +11,7 @@
  */
 
 import React, { useCallback, useEffect, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { institutionApi, type ListInstitutionsParams } from '@/services/institution'
 import { Alert } from '@/components/ui/Alert'
 import { Badge } from '@/components/ui/Badge'
@@ -36,8 +36,11 @@ import type {
 
 export const InstitutionsView: React.FC = () => {
   const { user, hasRole, activeInstitutionId, setActiveInstitutionContext } = useAuth()
+  const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const isContextRequired = searchParams.get('contextRequired') === 'true'
+  const rawReturnTo = searchParams.get('returnTo')
+  const returnTo = rawReturnTo && rawReturnTo.startsWith('/') && !rawReturnTo.startsWith('//') ? rawReturnTo : null
 
   // Role resolution
   const isNationalAdmin = hasRole(['national_admin', 'superadmin']) || Boolean(user?.scope?.is_national)
@@ -114,7 +117,7 @@ export const InstitutionsView: React.FC = () => {
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
 
   // View Mode: 'catalog' for official MEN/DANE territorial catalog, 'tenants' for provisioned operational institutions
-  const [activeTab, setActiveTab] = useState<'catalog' | 'tenants'>('catalog')
+  const [activeTab, setActiveTab] = useState<'catalog' | 'tenants'>(isContextRequired ? 'tenants' : 'catalog')
 
   // Official Catalog Explorer State
   const [catalogItems, setCatalogItems] = useState<OfficialCatalogItem[]>([])
@@ -1282,7 +1285,7 @@ export const InstitutionsView: React.FC = () => {
       {isContextRequired && !activeInstitutionId && (
         <div style={{ marginBottom: '1.5rem' }}>
           <Alert variant="info" title="Selección de Contexto Requerida">
-            Para acceder a los módulos de Gestión Académica y Aulas Virtuales, seleccione una institución activa de su jurisdicción territorial haciendo clic en el botón <strong>🏛️ Contexto</strong> de la lista inferior.
+            Para acceder a {returnTo ? <strong>{returnTo}</strong> : 'los módulos de Gestión Académica y Aulas Virtuales'}, seleccione una institución activa de su jurisdicción territorial haciendo clic en el botón <strong>🏛️ Contexto</strong> de la lista de colegios aprovisionados. Una vez seleccionada, accederá a la gestión institucional correspondiente.
           </Alert>
         </div>
       )}
@@ -1714,6 +1717,9 @@ export const InstitutionsView: React.FC = () => {
                                 onClick={() => {
                                   setActiveInstitutionContext(item.institution_id!, item.name)
                                   setSuccessMsg(`Contexto establecido en "${item.name}".`)
+                                  if (returnTo) {
+                                    navigate(returnTo)
+                                  }
                                 }}
                                 title="Fijar como contexto institucional activo"
                               >
@@ -1977,6 +1983,9 @@ export const InstitutionsView: React.FC = () => {
                                     onClick={() => {
                                       setActiveInstitutionContext(inst.id, inst.name)
                                       setSuccessMsg(`Contexto institucional establecido en "${inst.name}". Ahora puede acceder a Gestión Académica y Aulas Virtuales para esta institución.`)
+                                      if (returnTo) {
+                                        navigate(returnTo)
+                                      }
                                     }}
                                     title="Seleccionar esta institución como contexto de trabajo para inspección"
                                   >

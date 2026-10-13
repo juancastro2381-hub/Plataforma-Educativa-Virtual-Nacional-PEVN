@@ -237,7 +237,8 @@ export const StudentsView: React.FC = () => {
 
     try {
       const created = await academicApi.createStudent(payload)
-      setSuccessMsg(`Estudiante ${created.code_simat} registrado exitosamente.`)
+      const simatCode = created?.code_simat || payload.code_simat
+      setSuccessMsg(`Perfil estudiantil con código SIMAT ${simatCode} creado exitosamente.`)
       setIsCreateOpen(false)
       resetCreateForm()
       await loadStudents()
@@ -953,7 +954,7 @@ export const StudentsView: React.FC = () => {
                 }}
               >
                 <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#1E293B' }}>
-                  Datos de la Nueva Cuenta
+                  🆕 Nuevo Estudiante Institucional
                 </span>
                 <Button
                   type="button"
@@ -1026,6 +1027,7 @@ export const StudentsView: React.FC = () => {
                   <input
                     type="text"
                     required
+                    placeholder="10203040"
                     value={newDocNumber}
                     onChange={(e) => {
                       setNewDocNumber(e.target.value)
@@ -1043,6 +1045,7 @@ export const StudentsView: React.FC = () => {
                   <input
                     type="email"
                     required
+                    placeholder="natalia.castro@colegio.edu.co"
                     value={newEmail}
                     onChange={(e) => {
                       setNewEmail(e.target.value)
@@ -1086,9 +1089,18 @@ export const StudentsView: React.FC = () => {
                   onClick={() => {
                     setIsRegisteringNewUser(true)
                     setSelectedUser(null)
+                    if (userSearchQuery.trim()) {
+                      const parts = userSearchQuery.trim().split(/\s+/)
+                      if (parts.length > 1) {
+                        setNewFirstName(parts[0])
+                        setNewLastName(parts.slice(1).join(' '))
+                      } else {
+                        setNewFirstName(userSearchQuery.trim())
+                      }
+                    }
                   }}
                 >
-                  + Aprovisionar Nuevo Usuario
+                  + Registrar Nuevo Estudiante
                 </Button>
               </div>
 
@@ -1106,7 +1118,7 @@ export const StudentsView: React.FC = () => {
                 >
                   <div>
                     <div style={{ fontWeight: 700, color: '#1E40AF' }}>
-                      {selectedUser.first_name} {selectedUser.last_name}
+                      ✓ {selectedUser.first_name} {selectedUser.last_name}
                     </div>
                     <div style={{ fontSize: '0.75rem', color: '#3B82F6' }}>
                       {selectedUser.email} • {selectedUser.document_type} {selectedUser.document_number}
@@ -1127,7 +1139,7 @@ export const StudentsView: React.FC = () => {
                 <div>
                   <input
                     type="text"
-                    placeholder="Escriba nombre o correo del estudiante..."
+                    placeholder="Buscar por documento (ej. 8788) o nombre..."
                     value={userSearchQuery}
                     onChange={(e) => {
                       void handleSearchUsers(e.target.value)
@@ -1163,13 +1175,25 @@ export const StudentsView: React.FC = () => {
                             setUserSearchResults([])
                           }}
                           style={{
-                            padding: '0.5rem 0.75rem',
+                            padding: '0.6rem 0.85rem',
                             borderBottom: '1px solid #F1F5F9',
                             cursor: 'pointer',
-                            fontSize: '0.8125rem',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
                           }}
                         >
-                          <strong>{u.first_name} {u.last_name}</strong> — {u.email}
+                          <div>
+                            <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#0F172A' }}>
+                              {u.first_name} {u.last_name}
+                            </div>
+                            <div style={{ fontSize: '0.75rem', color: '#64748B' }}>
+                              {u.document_type} {u.document_number} · {u.email}
+                            </div>
+                          </div>
+                          <Button type="button" variant="primary" size="sm">
+                            Seleccionar
+                          </Button>
                         </div>
                       ))}
                     </div>
@@ -1188,7 +1212,7 @@ export const StudentsView: React.FC = () => {
               <input
                 type="text"
                 required
-                placeholder="Ej: SIMAT-2026-001"
+                placeholder="SIMAT-2026-XXXX"
                 value={codeSimat}
                 onChange={(e) => {
                   setCodeSimat(e.target.value)
@@ -1321,7 +1345,7 @@ export const StudentsView: React.FC = () => {
               Cancelar
             </Button>
             <Button type="submit" variant="primary" disabled={isSubmitting}>
-              {isSubmitting ? 'Registrando...' : 'Registrar Estudiante'}
+              {isSubmitting ? 'Registrando...' : 'Guardar Estudiante'}
             </Button>
           </div>
         </form>
