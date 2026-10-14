@@ -404,27 +404,41 @@ def generate_pdf(output_pdf_path, project_root):
     story.append(Paragraph("2. Tour Institucional de Producto: 10 Recorridos de Demostración", styles['h1']))
     story.append(Paragraph("A continuación se presentan los flujos operativos clave acompañados de capturas de pantalla auténticas capturadas del sistema funcional:", styles['body']))
 
-    # Recorrido 1
-    story.append(Paragraph("Recorrido 1: Acceso Centralizado y Autenticación Segura", styles['h2']))
-    story.append(Paragraph("<b>Objetivo:</b> Iniciar sesión mediante credenciales oficiales con protección contra ataques de fuerza bruta y resolución automática de roles.", styles['body']))
-    story.append(Paragraph("<b>Flujo Operativo:</b> 1. El usuario accede a <code>/login</code>. 2. Digita correo y contraseña. 3. El sistema valida contra la base de datos y genera JWT en memoria RAM sin persistencia en LocalStorage.", styles['body']))
+    # Recorrido 1: Acceso Centralizado y Portal de Inicio
+    story.append(Paragraph("Recorrido 1: Portal Institucional de Inicio y Autenticación Segura", styles['h2']))
+    story.append(Paragraph("<b>Objetivo:</b> Acceso inicial al ecosistema educativo e inicio de sesión mediante credenciales oficiales con protección contra ataques de fuerza bruta y resolución automática de roles.", styles['body']))
+    story.append(Paragraph("<b>Flujo Operativo:</b> 1. El usuario accede a la raíz (<code>/</code>) para conocer la oferta institucional. 2. Ingresa a <code>/login</code> y digita sus credenciales. 3. El sistema valida contra la base de datos y genera JWT en memoria RAM sin persistencia en LocalStorage.", styles['body']))
 
-    img_login = scale_image(os.path.join(screenshots_dir, "02_autenticacion_login.png"), max_height=180)
+    img_portal = scale_image(os.path.join(screenshots_dir, "01_portal_inicio.png"), max_height=145)
+    if img_portal:
+        story.append(img_portal)
+        story.append(Paragraph("<b>Figura 2.1:</b> Portal institucional de bienvenida, acceso unificado y presentación del ecosistema educativo nacional.", styles['caption']))
+
+    story.append(Spacer(1, 4))
+
+    img_login = scale_image(os.path.join(screenshots_dir, "02_autenticacion_login.png"), max_height=145)
     if img_login:
         story.append(img_login)
-        story.append(Paragraph("<b>Figura 2.1:</b> Pantalla de autenticación oficial con formulario accesible y soporte de recuperación de cuenta.", styles['caption']))
+        story.append(Paragraph("<b>Figura 2.2:</b> Pantalla de autenticación oficial con formulario accesible y soporte de recuperación de cuenta.", styles['caption']))
 
-    story.append(Spacer(1, 10))
+    story.append(PageBreak())
 
-    # Recorrido 2 y 3
-    story.append(Paragraph("Recorrido 2 y 3: Gobernanza Territorial y Diagnóstico Operacional", styles['h2']))
-    story.append(Paragraph("<b>Objetivo:</b> Inspeccionar los indicadores departamentales consolidados y verificar la salud de los inquilinos institucionales.", styles['body']))
-    story.append(Paragraph("<b>Flujo:</b> El SuperAdmin o funcionario del MEN consulta <code>/analytics/territorial</code> para visualizar las 4 capas de datos del país y accede a <code>/operations/diagnostics</code> para verificar latencias relacionales y la tabla de auditoría inmutable en PostgreSQL.", styles['body']))
+    # Recorrido 2 y 3: Gobernanza Territorial y Diagnóstico Operacional
+    story.append(Paragraph("Recorrido 2 y 3: Gobernanza Territorial, Invitaciones y Diagnóstico Operacional", styles['h2']))
+    story.append(Paragraph("<b>Objetivo:</b> Inspeccionar los indicadores territoriales consolidados, despachar invitaciones a rectores y verificar la salud de los inquilinos.", styles['body']))
+    story.append(Paragraph("<b>Flujo:</b> Las autoridades territoriales (SED/SEM) administran invitaciones institucionales en <code>/admin/institutions/invite</code>. El SuperAdmin técnico consulta <code>/analytics/territorial</code> y accede a <code>/operations/diagnostics</code> para verificar latencias relacionales y la tabla de auditoría inmutable en PostgreSQL.", styles['body']))
 
-    img_diag = scale_image(os.path.join(screenshots_dir, "03_operaciones_diagnostico_inquilino.png"), max_height=180)
+    img_invite = scale_image(os.path.join(screenshots_dir, "04_administracion_municipal_invitacion.png"), max_height=145)
+    if img_invite:
+        story.append(img_invite)
+        story.append(Paragraph("<b>Figura 2.3:</b> Consola de gobierno territorial municipal (SEM) para emisión formal y control de invitaciones a rectores.", styles['caption']))
+
+    story.append(Spacer(1, 4))
+
+    img_diag = scale_image(os.path.join(screenshots_dir, "03_operaciones_diagnostico_inquilino.png"), max_height=145)
     if img_diag:
         story.append(img_diag)
-        story.append(Paragraph("<b>Figura 2.2:</b> Centro de Operaciones Técnicas y Diagnóstico de Inquilinos con telemetría de base de datos.", styles['caption']))
+        story.append(Paragraph("<b>Figura 2.4:</b> Centro de Operaciones Técnicas y Diagnóstico de Inquilinos con telemetría de base de datos.", styles['caption']))
 
     story.append(PageBreak())
 
@@ -433,15 +447,17 @@ def generate_pdf(output_pdf_path, project_root):
     story.append(Paragraph("<b>Objetivo:</b> Configurar el año escolar, sedes operativas y períodos académicos institucionales con validación del 100%.", styles['body']))
     story.append(Paragraph("<b>Flujo:</b> El Rector ingresa a su tablero principal (<code>/rector-dashboard</code>), revisa los indicadores de matrícula y accede a Gestión Académica para fijar las ponderaciones del I, II, III y IV período.", styles['body']))
 
-    img_rec = scale_image(os.path.join(screenshots_dir, "05_rectoria_dashboard.png"), max_height=175)
+    img_rec = scale_image(os.path.join(screenshots_dir, "05_rectoria_dashboard.png"), max_height=145)
     if img_rec:
         story.append(img_rec)
-        story.append(Paragraph("<b>Figura 2.3:</b> Tablero Ejecutivo de Rectoría con indicadores de sedes, estudiantes y acceso rápido a módulos.", styles['caption']))
+        story.append(Paragraph("<b>Figura 2.5:</b> Tablero Ejecutivo de Rectoría con indicadores de sedes, estudiantes y acceso rápido a módulos.", styles['caption']))
 
-    img_per = scale_image(os.path.join(screenshots_dir, "06_gestion_academica_periodos.png"), max_height=175)
+    story.append(Spacer(1, 4))
+
+    img_per = scale_image(os.path.join(screenshots_dir, "06_gestion_academica_periodos.png"), max_height=145)
     if img_per:
         story.append(img_per)
-        story.append(Paragraph("<b>Figura 2.4:</b> Configuración de períodos académicos y ponderaciones porcentuales bajo el Decreto 1290.", styles['caption']))
+        story.append(Paragraph("<b>Figura 2.6:</b> Configuración de períodos académicos y ponderaciones porcentuales bajo el Decreto 1290.", styles['caption']))
 
     story.append(PageBreak())
 
@@ -450,15 +466,17 @@ def generate_pdf(output_pdf_path, project_root):
     story.append(Paragraph("<b>Objetivo:</b> Registrar estudiantes en los grupos oficiales e incorporar a sus acudientes legales con parentesco formal.", styles['body']))
     story.append(Paragraph("<b>Flujo:</b> Coordinación accede a <code>/academic/enrollments</code> para vincular alumnos a grados y sedes específicas. En <code>/academic/guardians</code> se asocian los tutores legales con datos sintéticos auditados (cero PII).", styles['body']))
 
-    img_simat = scale_image(os.path.join(screenshots_dir, "07_gestion_academica_estudiantes_simat.png"), max_height=175)
+    img_simat = scale_image(os.path.join(screenshots_dir, "07_gestion_academica_estudiantes_simat.png"), max_height=145)
     if img_simat:
         story.append(img_simat)
-        story.append(Paragraph("<b>Figura 2.5:</b> Padrón de estudiantes matriculados con código SIMAT y estado lectivo activo.", styles['caption']))
+        story.append(Paragraph("<b>Figura 2.7:</b> Padrón de estudiantes matriculados con código SIMAT y estado lectivo activo.", styles['caption']))
 
-    img_guard = scale_image(os.path.join(screenshots_dir, "08_gestion_academica_acudientes.png"), max_height=175)
+    story.append(Spacer(1, 4))
+
+    img_guard = scale_image(os.path.join(screenshots_dir, "08_gestion_academica_acudientes.png"), max_height=145)
     if img_guard:
         story.append(img_guard)
-        story.append(Paragraph("<b>Figura 2.6:</b> Padrón institucional de acudientes y tutores legales demostrando vinculación efectiva.", styles['caption']))
+        story.append(Paragraph("<b>Figura 2.8:</b> Padrón institucional de acudientes y tutores legales demostrando vinculación efectiva.", styles['caption']))
 
     story.append(PageBreak())
 
@@ -467,32 +485,43 @@ def generate_pdf(output_pdf_path, project_root):
     story.append(Paragraph("<b>Objetivo:</b> Formular unidades temáticas en el planeador curricular y calificar actividades respetando el SIEE.", styles['body']))
     story.append(Paragraph("<b>Flujo:</b> El Docente ingresa a <code>/teacher-portal</code> (con contraste y legibilidad tipográfica optimizados internamente en DOC-02), formula unidades temáticas en <code>/teacher/planning</code> y asienta notas periódicas en <code>/teacher/siee</code>.", styles['body']))
 
-    img_teach = scale_image(os.path.join(screenshots_dir, "09_portal_docente_dashboard.png"), max_height=175)
+    img_teach = scale_image(os.path.join(screenshots_dir, "09_portal_docente_dashboard.png"), max_height=145)
     if img_teach:
         story.append(img_teach)
-        story.append(Paragraph("<b>Figura 2.7:</b> Portal del docente con tipografía optimizada y listado de asignaturas a cargo.", styles['caption']))
+        story.append(Paragraph("<b>Figura 2.9:</b> Portal del docente con tipografía optimizada y listado de asignaturas a cargo.", styles['caption']))
 
-    img_plan = scale_image(os.path.join(screenshots_dir, "10_portal_docente_planeacion.png"), max_height=175)
+    story.append(Spacer(1, 4))
+
+    img_plan = scale_image(os.path.join(screenshots_dir, "10_portal_docente_planeacion.png"), max_height=145)
     if img_plan:
         story.append(img_plan)
-        story.append(Paragraph("<b>Figura 2.8:</b> Planeador curricular por unidades didácticas y cronogramas pedagógicos.", styles['caption']))
+        story.append(Paragraph("<b>Figura 2.10:</b> Planeador curricular por unidades didácticas y cronogramas pedagógicos.", styles['caption']))
 
     story.append(PageBreak())
 
-    # Recorrido 9: Portal del Estudiante
-    story.append(Paragraph("Recorrido 9: Experiencia del Estudiante (Tareas, Comunicados y Noticias)", styles['h2']))
-    story.append(Paragraph("<b>Objetivo:</b> Entregar actividades académicas en línea, revisar calificaciones y acceder a directrices oficiales.", styles['body']))
-    story.append(Paragraph("<b>Flujo:</b> El estudiante (p. ej. Ramiro Rey) consulta sus tareas pendientes en el modal interactivo, adjunta archivos de entrega y consulta circulares institucionales con acuse de recibo.", styles['body']))
+    # Recorrido 9 y 10: Portal del Estudiante
+    story.append(Paragraph("Recorrido 9 y 10: Experiencia del Estudiante (Tareas, Comunicados y Periódico)", styles['h2']))
+    story.append(Paragraph("<b>Objetivo:</b> Entregar actividades académicas en línea, revisar calificaciones y acceder a noticias y comunicados institucionales.", styles['body']))
+    story.append(Paragraph("<b>Flujo:</b> El estudiante consulta sus tareas pendientes en el modal interactivo, adjunta archivos de entrega, visualiza circulares institucionales y lee el periódico escolar oficial.", styles['body']))
 
-    img_comm = scale_image(os.path.join(screenshots_dir, "11_portal_estudiante_comunicados.png"), max_height=165)
+    img_comm = scale_image(os.path.join(screenshots_dir, "11_portal_estudiante_comunicados.png"), max_height=125)
     if img_comm:
         story.append(img_comm)
-        story.append(Paragraph("<b>Figura 2.9:</b> Muro oficial de circulares y comunicados con categorías institucionales.", styles['caption']))
+        story.append(Paragraph("<b>Figura 2.11:</b> Muro oficial de circulares y comunicados con categorías institucionales.", styles['caption']))
 
-    img_task = scale_image(os.path.join(screenshots_dir, "13_portal_estudiante_entrega_tarea.png"), max_height=165)
+    story.append(Spacer(1, 3))
+
+    img_news = scale_image(os.path.join(screenshots_dir, "12_portal_estudiante_noticias.png"), max_height=125)
+    if img_news:
+        story.append(img_news)
+        story.append(Paragraph("<b>Figura 2.12:</b> Módulo de noticias institucionales y cartelera cultural escolar.", styles['caption']))
+
+    story.append(Spacer(1, 3))
+
+    img_task = scale_image(os.path.join(screenshots_dir, "13_portal_estudiante_entrega_tarea.png"), max_height=130)
     if img_task:
         story.append(img_task)
-        story.append(Paragraph("<b>Figura 2.10:</b> Modal interactivo de entrega de tareas con control de fecha límite y retroalimentación docente.", styles['caption']))
+        story.append(Paragraph("<b>Figura 2.13:</b> Modal interactivo de entrega de tareas con control de fecha límite y retroalimentación docente.", styles['caption']))
 
     story.append(PageBreak())
 
