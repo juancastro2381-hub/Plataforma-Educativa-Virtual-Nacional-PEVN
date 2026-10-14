@@ -1,3 +1,7 @@
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
 """
 PEVN — Verification Script for Section 17: MANUAL ACCEPTANCE TEST
 DEPARTMENT_ADMIN Secure Invitation & Account Activation
@@ -28,7 +32,7 @@ from app.models.territory import Department
 from app.models.institution import Institution
 from app.models.invitation import DepartmentAdminInvitation
 
-DB_URL = "postgresql+asyncpg://pevn_app:pevn_app_dev_pass@localhost:5433/pevn_db"
+DB_URL = os.environ.get("TEST_DATABASE_URL") or os.environ.get("DATABASE_URL")
 
 async def run_manual_acceptance_suite():
     print("=" * 80)

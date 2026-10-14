@@ -31,8 +31,9 @@ from app.main import create_application
 from app.models.institution import Institution
 from app.models.role import Role, UserRole
 from app.models.user import User
+from tests.conftest import get_test_postgres_url
 
-PG_DB_URL = "postgresql+asyncpg://pevn_app:pevn_app_dev_pass@localhost:5433/pevn_db"
+PG_DB_URL = get_test_postgres_url()
 
 
 @pytest.fixture(scope="function")

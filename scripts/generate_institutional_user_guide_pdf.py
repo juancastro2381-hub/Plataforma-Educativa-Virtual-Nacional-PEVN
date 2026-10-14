@@ -465,7 +465,7 @@ def generate_pdf(output_pdf_path, project_root):
     # Recorrido 7 y 8: Gestión Pedagógica y Planeación Curricular
     story.append(Paragraph("Recorrido 7 y 8: Trabajo Pedagógico del Docente y Evaluación", styles['h2']))
     story.append(Paragraph("<b>Objetivo:</b> Formular unidades temáticas en el planeador curricular y calificar actividades respetando el SIEE.", styles['body']))
-    story.append(Paragraph("<b>Flujo:</b> El Docente ingresa a <code>/teacher-portal</code> (con contraste WCAG 2.1 AA corregido en DOC-02), formula unidades temáticas en <code>/teacher/planning</code> y asienta notas periódicas en <code>/teacher/siee</code>.", styles['body']))
+    story.append(Paragraph("<b>Flujo:</b> El Docente ingresa a <code>/teacher-portal</code> (con contraste y legibilidad tipográfica optimizados internamente en DOC-02), formula unidades temáticas en <code>/teacher/planning</code> y asienta notas periódicas en <code>/teacher/siee</code>.", styles['body']))
 
     img_teach = scale_image(os.path.join(screenshots_dir, "09_portal_docente_dashboard.png"), max_height=175)
     if img_teach:
@@ -546,7 +546,7 @@ def generate_pdf(output_pdf_path, project_root):
 
     story.append(Spacer(1, 15))
 
-    story.append(Paragraph("<b>Certificación de Cierre DOC-03:</b> La presente guía institucional integral ha sido generada conforme al estado verificado del repositorio, asegurando total coherencia entre la documentación, el Tour Interactivo de Producto, las pruebas automatizadas y el código en producción.", styles['caption']))
+    story.append(Paragraph("<b>Validación y Cierre Técnico DOC-03-R1:</b> La presente guía institucional integral describe el estado verificado internamente en el repositorio, asegurando consistencia técnica entre la documentación, el Tour Interactivo de Producto, las pruebas automatizadas y los componentes implementados.", styles['caption']))
 
     doc.build(story, canvasmaker=InstitutionalNumberedCanvas)
     print(f"PDF generado exitosamente en: {output_pdf_path}")
@@ -554,6 +554,9 @@ def generate_pdf(output_pdf_path, project_root):
 
 if __name__ == "__main__":
     root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-    out_pdf = os.path.join(root_dir, "docs", "manual", "pdf", "PEVN_INSTITUTIONAL_USER_GUIDE.pdf")
+    if len(sys.argv) > 1:
+        out_pdf = sys.argv[1]
+    else:
+        out_pdf = os.path.join(root_dir, "docs", "manual", "pdf", "PEVN_INSTITUTIONAL_USER_GUIDE.pdf")
     os.makedirs(os.path.dirname(out_pdf), exist_ok=True)
     generate_pdf(out_pdf, root_dir)

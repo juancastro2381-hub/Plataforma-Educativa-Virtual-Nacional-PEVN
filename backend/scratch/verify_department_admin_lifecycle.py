@@ -1,3 +1,7 @@
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
 """
 PEVN — Verification Script for DEPARTMENT_ADMIN Lifecycle & Territorial Provisioning
 Authoritative backend validation of all 17 mandatory security test scenarios.
@@ -26,7 +30,7 @@ from app.models.user import User
 from app.models.role import Role, UserRole, Permission, RolePermission
 from app.models.territory import Department
 
-DB_URL = "postgresql+asyncpg://pevn_app:pevn_app_dev_pass@localhost:5433/pevn_db"
+DB_URL = os.environ.get("TEST_DATABASE_URL") or os.environ.get("DATABASE_URL")
 
 async def run_lifecycle_security_tests():
     print("=" * 80)

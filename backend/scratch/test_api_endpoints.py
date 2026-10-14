@@ -1,3 +1,7 @@
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
 """
 Test API endpoints for NTA-02 territorial foundation
 """
@@ -15,7 +19,7 @@ from app.core.security.tokens import token_service
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy import text
 
-DB_URL = "postgresql+asyncpg://pevn_app:pevn_app_dev_pass@localhost:5433/pevn_db"
+DB_URL = os.environ.get("TEST_DATABASE_URL") or os.environ.get("DATABASE_URL")
 engine = create_async_engine(DB_URL, echo=False)
 
 async def test_apis():

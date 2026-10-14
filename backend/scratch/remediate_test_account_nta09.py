@@ -1,3 +1,7 @@
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
 import asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
@@ -6,7 +10,7 @@ from app.db.base_class import Base
 from app.models.user import DocumentType
 from app.services.municipality_admin_service import MunicipalityAdminService
 
-DB_URL = "postgresql+asyncpg://pevn_app:pevn_app_dev_pass@localhost:5433/pevn_db"
+DB_URL = os.environ.get("TEST_DATABASE_URL") or os.environ.get("DATABASE_URL")
 
 async def main():
     engine = create_async_engine(DB_URL)

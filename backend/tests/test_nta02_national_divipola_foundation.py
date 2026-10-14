@@ -29,6 +29,7 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.pool import NullPool
 
 from app.core.security.tokens import token_service
 from app.db.session import get_async_session
@@ -38,9 +39,9 @@ from app.models.role import Role, UserRole
 from app.models.territory import Department, Municipality
 from app.models.user import User
 
-from sqlalchemy.pool import NullPool
+from tests.conftest import get_test_postgres_url
 
-PG_DB_URL = "postgresql+asyncpg://pevn_app:pevn_app_dev_pass@localhost:5433/pevn_db"
+PG_DB_URL = get_test_postgres_url()
 
 
 @pytest.fixture(scope="function")

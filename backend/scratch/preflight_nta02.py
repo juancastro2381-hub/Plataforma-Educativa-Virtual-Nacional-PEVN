@@ -1,3 +1,7 @@
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
 """
 PEVN — NTA-02 Mandatory Preflight Script
 Performs read-only inspection of the current database state before migration.
@@ -17,7 +21,7 @@ from app.models.role import Role, UserRole
 from app.models.user import User
 from app.models.official_catalog import OfficialInstitutionCatalog, OfficialCampusCatalog
 
-DB_URL = "postgresql+asyncpg://pevn_app:pevn_app_dev_pass@localhost:5433/pevn_db"
+DB_URL = os.environ.get("TEST_DATABASE_URL") or os.environ.get("DATABASE_URL")
 engine = create_async_engine(DB_URL, echo=False)
 async_session_factory = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 

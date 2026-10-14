@@ -1,3 +1,7 @@
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
 """
 Inspect canonical names in official_institution_catalog
 """
@@ -10,7 +14,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import select, func, text, desc
 
-DB_URL = "postgresql+asyncpg://pevn_app:pevn_app_dev_pass@localhost:5433/pevn_db"
+DB_URL = os.environ.get("TEST_DATABASE_URL") or os.environ.get("DATABASE_URL")
 engine = create_async_engine(DB_URL, echo=False)
 async_session_factory = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 

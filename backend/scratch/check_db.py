@@ -1,8 +1,16 @@
 import asyncio
+import os
 import asyncpg
+from dotenv import load_dotenv
+
+load_dotenv()
 
 async def main():
-    conn = await asyncpg.connect("postgresql://pevn_app:pevn_app_dev_pass@localhost:5433/pevn_db")
+    raw_url = os.environ.get("TEST_DATABASE_URL") or os.environ.get("DATABASE_URL")
+    if not raw_url:
+        raise RuntimeError("Neither TEST_DATABASE_URL nor DATABASE_URL environment variable is set.")
+    url = raw_url.replace("postgresql+asyncpg://", "postgresql://")
+    conn = await asyncpg.connect(url)
     exists = await conn.fetchval("SELECT to_regclass('audit_logs') IS NOT NULL")
     print("audit_logs exists in PostgreSQL:", exists)
     if exists:

@@ -1,3 +1,7 @@
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
 """
 PEVN — READ-ONLY TERRITORIAL & PROVISIONING RECONCILIATION AUDIT SCRIPT
 AI Software Factory Standard v1.2 — Phase: Read-Only Forensic Audit
@@ -31,7 +35,7 @@ from app.models.user import User
 from app.models.role import UserRole, Role
 from app.models.invitation import DepartmentAdminInvitation
 
-DB_URL = "postgresql+asyncpg://pevn_app:pevn_app_dev_pass@localhost:5433/pevn_db"
+DB_URL = os.environ.get("TEST_DATABASE_URL") or os.environ.get("DATABASE_URL")
 
 async def run_audit():
     engine = create_async_engine(DB_URL)

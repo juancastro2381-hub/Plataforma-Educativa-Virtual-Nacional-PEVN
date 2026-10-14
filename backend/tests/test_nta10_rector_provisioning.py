@@ -686,6 +686,7 @@ async def test_14_production_environment_omits_raw_token(
     """14. In staging and production, raw_invitation_token and invitation_url are strictly None."""
     settings = get_settings()
     monkeypatch.setattr(settings, "ENVIRONMENT", Environment.PRODUCTION)
+    monkeypatch.setattr(settings, "FRONTEND_URL", "https://pevn.edu.co")
 
     inst_med = nta10_fixture["inst_med"]
     headers = nta10_fixture["muni_admin_med_headers"]

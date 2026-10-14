@@ -1,3 +1,7 @@
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
 """
 PEVN — COMPREHENSIVE PRIVILEGE EXPOSURE & FUNCTIONAL COVERAGE AUDIT
 Verifies all 17 atomic read permissions, write rejections, Anti-IDOR enforcement,
@@ -28,7 +32,7 @@ from app.models.invitation import DepartmentAdminInvitation
 from app.models.territory import Department, Municipality
 from app.models.institution import Institution
 
-DB_URL = "postgresql+asyncpg://pevn_app:pevn_app_dev_pass@localhost:5433/pevn_db"
+DB_URL = os.environ.get("TEST_DATABASE_URL") or os.environ.get("DATABASE_URL")
 
 CERTIFIED_17_PERMISSIONS = {
     "academic_assignments:read",

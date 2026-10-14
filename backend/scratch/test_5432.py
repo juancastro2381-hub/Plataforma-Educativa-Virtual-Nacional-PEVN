@@ -1,9 +1,13 @@
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
 import asyncio
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
 
 for url in [
-    "postgresql+asyncpg://pevn_app:pevn_app_dev_pass@localhost:5432/pevn_db",
+    os.environ.get("TEST_DATABASE_URL") or os.environ.get("DATABASE_URL"),
     "postgresql+asyncpg://postgres:postgres@localhost:5432/pevn_db",
     "postgresql+asyncpg://pevn_admin:pevn_admin_dev_pass@localhost:5432/pevn_db",
     "postgresql+asyncpg://postgres:postgres@localhost:5432/postgres",

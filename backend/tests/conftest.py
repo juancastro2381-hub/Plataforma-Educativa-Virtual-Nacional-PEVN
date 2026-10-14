@@ -42,6 +42,34 @@ from app.models.grade import EducationalLevel, Grade
 from app.models.role import Permission, Role
 
 
+def get_test_postgres_url() -> str:
+    """
+    Return the isolated PostgreSQL test database connection URL.
+
+    Reads from TEST_DATABASE_URL environment variable.
+    Fails safely with a clear, informative error message if unconfigured.
+    """
+    from dotenv import load_dotenv
+
+    load_dotenv()
+
+    url = os.environ.get("TEST_DATABASE_URL")
+    if not url:
+        # Fallback only if DATABASE_URL is explicitly set to PostgreSQL and targeting test db
+        env_db = os.environ.get("DATABASE_URL", "")
+        if "postgresql" in env_db and "pevn_test_db" in env_db:
+            url = env_db
+
+    if not url:
+        raise RuntimeError(
+            "TEST_DATABASE_URL is not configured. "
+            "An isolated PostgreSQL test database is required to run integration suites safely. "
+            "Set TEST_DATABASE_URL in backend/.env or your environment (e.g., "
+            "postgresql+asyncpg://<app_user>:<secret>@localhost:5433/pevn_test_db)."
+        )
+    return url
+
+
 @pytest.fixture(scope="session")
 def anyio_backend() -> str:
     """Use asyncio as the anyio backend for async tests."""

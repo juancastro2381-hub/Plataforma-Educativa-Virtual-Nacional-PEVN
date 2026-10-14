@@ -1,3 +1,7 @@
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
 """
 Test NTA-02 migration SQL within an explicit rollback transaction to verify invariants.
 """
@@ -11,7 +15,7 @@ if hasattr(sys.stdout, "reconfigure"):
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy import text
 
-DB_URL = "postgresql+asyncpg://pevn_app:pevn_app_dev_pass@localhost:5433/pevn_db"
+DB_URL = os.environ.get("TEST_DATABASE_URL") or os.environ.get("DATABASE_URL")
 engine = create_async_engine(DB_URL, echo=False)
 
 async def test_migration():
