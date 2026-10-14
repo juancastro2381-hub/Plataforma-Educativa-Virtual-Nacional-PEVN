@@ -19,7 +19,12 @@ if hasattr(sys.stdout, "reconfigure"):
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy import text
 
-DB_URL = os.environ.get("TEST_DATABASE_URL") or os.environ.get("DATABASE_URL")
+try:
+    from scratch._safe_db import get_safe_test_db_url
+except ImportError:
+    from _safe_db import get_safe_test_db_url
+
+DB_URL = get_safe_test_db_url()
 engine = create_async_engine(DB_URL, echo=False)
 
 PILOT_DEPT_UUIDS = {

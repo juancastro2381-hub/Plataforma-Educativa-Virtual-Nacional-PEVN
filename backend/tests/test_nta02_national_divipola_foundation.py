@@ -9,8 +9,8 @@ Verifies:
   5. Every municipality references an existing parent department.
   6. Existing pilot department UUIDs (08, 11, 25) are preserved.
   7. Existing pilot municipality UUIDs (08001, 11001, 25286) are preserved.
-  8. Exactly 34 existing PEVN institutions preserved.
-  9. Exactly 31 active institutions preserved.
+  8. Exactly 38 existing PEVN institutions preserved.
+  9. Exactly 35 active institutions preserved.
   10. Exactly 3 inactive institutions preserved.
   11. Existing institution -> municipality foreign keys preserved.
   12. Existing Department Admin -> department assignments preserved.
@@ -46,7 +46,7 @@ PG_DB_URL = get_test_postgres_url()
 
 @pytest.fixture(scope="function")
 async def db_session() -> AsyncGenerator[AsyncSession, None]:
-    """Provide an isolated session connected to the operational PostgreSQL database."""
+    """Provide an isolated session connected to the isolated test PostgreSQL database (pevn_test_db)."""
     engine = create_async_engine(PG_DB_URL, poolclass=NullPool)
     session_factory = async_sessionmaker(
         bind=engine, class_=AsyncSession, expire_on_commit=False
@@ -164,14 +164,14 @@ async def test_07_pilot_municipality_uuids_preserved(db_session: AsyncSession) -
 
 
 @pytest.mark.asyncio
-async def test_08_thirty_four_institutions_preserved(db_session: AsyncSession) -> None:
+async def test_08_thirty_eight_institutions_preserved(db_session: AsyncSession) -> None:
     """Invariant 8: Exactly 38 institutions preserved (authoritative post-Phase 0.6)."""
     count = (await db_session.execute(select(func.count(Institution.id)))).scalar_one()
     assert count == 38
 
 
 @pytest.mark.asyncio
-async def test_09_thirty_one_active_institutions_preserved(
+async def test_09_thirty_five_active_institutions_preserved(
     db_session: AsyncSession,
 ) -> None:
     """Invariant 9: Exactly 35 active institutions preserved (authoritative post-Phase 0.6)."""

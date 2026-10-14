@@ -14,7 +14,12 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import select, func, text, desc
 
-DB_URL = os.environ.get("TEST_DATABASE_URL") or os.environ.get("DATABASE_URL")
+try:
+    from scratch._safe_db import get_safe_test_db_url
+except ImportError:
+    from _safe_db import get_safe_test_db_url
+
+DB_URL = get_safe_test_db_url()
 engine = create_async_engine(DB_URL, echo=False)
 async_session_factory = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 

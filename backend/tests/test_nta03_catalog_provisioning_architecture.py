@@ -5,11 +5,11 @@ Verifies:
   1. catalog_institution_id column exists on institutions.
   2. Foreign key exists on institutions.catalog_institution_id.
   3. Foreign key points to official_institution_catalog.id.
-  4. Exactly 34 existing PEVN institutions preserved.
-  5. Exactly 31 active institutions preserved.
+  4. Exactly 38 existing PEVN institutions preserved.
+  5. Exactly 35 active institutions preserved.
   6. Exactly 3 inactive institutions preserved.
-  7. Exactly 18 campuses preserved.
-  8. Exactly 200 users preserved.
+  7. Exactly 26 operational campuses preserved.
+  8. Exactly 223 users preserved.
   9. Exactly 7 verified official institutions receive valid catalog_institution_id.
   10. Every catalog_institution_id resolves to an existing catalog record.
   11. No duplicate catalog_institution_id among PEVN tenants (unique partial index).
@@ -46,7 +46,7 @@ PG_DB_URL = get_test_postgres_url()
 
 @pytest.fixture(scope="function")
 async def db_session() -> AsyncGenerator[AsyncSession, None]:
-    """Provide an isolated session connected to the operational PostgreSQL database."""
+    """Provide an isolated session connected to the isolated test PostgreSQL database (pevn_test_db)."""
     engine = create_async_engine(PG_DB_URL, poolclass=NullPool)
     session_factory = async_sessionmaker(
         bind=engine, class_=AsyncSession, expire_on_commit=False
@@ -117,14 +117,14 @@ async def test_03_foreign_key_points_to_official_catalog(db_session: AsyncSessio
 
 
 @pytest.mark.asyncio
-async def test_04_existing_34_institutions_preserved(db_session: AsyncSession) -> None:
+async def test_04_existing_38_institutions_preserved(db_session: AsyncSession) -> None:
     """Test 4: Total PEVN institutions count remains exactly 38 (authoritative post-Phase 0.6)."""
     count = (await db_session.execute(select(func.count(Institution.id)))).scalar_one()
     assert count == 38
 
 
 @pytest.mark.asyncio
-async def test_05_existing_31_active_institutions_preserved(db_session: AsyncSession) -> None:
+async def test_05_existing_35_active_institutions_preserved(db_session: AsyncSession) -> None:
     """Test 5: Exactly 35 active institutions preserved (authoritative post-Phase 0.6)."""
     count = (
         await db_session.execute(
@@ -146,14 +146,14 @@ async def test_06_existing_3_inactive_institutions_preserved(db_session: AsyncSe
 
 
 @pytest.mark.asyncio
-async def test_07_existing_18_campuses_preserved(db_session: AsyncSession) -> None:
+async def test_07_existing_26_campuses_preserved(db_session: AsyncSession) -> None:
     """Test 7: Exactly 26 operational campuses preserved (authoritative post-Phase 0.6)."""
     count = (await db_session.execute(select(func.count(Campus.id)))).scalar_one()
     assert count == 26
 
 
 @pytest.mark.asyncio
-async def test_08_existing_200_users_preserved(db_session: AsyncSession) -> None:
+async def test_08_existing_223_users_preserved(db_session: AsyncSession) -> None:
     """Test 8: Exactly 223 users preserved (authoritative post-Phase 0.6)."""
     count = (await db_session.execute(select(func.count(User.id)))).scalar_one()
     assert count == 223

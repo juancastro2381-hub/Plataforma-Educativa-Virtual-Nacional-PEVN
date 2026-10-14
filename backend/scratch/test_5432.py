@@ -6,18 +6,27 @@ import asyncio
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
 
-for url in [
-    os.environ.get("TEST_DATABASE_URL") or os.environ.get("DATABASE_URL"),
-    "postgresql+asyncpg://postgres:postgres@localhost:5432/pevn_db",
-    "postgresql+asyncpg://pevn_admin:pevn_admin_dev_pass@localhost:5432/pevn_db",
-    "postgresql+asyncpg://postgres:postgres@localhost:5432/postgres",
-]:
+try:
+    from scratch._safe_db import get_safe_test_db_url, mask_url_credentials
+except ImportError:
+    from _safe_db import get_safe_test_db_url, mask_url_credentials
+
+
+async def test_connection():
+    url = get_safe_test_db_url()
+    masked = mask_url_credentials(url)
+    print(f"Testing safe test database connection to {masked}...")
+    engine = create_async_engine(url)
     try:
-        engine = create_async_engine(url)
-        async def test(eng=engine):
-            async with eng.connect() as conn:
-                res = await conn.execute(text("SELECT current_database(), current_user"))
-                print(f"SUCCESS with {url} -> {res.fetchone()}")
-        asyncio.run(test())
+        async with engine.connect() as conn:
+            res = await conn.execute(text("SELECT current_database(), current_user"))
+            db, user = res.fetchone()
+            print(f"SUCCESS: Connected to database='{db}' as user='{user}'")
     except Exception as e:
-        print(f"FAILED {url} -> {type(e).__name__}: {e}")
+        print(f"FAILED connection to {masked}: {type(e).__name__}: {e}")
+    finally:
+        await engine.dispose()
+
+
+if __name__ == "__main__":
+    asyncio.run(test_connection())

@@ -30,7 +30,12 @@ from app.models.user import User
 from app.models.role import Role, UserRole, Permission, RolePermission
 from app.models.territory import Department
 
-DB_URL = os.environ.get("TEST_DATABASE_URL") or os.environ.get("DATABASE_URL")
+try:
+    from scratch._safe_db import get_safe_test_db_url
+except ImportError:
+    from _safe_db import get_safe_test_db_url
+
+DB_URL = get_safe_test_db_url()
 
 async def run_lifecycle_security_tests():
     print("=" * 80)

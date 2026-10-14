@@ -8,10 +8,12 @@ import sys
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
 
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    os.environ.get("TEST_DATABASE_URL") or os.environ.get("DATABASE_URL")
-)
+try:
+    from scratch._safe_db import get_safe_test_db_url
+except ImportError:
+    from _safe_db import get_safe_test_db_url
+
+DATABASE_URL = get_safe_test_db_url()
 
 async def run_preflight():
     engine = create_async_engine(DATABASE_URL)

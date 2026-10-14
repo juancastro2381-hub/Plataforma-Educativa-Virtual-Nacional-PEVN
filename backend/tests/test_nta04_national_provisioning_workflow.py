@@ -50,7 +50,7 @@ PG_DB_URL = get_test_postgres_url()
 
 @pytest.fixture(scope="function")
 async def db_session() -> AsyncGenerator[AsyncSession, None]:
-    """Provide an isolated session connected to the operational PostgreSQL database."""
+    """Provide an isolated session connected to the isolated test PostgreSQL database (pevn_test_db)."""
     engine = create_async_engine(PG_DB_URL, poolclass=NullPool)
     session_factory = async_sessionmaker(
         bind=engine, class_=AsyncSession, expire_on_commit=False

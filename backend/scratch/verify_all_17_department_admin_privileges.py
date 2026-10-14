@@ -32,7 +32,12 @@ from app.models.invitation import DepartmentAdminInvitation
 from app.models.territory import Department, Municipality
 from app.models.institution import Institution
 
-DB_URL = os.environ.get("TEST_DATABASE_URL") or os.environ.get("DATABASE_URL")
+try:
+    from scratch._safe_db import get_safe_test_db_url
+except ImportError:
+    from _safe_db import get_safe_test_db_url
+
+DB_URL = get_safe_test_db_url()
 
 CERTIFIED_17_PERMISSIONS = {
     "academic_assignments:read",

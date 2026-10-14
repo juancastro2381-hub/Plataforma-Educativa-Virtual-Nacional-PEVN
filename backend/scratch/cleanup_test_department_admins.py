@@ -19,7 +19,12 @@ import asyncio
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy import text
 
-DB_URL = os.environ.get("TEST_DATABASE_URL") or os.environ.get("DATABASE_URL")
+try:
+    from scratch._safe_db import get_safe_test_db_url
+except ImportError:
+    from _safe_db import get_safe_test_db_url
+
+DB_URL = get_safe_test_db_url()
 
 PRESERVED_USERNAMES = {"department_admin", "Eduardo_Admin_Departamental", "admin_nacional", "superadmin"}
 

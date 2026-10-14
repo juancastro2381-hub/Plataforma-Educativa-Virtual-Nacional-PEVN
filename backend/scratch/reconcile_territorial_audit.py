@@ -35,7 +35,12 @@ from app.models.user import User
 from app.models.role import UserRole, Role
 from app.models.invitation import DepartmentAdminInvitation
 
-DB_URL = os.environ.get("TEST_DATABASE_URL") or os.environ.get("DATABASE_URL")
+try:
+    from scratch._safe_db import get_safe_test_db_url
+except ImportError:
+    from _safe_db import get_safe_test_db_url
+
+DB_URL = get_safe_test_db_url()
 
 async def run_audit():
     engine = create_async_engine(DB_URL)
