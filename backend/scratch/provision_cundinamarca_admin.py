@@ -28,12 +28,14 @@ async def main():
     
     async with session_factory() as session:
         service = DepartmentAdminService(session=session)
+        import secrets
+        admin_password = os.environ.get("CUNDINAMARCA_ADMIN_PASSWORD") or (secrets.token_urlsafe(18) + "A1*!")
         payload = DepartmentAdminCreateRequest(
             first_name="Administrador",
             last_name="Cundinamarca",
             email="admin.cundinamarca@pevn.edu.co",
             username="admin_cundinamarca",
-            password="CundinamarcaAdmin2026*!",
+            password=admin_password,
             department_id=uuid.UUID("9aea113f-54e2-4345-8cc6-46970a91c7c6"),
             is_active=True,
         )

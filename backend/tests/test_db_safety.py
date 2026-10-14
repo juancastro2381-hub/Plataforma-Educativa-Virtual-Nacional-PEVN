@@ -25,6 +25,7 @@ from app.core.db_safety import (
     get_safe_operational_readonly_url,
     get_safe_test_db_url,
     mask_url_credentials,
+    sanitize_exception_message,
     validate_and_sanitize_db_url,
 )
 
@@ -146,13 +147,14 @@ class TestDatabaseSafetyFailClosed:
         assert self.SECRET_PASS not in err_msg
 
     def test_10_operational_readonly_succeeds_with_opt_in(self, monkeypatch):
-        """10. Operational read-only mode succeeds when explicitly enabled."""
+        """10. Operational read-only mode succeeds when explicitly enabled and enforces read-only options."""
         monkeypatch.setenv("ALLOW_OPERATIONAL_DIAGNOSTICS", "true")
         monkeypatch.setenv("DATABASE_URL", self.VALID_OP_URL)
 
         url = get_safe_operational_readonly_url(as_asyncpg=True)
         assert url.startswith("postgresql://")
-        assert url.endswith("/pevn_db")
+        assert "/pevn_db" in url
+        assert "default_transaction_read_only=on" in url
 
     def test_11_mask_url_credentials_utility(self):
         """11. mask_url_credentials masks user and password correctly."""
@@ -160,3 +162,82 @@ class TestDatabaseSafetyFailClosed:
         masked = mask_url_credentials(url)
         assert "mypassword123" not in masked
         assert "myuser:***@myhost:5432/mydb" in masked
+
+    def test_12_rejection_of_unauthorized_destination_hosts(self, monkeypatch):
+        """12. Fail-closed rejection of unapproved database hosts."""
+        for unauthorized_host in ["remote.corp.internal", "192.168.1.100", "evil-database.org", "pevn-production.aws"]:
+            bad_url = f"postgresql+asyncpg://pevn_app:{self.SECRET_PASS}@{unauthorized_host}:5433/pevn_test_db"
+            with pytest.raises(DatabaseSecurityError) as exc_info:
+                validate_and_sanitize_db_url(bad_url, mode="test")
+
+            err_msg = str(exc_info.value)
+            assert "FAIL-CLOSED REJECTION: Unauthorized database host" in err_msg
+            assert unauthorized_host in err_msg
+            assert self.SECRET_PASS not in err_msg
+
+    def test_13_configurable_destination_hosts(self, monkeypatch):
+        """13. Approved destination hosts are configurable via ALLOWED_TEST_DB_HOSTS."""
+        monkeypatch.setenv("ALLOWED_TEST_DB_HOSTS", "ci-runner-db,staging-test-host")
+        custom_url = f"postgresql+asyncpg://pevn_app:{self.SECRET_PASS}@ci-runner-db:5433/pevn_test_db"
+        validated = validate_and_sanitize_db_url(custom_url, mode="test")
+        assert "ci-runner-db" in validated
+
+    def test_14_rejection_of_unauthorized_destination_ports(self, monkeypatch):
+        """14. Fail-closed rejection of unapproved database ports."""
+        for bad_port in [9999, 3306, 1521, 6379, 8080]:
+            bad_url = f"postgresql+asyncpg://pevn_app:{self.SECRET_PASS}@localhost:{bad_port}/pevn_test_db"
+            with pytest.raises(DatabaseSecurityError) as exc_info:
+                validate_and_sanitize_db_url(bad_url, mode="test")
+
+            err_msg = str(exc_info.value)
+            assert "FAIL-CLOSED REJECTION: Unauthorized database port" in err_msg
+            assert str(bad_port) in err_msg
+            assert self.SECRET_PASS not in err_msg
+
+    def test_15_configurable_destination_ports(self, monkeypatch):
+        """15. Approved destination ports are configurable via ALLOWED_TEST_DB_PORTS."""
+        monkeypatch.setenv("ALLOWED_TEST_DB_PORTS", "5435,5436")
+        custom_url = f"postgresql+asyncpg://pevn_app:{self.SECRET_PASS}@localhost:5435/pevn_test_db"
+        validated = validate_and_sanitize_db_url(custom_url, mode="test")
+        assert ":5435" in validated
+
+    def test_16_rejection_of_disallowed_query_parameters(self):
+        """16. Reject connection parameters that could redirect or spoof destinations."""
+        for param in ["host", "hostaddr", "port", "dbname", "service", "passfile", "target_session_attrs"]:
+            bad_url = f"postgresql+asyncpg://pevn_app:{self.SECRET_PASS}@localhost:5433/pevn_test_db?{param}=malicious"
+            with pytest.raises(DatabaseSecurityError) as exc_info:
+                validate_and_sanitize_db_url(bad_url, mode="test")
+
+            err_msg = str(exc_info.value)
+            assert "Disallowed connection query parameter" in err_msg
+            assert param in err_msg
+            assert self.SECRET_PASS not in err_msg
+
+    def test_17_sanitizer_redacts_synthetic_sentinels_and_urls(self):
+        """17. Centralized exception sanitizer strips synthetic sentinel secrets and URLs."""
+        sentinel_secret = "SentinelSuperSecretToken987654321!"
+        raw_error = (
+            f"asyncpg.exceptions.InvalidPasswordError: password authentication failed for user 'pevn_app' "
+            f"connecting to postgresql+asyncpg://pevn_app:{sentinel_secret}@localhost:5433/pevn_db "
+            f"token={sentinel_secret}"
+        )
+        sanitized = sanitize_exception_message(raw_error, sentinels=[sentinel_secret])
+
+        assert sentinel_secret not in sanitized
+        assert "pevn_app:***@localhost:5433/pevn_db" in sanitized
+        assert "token=***" in sanitized
+
+    def test_18_operational_readonly_prefers_dedicated_readonly_url(self, monkeypatch):
+        """18. Operational read-only mode prioritizes OPERATIONAL_READONLY_DATABASE_URL over DATABASE_URL."""
+        monkeypatch.setenv("ALLOW_OPERATIONAL_DIAGNOSTICS", "true")
+        ro_url = f"postgresql+asyncpg://pevn_ro:{self.SECRET_PASS}@localhost:5433/pevn_db"
+        rw_url = f"postgresql+asyncpg://pevn_rw:RwPass123!@localhost:5433/pevn_db"
+
+        monkeypatch.setenv("OPERATIONAL_READONLY_DATABASE_URL", ro_url)
+        monkeypatch.setenv("DATABASE_URL", rw_url)
+
+        resolved = get_safe_operational_readonly_url(as_asyncpg=False)
+        assert "pevn_ro" in resolved
+        assert "pevn_rw" not in resolved
+        assert "default_transaction_read_only=on" in resolved
+

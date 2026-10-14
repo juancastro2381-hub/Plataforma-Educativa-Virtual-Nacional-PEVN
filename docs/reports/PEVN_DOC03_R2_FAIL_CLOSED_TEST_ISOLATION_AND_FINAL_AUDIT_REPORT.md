@@ -13,9 +13,9 @@
 
 En el marco de la auditoría de seguimiento DOC-03-R2, se ejecutó una revisión técnica forense e independiente sobre el repositorio de la Plataforma Educativa Virtual Nacional (PEVN). Esta intervención aborda de forma definitiva las brechas remanentes identificadas tras DOC-03-R1:
 
-1. **Aislamiento Fail-Closed Estricto de Base de Datos:** Se implementó una arquitectura centralizada en [`backend/app/core/db_safety.py`](file:///c:/Users/juanc/OneDrive/Documentos/Desarrollo%20proyectos/Plataforma%20Educativa%20PEVN/Plataforma%20Educativa%20Virtual%20Nacional%20PEVN/backend/app/core/db_safety.py) y [`backend/scratch/_safe_db.py`](file:///c:/Users/juanc/OneDrive/Documentos/Desarrollo%20proyectos/Plataforma%20Educativa%20PEVN/Plataforma%20Educativa%20Virtual%20Nacional%20PEVN/backend/scratch/_safe_db.py) que prohíbe de forma tajante el fallback silencioso de `TEST_DATABASE_URL` a `DATABASE_URL`. Todo intento de conectar pruebas o diagnósticos hacia la base de desarrollo (`pevn_db`), bases desconocidas, esquemas no soportados o mediante trucos de subcadena/parámetros es abortado inmediatamente (*fail-closed*) con enmascaramiento integral de contraseñas.
+1. **Aislamiento Fail-Closed Estricto de Base de Datos:** Se implementó una arquitectura centralizada en [`backend/app/core/db_safety.py`](../../backend/app/core/db_safety.py) y [`backend/scratch/_safe_db.py`](../../backend/scratch/_safe_db.py) que prohíbe de forma tajante el fallback silencioso de `TEST_DATABASE_URL` a `DATABASE_URL`. Todo intento de conectar pruebas o diagnósticos hacia la base de desarrollo (`pevn_db`), bases desconocidas, esquemas no soportados o mediante trucos de subcadena/parámetros es abortado inmediatamente (*fail-closed*) con enmascaramiento integral de contraseñas.
 2. **Saneamiento de Herramientas Diagnósticas:** Se auditaron y remediaron la totalidad de los 30 scripts en `backend/scratch/` (incluyendo los 29 identificados en DOC-03-R1 y `check_db.py`), eliminando cualquier patrón de fallback inseguro.
-3. **Reconciliación Aritmética Inequívoca del Conteo de Pruebas:** Se resolvió la discrepancia matemática del informe DOC-03-R1 (que arrojaba sumas contradictorias de 719 o 687 frente al total de 704). Se demostró matemáticamente y con la salida real de pytest que la suite previa constaba de **83 pruebas de integración PostgreSQL** y **621 pruebas unitarias/in-memory** (desglosadas en 17 de provisión, 15 de rector y 589 unitarias restantes). Con la adición de la nueva suite automatizada de seguridad de bases de datos ([`test_db_safety.py`](file:///c:/Users/juanc/OneDrive/Documentos/Desarrollo%20proyectos/Plataforma%20Educativa%20PEVN/Plataforma%20Educativa%20Virtual%20Nacional%20PEVN/backend/tests/test_db_safety.py), 11 pruebas), el total backend asciende a **715 pruebas recolectadas** (83 en Grupo A + 632 en Grupo B).
+3. **Reconciliación Aritmética Inequívoca del Conteo de Pruebas:** Se resolvió la discrepancia matemática del informe DOC-03-R1 (que arrojaba sumas contradictorias de 719 o 687 frente al total de 704). Se demostró matemáticamente y con la salida real de pytest que la suite previa constaba de **83 pruebas de integración PostgreSQL** y **621 pruebas unitarias/in-memory** (desglosadas en 17 de provisión, 15 de rector y 589 unitarias restantes). Con la adición de la nueva suite automatizada de seguridad de bases de datos ([`test_db_safety.py`](../../backend/tests/test_db_safety.py), 11 pruebas), el total backend asciende a **715 pruebas recolectadas** (83 en Grupo A + 632 en Grupo B).
 4. **Corrección de Nombres Canónicos e Invariantes:** Se renombraron las funciones desalineadas en `test_nta02` y `test_nta03` para reflejar la realidad del aprovisionamiento formal post-Fase 0.6 (38 instituciones totales, 35 activas, 26 sedes operativas y 223 usuarios), corrigiendo a su vez los docstrings engañosos de fixtures que aludían a la base de pruebas como base "operacional".
 5. **Verificación Frontend Impecable:** El chequeo de tipos TypeScript (`tsc --noEmit`), las 196 pruebas de Vitest (29 archivos, 100% aprobados en 93.17s) y la compilación de producción de Vite (219 módulos en 6.45s) pasaron exitosamente sin ninguna advertencia crítica.
 6. **Preservación Documental:** La guía institucional HTML, los dos manuales PDF consolidados (`PEVN_INSTITUTIONAL_USER_GUIDE_R1.pdf` y `PEVN_INTERACTIVE_USER_MANUAL.pdf`) y las capturas sintéticas fueron preservados íntegramente.
@@ -87,7 +87,7 @@ $ git status -s
 
 ## 3. Arquitectura de Seguridad y Validación de URL de Base de Datos
 
-Se implementó el módulo [`backend/app/core/db_safety.py`](file:///c:/Users/juanc/OneDrive/Documentos/Desarrollo%20proyectos/Plataforma%20Educativa%20PEVN/Plataforma%20Educativa%20Virtual%20Nacional%20PEVN/backend/app/core/db_safety.py) y el helper de diagnóstico [`backend/scratch/_safe_db.py`](file:///c:/Users/juanc/OneDrive/Documentos/Desarrollo%20proyectos/Plataforma%20Educativa%20PEVN/Plataforma%20Educativa%20Virtual%20Nacional%20PEVN/backend/scratch/_safe_db.py). Sus garantías técnicas son:
+Se implementó el módulo [`backend/app/core/db_safety.py`](../../backend/app/core/db_safety.py) y el helper de diagnóstico [`backend/scratch/_safe_db.py`](../../backend/scratch/_safe_db.py). Sus garantías técnicas son:
 
 1. **Eliminación Total de Fallbacks Inseguros:**  
    `get_safe_test_db_url()` consume exclusivamente la variable `TEST_DATABASE_URL`. Si no está presente, se levanta inmediatamente `DatabaseSecurityError` indicando que se requiere una configuración explícita. Nunca recurre a `DATABASE_URL`.
@@ -103,7 +103,7 @@ Se implementó el módulo [`backend/app/core/db_safety.py`](file:///c:/Users/jua
 6. **Separación de Diagnósticos Operacionales:**  
    Se diseñó la función `get_safe_operational_readonly_url()` para diagnósticos que legítimamente requieran consultar la base de desarrollo. Esta función exige obligatoriamente la variable de entorno `ALLOW_OPERATIONAL_DIAGNOSTICS=true`; de lo contrario, la conexión es rechazada por defecto.
 
-### Batería de Pruebas Automatizadas de Seguridad ([`test_db_safety.py`](file:///c:/Users/juanc/OneDrive/Documentos/Desarrollo%20proyectos/Plataforma%20Educativa%20PEVN/Plataforma%20Educativa%20Virtual%20Nacional%20PEVN/backend/tests/test_db_safety.py)):
+### Batería de Pruebas Automatizadas de Seguridad ([`test_db_safety.py`](../../backend/tests/test_db_safety.py)):
 Se ejecutó la suite con 11 pruebas exhaustivas:
 - `test_01`: `TEST_DATABASE_URL` ausente levanta `DatabaseSecurityError` sin recurrir a `DATABASE_URL`.
 - `test_02`: URL válida de `pevn_test_db` es aceptada y formateada para SQLAlchemy (`postgresql+asyncpg://`) y asyncpg (`postgresql://`).
@@ -122,7 +122,7 @@ Se ejecutó la suite con 11 pruebas exhaustivas:
 
 ## 4. Inventario de Scripts Diagnósticos Auditados y Remediados
 
-Se auditaron y adaptaron los 30 scripts diagnósticos ubicados en [`backend/scratch/`](file:///c:/Users/juanc/OneDrive/Documentos/Desarrollo%20proyectos/Plataforma%20Educativa%20PEVN/Plataforma%20Educativa%20Virtual%20Nacional%20PEVN/backend/scratch), erradicando el patrón `TEST_DATABASE_URL or DATABASE_URL`:
+Se auditaron y adaptaron los 30 scripts diagnósticos ubicados en [`backend/scratch/`](../../backend/scratch), erradicando el patrón `TEST_DATABASE_URL or DATABASE_URL`:
 
 | # | Archivo en `backend/scratch/` | Rol Funcional | Estado Anterior | Remediación Aplicada |
 | :-: | :--- | :--- | :--- | :--- |
@@ -162,12 +162,12 @@ Se auditaron y adaptaron los 30 scripts diagnósticos ubicados en [`backend/scra
 ## 5. Hallazgos de Aislamiento de Base de Datos y Seguridad de Mutaciones
 
 Se auditaron las 6 suites de integración con PostgreSQL:
-- [`backend/tests/test_nta02_national_divipola_foundation.py`](file:///c:/Users/juanc/OneDrive/Documentos/Desarrollo%20proyectos/Plataforma%20Educativa%20PEVN/Plataforma%20Educativa%20Virtual%20Nacional%20PEVN/backend/tests/test_nta02_national_divipola_foundation.py)
-- [`backend/tests/test_nta03_catalog_provisioning_architecture.py`](file:///c:/Users/juanc/OneDrive/Documentos/Desarrollo%20proyectos/Plataforma%20Educativa%20PEVN/Plataforma%20Educativa%20Virtual%20Nacional%20PEVN/backend/tests/test_nta03_catalog_provisioning_architecture.py)
-- [`backend/tests/test_nta04_national_provisioning_workflow.py`](file:///c:/Users/juanc/OneDrive/Documentos/Desarrollo%20proyectos/Plataforma%20Educativa%20PEVN/Plataforma%20Educativa%20Virtual%20Nacional%20PEVN/backend/tests/test_nta04_national_provisioning_workflow.py)
-- [`backend/tests/test_nta05_territorial_control_center.py`](file:///c:/Users/juanc/OneDrive/Documentos/Desarrollo%20proyectos/Plataforma%20Educativa%20PEVN/Plataforma%20Educativa%20Virtual%20Nacional%20PEVN/backend/tests/test_nta05_territorial_control_center.py)
-- [`backend/tests/test_sa01_superadmin_governance.py`](file:///c:/Users/juanc/OneDrive/Documentos/Desarrollo%20proyectos/Plataforma%20Educativa%20PEVN/Plataforma%20Educativa%20Virtual%20Nacional%20PEVN/backend/tests/test_sa01_superadmin_governance.py)
-- [`backend/tests/test_sa02_technical_operations_portal.py`](file:///c:/Users/juanc/OneDrive/Documentos/Desarrollo%20proyectos/Plataforma%20Educativa%20PEVN/Plataforma%20Educativa%20Virtual%20Nacional%20PEVN/backend/tests/test_sa02_technical_operations_portal.py)
+- [`backend/tests/test_nta02_national_divipola_foundation.py`](../../backend/tests/test_nta02_national_divipola_foundation.py)
+- [`backend/tests/test_nta03_catalog_provisioning_architecture.py`](../../backend/tests/test_nta03_catalog_provisioning_architecture.py)
+- [`backend/tests/test_nta04_national_provisioning_workflow.py`](../../backend/tests/test_nta04_national_provisioning_workflow.py)
+- [`backend/tests/test_nta05_territorial_control_center.py`](../../backend/tests/test_nta05_territorial_control_center.py)
+- [`backend/tests/test_sa01_superadmin_governance.py`](../../backend/tests/test_sa01_superadmin_governance.py)
+- [`backend/tests/test_sa02_technical_operations_portal.py`](../../backend/tests/test_sa02_technical_operations_portal.py)
 
 ### Medidas de Aislamiento Verificadas:
 1. **Configuración de Pool Nulo (`NullPool`):**  
@@ -218,7 +218,7 @@ El requerimiento 4 señalaba que el informe DOC-03-R1 reportaba:
    $$83 + 604 = 687 \neq 704$$
 
 ### Reconciliación Definitiva en DOC-03-R2:
-Con la verificación mediante el script forense [`backend/scratch/analyze_tests.py`](file:///c:/Users/juanc/OneDrive/Documentos/Desarrollo%20proyectos/Plataforma%20Educativa%20PEVN/Plataforma%20Educativa%20Virtual%20Nacional%20PEVN/backend/scratch/analyze_tests.py), los sumandos mutuamente excluyentes son:
+Con la verificación mediante el script forense [`backend/scratch/analyze_tests.py`](../../backend/scratch/analyze_tests.py), los sumandos mutuamente excluyentes son:
 
 $$\begin{aligned}
 \text{Suites PostgreSQL (6 archivos)} &= 83 \\
@@ -275,7 +275,7 @@ Se llevó a cabo una auditoría estática y del historial de Git con respecto a 
    ```
    El comando `git ls-files | findstr "\.env"` confirmó que **ningún archivo `.env` real está indexado ni rastreado por Git**; únicamente existen las plantillas seguras `.env.example` y `frontend/.env.example`.
 2. **Credenciales en Historial de Git:**  
-   El historial de Git contiene commits previos con contraseñas de desarrollo sintéticas (tales como las usadas por defecto en Docker para pruebas locales: `pevn_app_dev_pass` y `pevn_admin_dev_pass`).
+   El historial de Git contiene commits previos con contraseñas de desarrollo sintéticas (tales como las usadas por defecto en Docker para pruebas locales: `[REDACTED DEVELOPMENT CREDENTIAL]` y `[REDACTED DEVELOPMENT CREDENTIAL]`).
 3. **Advertencia de Seguridad Criptográfica:**  
    Eliminar una cadena de texto en un commit nuevo **no borra el secreto del historial previo de Git**. Por ende, bajo ninguna circunstancia se deben reutilizar contraseñas ni cadenas de desarrollo en servidores de staging o producción.
 4. **Procedimiento Formal de Rotación Recomendado:**  
@@ -286,7 +286,7 @@ Se llevó a cabo una auditoría estática y del historial de Git con respecto a 
 
 ## 10. Resultados de Verificación Frontend
 
-Se ejecutó la batería completa de verificación en [`frontend/`](file:///c:/Users/juanc/OneDrive/Documentos/Desarrollo%20proyectos/Plataforma%20Educativa%20PEVN/Plataforma%20Educativa%20Virtual%20Nacional%20PEVN/frontend):
+Se ejecutó la batería completa de verificación en [`frontend/`](../../frontend):
 
 1. **Chequeo de Tipos TypeScript (`npx tsc --noEmit`):**
    - **Resultado:** Código de salida `0`. Cero errores de tipado.
@@ -310,13 +310,13 @@ Se ejecutó la batería completa de verificación en [`frontend/`](file:///c:/Us
 
 Se verificó el estado físico y la consistencia de los documentos institucionales:
 
-1. [`docs/manual/PEVN_INSTITUTIONAL_USER_GUIDE.html`](file:///c:/Users/juanc/OneDrive/Documentos/Desarrollo%20proyectos/Plataforma%20Educativa%20PEVN/Plataforma%20Educativa%20Virtual%20Nacional%20PEVN/docs/manual/PEVN_INSTITUTIONAL_USER_GUIDE.html):  
+1. [`docs/manual/PEVN_INSTITUTIONAL_USER_GUIDE.html`](../../docs/manual/PEVN_INSTITUTIONAL_USER_GUIDE.html):  
    - Tamaño: **92.507 bytes**.
    - Integra la presentación completa de la plataforma, los 10 recorridos de usuario, contraste cromático optimizado y trazabilidad electrónica de acuses de recibo.
-2. [`docs/manual/pdf/PEVN_INSTITUTIONAL_USER_GUIDE_R1.pdf`](file:///c:/Users/juanc/OneDrive/Documentos/Desarrollo%20proyectos/Plataforma%20Educativa%20PEVN/Plataforma%20Educativa%20Virtual%20Nacional%20PEVN/docs/manual/pdf/PEVN_INSTITUTIONAL_USER_GUIDE_R1.pdf):  
+2. [`docs/manual/pdf/PEVN_INSTITUTIONAL_USER_GUIDE_R1.pdf`](../../docs/manual/pdf/PEVN_INSTITUTIONAL_USER_GUIDE_R1.pdf):  
    - Tamaño: **809.571 bytes**.
    - 8 páginas A4 generadas con ReportLab, numeración canónica en dos pasadas, escala proporcionada de capturas y saltos de página limpios.
-3. [`docs/manual/pdf/PEVN_INTERACTIVE_USER_MANUAL.pdf`](file:///c:/Users/juanc/OneDrive/Documentos/Desarrollo%20proyectos/Plataforma%20Educativa%20PEVN/Plataforma%20Educativa%20Virtual%20Nacional%20PEVN/docs/manual/pdf/PEVN_INTERACTIVE_USER_MANUAL.pdf):  
+3. [`docs/manual/pdf/PEVN_INTERACTIVE_USER_MANUAL.pdf`](../../docs/manual/pdf/PEVN_INTERACTIVE_USER_MANUAL.pdf):  
    - Tamaño: **1.115.611 bytes**.
    - 10 páginas A4 correspondientes al manual interactivo preservado intacto.
 
@@ -325,20 +325,20 @@ Se verificó el estado físico y la consistencia de los documentos institucional
 ## 12. Inventario Exacto de Archivos Modificados y Creados
 
 ### Archivos Nuevos Creados:
-- [`backend/app/core/db_safety.py`](file:///c:/Users/juanc/OneDrive/Documentos/Desarrollo%20proyectos/Plataforma%20Educativa%20PEVN/Plataforma%20Educativa%20Virtual%20Nacional%20PEVN/backend/app/core/db_safety.py): Núcleo de validación *fail-closed* y enmascaramiento de credenciales de base de datos.
-- [`backend/scratch/_safe_db.py`](file:///c:/Users/juanc/OneDrive/Documentos/Desarrollo%20proyectos/Plataforma%20Educativa%20PEVN/Plataforma%20Educativa%20Virtual%20Nacional%20PEVN/backend/scratch/_safe_db.py): Helper centralizado para herramientas diagnósticas (`safe_asyncpg_connect`, `get_safe_test_db_url`, `create_safe_async_engine`).
-- [`backend/scratch/analyze_tests.py`](file:///c:/Users/juanc/OneDrive/Documentos/Desarrollo%20proyectos/Plataforma%20Educativa%20PEVN/Plataforma%20Educativa%20Virtual%20Nacional%20PEVN/backend/scratch/analyze_tests.py): Script analítico para verificación forense de colecciones y reconciliación aritmética de pruebas.
-- [`backend/tests/test_db_safety.py`](file:///c:/Users/juanc/OneDrive/Documentos/Desarrollo%20proyectos/Plataforma%20Educativa%20PEVN/Plataforma%20Educativa%20Virtual%20Nacional%20PEVN/backend/tests/test_db_safety.py): Suite automatizada con 11 pruebas de seguridad *fail-closed*.
-- [`docs/reports/PEVN_DOC03_R2_FAIL_CLOSED_TEST_ISOLATION_AND_FINAL_AUDIT_REPORT.md`](file:///c:/Users/juanc/OneDrive/Documentos/Desarrollo%20proyectos/Plataforma%20Educativa%20PEVN/Plataforma%20Educativa%20Virtual%20Nacional%20PEVN/docs/reports/PEVN_DOC03_R2_FAIL_CLOSED_TEST_ISOLATION_AND_FINAL_AUDIT_REPORT.md): El presente informe oficial de auditoría.
+- [`backend/app/core/db_safety.py`](../../backend/app/core/db_safety.py): Núcleo de validación *fail-closed* y enmascaramiento de credenciales de base de datos.
+- [`backend/scratch/_safe_db.py`](../../backend/scratch/_safe_db.py): Helper centralizado para herramientas diagnósticas (`safe_asyncpg_connect`, `get_safe_test_db_url`, `create_safe_async_engine`).
+- [`backend/scratch/analyze_tests.py`](../../backend/scratch/analyze_tests.py): Script analítico para verificación forense de colecciones y reconciliación aritmética de pruebas.
+- [`backend/tests/test_db_safety.py`](../../backend/tests/test_db_safety.py): Suite automatizada con 11 pruebas de seguridad *fail-closed*.
+- [`docs/reports/PEVN_DOC03_R2_FAIL_CLOSED_TEST_ISOLATION_AND_FINAL_AUDIT_REPORT.md`](../../docs/reports/PEVN_DOC03_R2_FAIL_CLOSED_TEST_ISOLATION_AND_FINAL_AUDIT_REPORT.md): El presente informe oficial de auditoría.
 
 ### Archivos Modificados en el Árbol de Trabajo:
-- [`backend/tests/conftest.py`](file:///c:/Users/juanc/OneDrive/Documentos/Desarrollo%20proyectos/Plataforma%20Educativa%20PEVN/Plataforma%20Educativa%20Virtual%20Nacional%20PEVN/backend/tests/conftest.py): Delegación de `get_test_postgres_url()` a `app.core.db_safety`.
-- [`backend/tests/test_nta02_national_divipola_foundation.py`](file:///c:/Users/juanc/OneDrive/Documentos/Desarrollo%20proyectos/Plataforma%20Educativa%20PEVN/Plataforma%20Educativa%20Virtual%20Nacional%20PEVN/backend/tests/test_nta02_national_divipola_foundation.py): Renombrado de `test_08` y `test_09` y corrección de docstrings a `pevn_test_db`.
-- [`backend/tests/test_nta03_catalog_provisioning_architecture.py`](file:///c:/Users/juanc/OneDrive/Documentos/Desarrollo%20proyectos/Plataforma%20Educativa%20PEVN/Plataforma%20Educativa%20Virtual%20Nacional%20PEVN/backend/tests/test_nta03_catalog_provisioning_architecture.py): Renombrado de pruebas `04`, `05`, `07`, `08` y docstrings.
-- [`backend/tests/test_nta04_national_provisioning_workflow.py`](file:///c:/Users/juanc/OneDrive/Documentos/Desarrollo%20proyectos/Plataforma%20Educativa%20PEVN/Plataforma%20Educativa%20Virtual%20Nacional%20PEVN/backend/tests/test_nta04_national_provisioning_workflow.py): Corrección de docstring de fixture `db_session`.
-- [`backend/tests/test_nta05_territorial_control_center.py`](file:///c:/Users/juanc/OneDrive/Documentos/Desarrollo%20proyectos/Plataforma%20Educativa%20PEVN/Plataforma%20Educativa%20Virtual%20Nacional%20PEVN/backend/tests/test_nta05_territorial_control_center.py): Corrección de docstring de fixture `db_session`.
-- [`backend/tests/test_sa01_superadmin_governance.py`](file:///c:/Users/juanc/OneDrive/Documentos/Desarrollo%20proyectos/Plataforma%20Educativa%20PEVN/Plataforma%20Educativa%20Virtual%20Nacional%20PEVN/backend/tests/test_sa01_superadmin_governance.py): Corrección de docstring de fixture `db_session`.
-- [`backend/scratch/*.py`](file:///c:/Users/juanc/OneDrive/Documentos/Desarrollo%20proyectos/Plataforma%20Educativa%20PEVN/Plataforma%20Educativa%20Virtual%20Nacional%20PEVN/backend/scratch): 30 scripts diagnósticos saneados contra fallbacks inseguros.
+- [`backend/tests/conftest.py`](../../backend/tests/conftest.py): Delegación de `get_test_postgres_url()` a `app.core.db_safety`.
+- [`backend/tests/test_nta02_national_divipola_foundation.py`](../../backend/tests/test_nta02_national_divipola_foundation.py): Renombrado de `test_08` y `test_09` y corrección de docstrings a `pevn_test_db`.
+- [`backend/tests/test_nta03_catalog_provisioning_architecture.py`](../../backend/tests/test_nta03_catalog_provisioning_architecture.py): Renombrado de pruebas `04`, `05`, `07`, `08` y docstrings.
+- [`backend/tests/test_nta04_national_provisioning_workflow.py`](../../backend/tests/test_nta04_national_provisioning_workflow.py): Corrección de docstring de fixture `db_session`.
+- [`backend/tests/test_nta05_territorial_control_center.py`](../../backend/tests/test_nta05_territorial_control_center.py): Corrección de docstring de fixture `db_session`.
+- [`backend/tests/test_sa01_superadmin_governance.py`](../../backend/tests/test_sa01_superadmin_governance.py): Corrección de docstring de fixture `db_session`.
+- [`backend/scratch/*.py`](../../backend/scratch): 30 scripts diagnósticos saneados contra fallbacks inseguros.
 
 ---
 

@@ -120,7 +120,7 @@ async def run_privilege_audit():
             raw_token = prov_data["raw_invitation_token"]
 
             # Accept invitation
-            temp_password = "Secure#Audit2026!Password"
+            temp_password = f"P@ss_{uuid.uuid4().hex[:12]}!Aa1"
             resp_accept = await client.post(
                 "/api/v1/auth/accept-invitation",
                 json={

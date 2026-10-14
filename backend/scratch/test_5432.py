@@ -7,9 +7,17 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
 
 try:
-    from scratch._safe_db import get_safe_test_db_url, mask_url_credentials
+    from scratch._safe_db import (
+        get_safe_test_db_url,
+        mask_url_credentials,
+        sanitize_exception_message,
+    )
 except ImportError:
-    from _safe_db import get_safe_test_db_url, mask_url_credentials
+    from _safe_db import (
+        get_safe_test_db_url,
+        mask_url_credentials,
+        sanitize_exception_message,
+    )
 
 
 async def test_connection():
@@ -23,7 +31,8 @@ async def test_connection():
             db, user = res.fetchone()
             print(f"SUCCESS: Connected to database='{db}' as user='{user}'")
     except Exception as e:
-        print(f"FAILED connection to {masked}: {type(e).__name__}: {e}")
+        sanitized_err = sanitize_exception_message(e)
+        print(f"FAILED connection to {masked}: {type(e).__name__}: {sanitized_err}")
     finally:
         await engine.dispose()
 
