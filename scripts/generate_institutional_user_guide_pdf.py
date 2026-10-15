@@ -196,22 +196,42 @@ def get_styles():
     }
 
 
-def scale_image(img_path, target_width=PRINTABLE_WIDTH, max_height=260.0):
+def make_screenshot_flowable(img_path, caption_text, styles, max_h=190, spacer_after=6):
     if not os.path.exists(img_path):
-        return None
+        return Spacer(1, 1)
     try:
-        with PILImage.open(img_path) as im:
-            orig_w, orig_h = im.size
+        with PILImage.open(img_path) as pil_img:
+            orig_w, orig_h = pil_img.size
         aspect = orig_h / orig_w
-        final_w = target_width
-        final_h = final_w * aspect
-        if final_h > max_height:
-            final_h = max_height
-            final_w = final_h / aspect
-        return Image(img_path, width=final_w, height=final_h)
+        pad_x = 4.0
+        inner_w = PRINTABLE_WIDTH - (2 * pad_x)
+        target_w = inner_w
+        target_h = inner_w * aspect
+        if max_h is not None and target_h > max_h:
+            target_h = max_h
+            target_w = target_h / aspect
+
+        img_flowable = Image(img_path, width=target_w, height=target_h)
+        cap_para = Paragraph(caption_text, styles['caption'])
+
+        table = Table([[img_flowable], [cap_para]], colWidths=[PRINTABLE_WIDTH])
+        table.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('BOX', (0, 0), (-1, -1), 0.5, COLOR_BORDER),
+            ('BACKGROUND', (0, 0), (-1, -1), COLOR_BG_LIGHT),
+            ('TOPPADDING', (0, 0), (-1, 0), 4),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 2),
+            ('LEFTPADDING', (0, 0), (-1, -1), pad_x),
+            ('RIGHTPADDING', (0, 0), (-1, -1), pad_x),
+            ('TOPPADDING', (0, 1), (-1, 1), 3),
+            ('BOTTOMPADDING', (0, 1), (-1, 1), 4),
+        ]))
+        return KeepTogether([table, Spacer(1, spacer_after)])
     except Exception as e:
         print(f"Error cargando imagen {img_path}: {e}")
-        return None
+        return Spacer(1, 1)
+
 
 
 def generate_pdf(output_pdf_path, project_root):
@@ -247,13 +267,13 @@ def generate_pdf(output_pdf_path, project_root):
         [Paragraph("<b>Destinatarios Oficiales:</b>", styles['table_cell_bold']),
          Paragraph("Ministerio de Educación Nacional (MEN), Secretarías Departamentales y Municipales (SED/SEM), Rectores y Comunidades Académicas.", styles['table_cell'])],
         [Paragraph("<b>Versión de Entrega:</b>", styles['table_cell_bold']),
-         Paragraph("v2.4.0 — Auditoría DOC-03 (Fase 16D + Reconciliación Integral de Evidencia)", styles['table_cell'])],
+         Paragraph("v2.4.0 — Auditoría DOC-04-R1 (Sincronización Total de Evidencia y Manuales)", styles['table_cell'])],
         [Paragraph("<b>Alcance del Documento:</b>", styles['table_cell_bold']),
          Paragraph("Inventario verificado de capacidades, 10 recorridos guiados (Product Tour), manual por roles y protocolo de demostración.", styles['table_cell'])],
         [Paragraph("<b>Arquitectura & Tenancy:</b>", styles['table_cell_bold']),
-         Paragraph("Multitenant estricto por institución (38 inquilinos operativos, 18.031 planteles en catálogo DUE, 33 departamentos DIVIPOLA).", styles['table_cell'])],
+         Paragraph("Multitenant estricto por institución (38 inquilinos sintéticos de prueba, 18.031 planteles en catálogo abierto DANE DUE, 33 departamentos DIVIPOLA).", styles['table_cell'])],
         [Paragraph("<b>Estado de Aceptación:</b>", styles['table_cell_bold']),
-         Paragraph("<font color='#15803D'><b>PASS — PRIVACIDAD Y PRUEBAS RECONCILIADAS CON EL REPOSITORIO</b></font>", styles['table_cell'])],
+         Paragraph("<font color='#B45309'><b>CONDITIONAL PASS — DOCUMENTACIÓN Y CAPTURAS VERIFICADAS (LIMITACIONES DE ENTORNO EN POSTGRESQL/REDIS)</b></font>", styles['table_cell'])],
     ]
     t_cover = Table(cover_meta, colWidths=[140, PRINTABLE_WIDTH - 140])
     t_cover.setStyle(TableStyle([
@@ -272,8 +292,8 @@ def generate_pdf(output_pdf_path, project_root):
     cover_callout = [
         [Paragraph("<b>DECLARACIÓN INSTITUCIONAL DE SOBERANÍA E INTEROPERABILIDAD:</b><br/>"
                    "PEVN es una propuesta tecnológica y pedagógica independiente desarrollada para el fortalecimiento de la educación pública. "
-                   "<b>No sustituye al SIMAT ni al DUE</b>; por el contrario, respeta sus identificadores canónicos (código DANE 12 dígitos y código de matrícula SIMAT) "
-                   "y opera como el entorno soberano de gestión curricular, evaluación SIEE (Decreto 1290), convivencia escolar (Ley 1620) y virtualidad de aula.",
+                   "<b>No sustituye al SIMAT ni al DUE ni cuenta con certificación formal previa del MEN</b>; opera con identificadores canónicos (código DANE 12 dígitos y código de matrícula SIMAT demostrativos) "
+                   "y funciona como el entorno soberano de gestión curricular, evaluación SIEE (Decreto 1290), convivencia escolar (Ley 1620) y virtualidad de aula.",
                    styles['table_cell'])]
     ]
     t_callout = Table(cover_callout, colWidths=[PRINTABLE_WIDTH])
@@ -315,16 +335,16 @@ def generate_pdf(output_pdf_path, project_root):
         [
             Paragraph("<b>Centro de Mando Territorial</b>", styles['table_cell_bold']),
             Paragraph("MEN / SED / SEM", styles['table_cell']),
-            Paragraph("Monitoreo en 4 capas de los 33 departamentos, 1.119 municipios y 38 colegios operativos.", styles['table_cell']),
+            Paragraph("Monitoreo en 4 capas de 33 departamentos, 1.119 municipios, 18.031 colegios de catálogo y 38 de prueba.", styles['table_cell']),
             Paragraph("<code>/analytics/territorial</code>", styles['table_cell']),
-            Paragraph("<font color='#15803D'><b>VERIFICADO</b></font>", styles['table_cell']),
+            Paragraph("<font color='#B45309'><b>DEPENDE PG EN VIVO</b></font>", styles['table_cell']),
         ],
         [
             Paragraph("<b>Diagnóstico y Auditoría SA-02</b>", styles['table_cell_bold']),
             Paragraph("SuperAdmin", styles['table_cell']),
-            Paragraph("Diagnóstico de inquilinos y registro inmutable en PostgreSQL (3.084 eventos reales).", styles['table_cell']),
+            Paragraph("Diagnóstico de inquilinos y registro inmutable en PostgreSQL (3.084 eventos sintéticos de prueba).", styles['table_cell']),
             Paragraph("<code>/operations/diagnostics</code>", styles['table_cell']),
-            Paragraph("<font color='#15803D'><b>VERIFICADO</b></font>", styles['table_cell']),
+            Paragraph("<font color='#B45309'><b>DEPENDE PG EN VIVO</b></font>", styles['table_cell']),
         ],
         [
             Paragraph("<b>Gestión Rectoral</b>", styles['table_cell_bold']),
@@ -409,17 +429,16 @@ def generate_pdf(output_pdf_path, project_root):
     story.append(Paragraph("<b>Objetivo:</b> Acceso inicial al ecosistema educativo e inicio de sesión mediante credenciales oficiales con protección contra ataques de fuerza bruta y resolución automática de roles.", styles['body']))
     story.append(Paragraph("<b>Flujo Operativo:</b> 1. El usuario accede a la raíz (<code>/</code>) para conocer la oferta institucional. 2. Ingresa a <code>/login</code> y digita sus credenciales. 3. El sistema valida contra la base de datos y genera JWT en memoria RAM sin persistencia en LocalStorage.", styles['body']))
 
-    img_portal = scale_image(os.path.join(screenshots_dir, "01_portal_inicio.png"), max_height=145)
-    if img_portal:
-        story.append(img_portal)
-        story.append(Paragraph("<b>Figura 2.1:</b> Portal institucional de bienvenida, acceso unificado y presentación del ecosistema educativo nacional.", styles['caption']))
-
-    story.append(Spacer(1, 4))
-
-    img_login = scale_image(os.path.join(screenshots_dir, "02_autenticacion_login.png"), max_height=145)
-    if img_login:
-        story.append(img_login)
-        story.append(Paragraph("<b>Figura 2.2:</b> Pantalla de autenticación oficial con formulario accesible y soporte de recuperación de cuenta.", styles['caption']))
+    story.append(make_screenshot_flowable(
+        os.path.join(screenshots_dir, "01_portal_inicio.png"),
+        "<b>Figura 2.1:</b> Portal institucional de bienvenida, acceso unificado y presentación del ecosistema educativo nacional.",
+        styles, max_h=190, spacer_after=6
+    ))
+    story.append(make_screenshot_flowable(
+        os.path.join(screenshots_dir, "02_autenticacion_login.png"),
+        "<b>Figura 2.2:</b> Pantalla de autenticación oficial con formulario accesible y soporte de recuperación de cuenta.",
+        styles, max_h=190, spacer_after=6
+    ))
 
     story.append(PageBreak())
 
@@ -428,17 +447,16 @@ def generate_pdf(output_pdf_path, project_root):
     story.append(Paragraph("<b>Objetivo:</b> Inspeccionar los indicadores territoriales consolidados, despachar invitaciones a rectores y verificar la salud de los inquilinos.", styles['body']))
     story.append(Paragraph("<b>Flujo:</b> Las autoridades territoriales (SED/SEM) administran invitaciones institucionales en <code>/admin/institutions/invite</code>. El SuperAdmin técnico consulta <code>/analytics/territorial</code> y accede a <code>/operations/diagnostics</code> para verificar latencias relacionales y la tabla de auditoría inmutable en PostgreSQL.", styles['body']))
 
-    img_invite = scale_image(os.path.join(screenshots_dir, "04_administracion_municipal_invitacion.png"), max_height=145)
-    if img_invite:
-        story.append(img_invite)
-        story.append(Paragraph("<b>Figura 2.3:</b> Consola de gobierno territorial municipal (SEM) para emisión formal y control de invitaciones a rectores.", styles['caption']))
-
-    story.append(Spacer(1, 4))
-
-    img_diag = scale_image(os.path.join(screenshots_dir, "03_operaciones_diagnostico_inquilino.png"), max_height=145)
-    if img_diag:
-        story.append(img_diag)
-        story.append(Paragraph("<b>Figura 2.4:</b> Centro de Operaciones Técnicas y Diagnóstico de Inquilinos con telemetría de base de datos.", styles['caption']))
+    story.append(make_screenshot_flowable(
+        os.path.join(screenshots_dir, "04_administracion_municipal_invitacion.png"),
+        "<b>Figura 2.3:</b> Consola de gobierno territorial municipal (SEM) para emisión formal y control de invitaciones a rectores.",
+        styles, max_h=190, spacer_after=6
+    ))
+    story.append(make_screenshot_flowable(
+        os.path.join(screenshots_dir, "03_operaciones_diagnostico_inquilino.png"),
+        "<b>Figura 2.4:</b> Centro de Operaciones Técnicas y Diagnóstico de Inquilinos con telemetría de base de datos.",
+        styles, max_h=190, spacer_after=6
+    ))
 
     story.append(PageBreak())
 
@@ -447,17 +465,16 @@ def generate_pdf(output_pdf_path, project_root):
     story.append(Paragraph("<b>Objetivo:</b> Configurar el año escolar, sedes operativas y períodos académicos institucionales con validación del 100%.", styles['body']))
     story.append(Paragraph("<b>Flujo:</b> El Rector ingresa a su tablero principal (<code>/rector-dashboard</code>), revisa los indicadores de matrícula y accede a Gestión Académica para fijar las ponderaciones del I, II, III y IV período.", styles['body']))
 
-    img_rec = scale_image(os.path.join(screenshots_dir, "05_rectoria_dashboard.png"), max_height=145)
-    if img_rec:
-        story.append(img_rec)
-        story.append(Paragraph("<b>Figura 2.5:</b> Tablero Ejecutivo de Rectoría con indicadores de sedes, estudiantes y acceso rápido a módulos.", styles['caption']))
-
-    story.append(Spacer(1, 4))
-
-    img_per = scale_image(os.path.join(screenshots_dir, "06_gestion_academica_periodos.png"), max_height=145)
-    if img_per:
-        story.append(img_per)
-        story.append(Paragraph("<b>Figura 2.6:</b> Configuración de períodos académicos y ponderaciones porcentuales bajo el Decreto 1290.", styles['caption']))
+    story.append(make_screenshot_flowable(
+        os.path.join(screenshots_dir, "05_rectoria_dashboard.png"),
+        "<b>Figura 2.5:</b> Tablero Ejecutivo de Rectoría con indicadores de sedes, estudiantes y acceso rápido a módulos.",
+        styles, max_h=190, spacer_after=6
+    ))
+    story.append(make_screenshot_flowable(
+        os.path.join(screenshots_dir, "06_gestion_academica_periodos.png"),
+        "<b>Figura 2.6:</b> Configuración de períodos académicos y ponderaciones porcentuales bajo el Decreto 1290.",
+        styles, max_h=190, spacer_after=6
+    ))
 
     story.append(PageBreak())
 
@@ -466,17 +483,16 @@ def generate_pdf(output_pdf_path, project_root):
     story.append(Paragraph("<b>Objetivo:</b> Registrar estudiantes en los grupos oficiales e incorporar a sus acudientes legales con parentesco formal.", styles['body']))
     story.append(Paragraph("<b>Flujo:</b> Coordinación accede a <code>/academic/enrollments</code> para vincular alumnos a grados y sedes específicas. En <code>/academic/guardians</code> se asocian los tutores legales con datos sintéticos auditados (cero PII).", styles['body']))
 
-    img_simat = scale_image(os.path.join(screenshots_dir, "07_gestion_academica_estudiantes_simat.png"), max_height=145)
-    if img_simat:
-        story.append(img_simat)
-        story.append(Paragraph("<b>Figura 2.7:</b> Padrón de estudiantes matriculados con código SIMAT y estado lectivo activo.", styles['caption']))
-
-    story.append(Spacer(1, 4))
-
-    img_guard = scale_image(os.path.join(screenshots_dir, "08_gestion_academica_acudientes.png"), max_height=145)
-    if img_guard:
-        story.append(img_guard)
-        story.append(Paragraph("<b>Figura 2.8:</b> Padrón institucional de acudientes y tutores legales demostrando vinculación efectiva.", styles['caption']))
+    story.append(make_screenshot_flowable(
+        os.path.join(screenshots_dir, "07_gestion_academica_estudiantes_simat.png"),
+        "<b>Figura 2.7:</b> Padrón de estudiantes matriculados con código SIMAT y estado lectivo activo.",
+        styles, max_h=190, spacer_after=6
+    ))
+    story.append(make_screenshot_flowable(
+        os.path.join(screenshots_dir, "08_gestion_academica_acudientes.png"),
+        "<b>Figura 2.8:</b> Padrón institucional de acudientes y tutores legales demostrando vinculación efectiva.",
+        styles, max_h=190, spacer_after=6
+    ))
 
     story.append(PageBreak())
 
@@ -485,17 +501,16 @@ def generate_pdf(output_pdf_path, project_root):
     story.append(Paragraph("<b>Objetivo:</b> Formular unidades temáticas en el planeador curricular y calificar actividades respetando el SIEE.", styles['body']))
     story.append(Paragraph("<b>Flujo:</b> El Docente ingresa a <code>/teacher-portal</code> (con contraste y legibilidad tipográfica optimizados internamente en DOC-02), formula unidades temáticas en <code>/teacher/planning</code> y asienta notas periódicas en <code>/teacher/siee</code>.", styles['body']))
 
-    img_teach = scale_image(os.path.join(screenshots_dir, "09_portal_docente_dashboard.png"), max_height=145)
-    if img_teach:
-        story.append(img_teach)
-        story.append(Paragraph("<b>Figura 2.9:</b> Portal del docente con tipografía optimizada y listado de asignaturas a cargo.", styles['caption']))
-
-    story.append(Spacer(1, 4))
-
-    img_plan = scale_image(os.path.join(screenshots_dir, "10_portal_docente_planeacion.png"), max_height=145)
-    if img_plan:
-        story.append(img_plan)
-        story.append(Paragraph("<b>Figura 2.10:</b> Planeador curricular por unidades didácticas y cronogramas pedagógicos.", styles['caption']))
+    story.append(make_screenshot_flowable(
+        os.path.join(screenshots_dir, "09_portal_docente_dashboard.png"),
+        "<b>Figura 2.9:</b> Portal del docente con tipografía optimizada y listado de asignaturas a cargo.",
+        styles, max_h=190, spacer_after=6
+    ))
+    story.append(make_screenshot_flowable(
+        os.path.join(screenshots_dir, "10_portal_docente_planeacion.png"),
+        "<b>Figura 2.10:</b> Planeador curricular por unidades didácticas y cronogramas pedagógicos.",
+        styles, max_h=190, spacer_after=6
+    ))
 
     story.append(PageBreak())
 
@@ -504,24 +519,22 @@ def generate_pdf(output_pdf_path, project_root):
     story.append(Paragraph("<b>Objetivo:</b> Entregar actividades académicas en línea, revisar calificaciones y acceder a noticias y comunicados institucionales.", styles['body']))
     story.append(Paragraph("<b>Flujo:</b> El estudiante consulta sus tareas pendientes en el modal interactivo, adjunta archivos de entrega, visualiza circulares institucionales y lee el periódico escolar oficial.", styles['body']))
 
-    img_comm = scale_image(os.path.join(screenshots_dir, "11_portal_estudiante_comunicados.png"), max_height=125)
-    if img_comm:
-        story.append(img_comm)
-        story.append(Paragraph("<b>Figura 2.11:</b> Muro oficial de circulares y comunicados con categorías institucionales.", styles['caption']))
+    story.append(make_screenshot_flowable(
+        os.path.join(screenshots_dir, "11_portal_estudiante_comunicados.png"),
+        "<b>Figura 2.11:</b> Muro oficial de circulares y comunicados con categorías institucionales.",
+        styles, max_h=130, spacer_after=4
+    ))
+    story.append(make_screenshot_flowable(
+        os.path.join(screenshots_dir, "12_portal_estudiante_noticias.png"),
+        "<b>Figura 2.12:</b> Módulo de noticias institucionales y cartelera cultural escolar.",
+        styles, max_h=130, spacer_after=4
+    ))
+    story.append(make_screenshot_flowable(
+        os.path.join(screenshots_dir, "13_portal_estudiante_entrega_tarea.png"),
+        "<b>Figura 2.13:</b> Modal interactivo de entrega de tareas con control de fecha límite y retroalimentación docente.",
+        styles, max_h=130, spacer_after=4
+    ))
 
-    story.append(Spacer(1, 3))
-
-    img_news = scale_image(os.path.join(screenshots_dir, "12_portal_estudiante_noticias.png"), max_height=125)
-    if img_news:
-        story.append(img_news)
-        story.append(Paragraph("<b>Figura 2.12:</b> Módulo de noticias institucionales y cartelera cultural escolar.", styles['caption']))
-
-    story.append(Spacer(1, 3))
-
-    img_task = scale_image(os.path.join(screenshots_dir, "13_portal_estudiante_entrega_tarea.png"), max_height=130)
-    if img_task:
-        story.append(img_task)
-        story.append(Paragraph("<b>Figura 2.13:</b> Modal interactivo de entrega de tareas con control de fecha límite y retroalimentación docente.", styles['caption']))
 
     story.append(PageBreak())
 
@@ -533,13 +546,13 @@ def generate_pdf(output_pdf_path, project_root):
 
     proto_steps = [
         [Paragraph("<b>Paso 1: Entorno de Datos</b>", styles['table_cell_bold']),
-         Paragraph("Levantar el backend con PostgreSQL activo en el puerto 5433. El sistema contiene los 38 inquilinos y 18.031 colegios de catálogo.", styles['table_cell'])],
+         Paragraph("Levantar el backend con PostgreSQL activo en el puerto 5433. El sistema contiene los 38 inquilinos sintéticos de prueba y 18.031 colegios del catálogo abierto DANE.", styles['table_cell'])],
         [Paragraph("<b>Paso 2: Datos Sintéticos</b>", styles['table_cell_bold']),
          Paragraph("Ejecutar <code>python backend/scratch/qa_seed_phase15.py --action seed</code> para asegurar que las cuentas de demostración del estudiante y acudiente cuenten con matrícula activa y comunicados sembrados.", styles['table_cell'])],
         [Paragraph("<b>Paso 3: Cuentas Demo</b>", styles['table_cell_bold']),
          Paragraph("Utilizar perfiles representativos: <code>admin@pevn.gov.co</code> (SuperAdmin), <code>rectoria@librada.edu.co</code> (Rector), <code>docente.ciencias@librada.edu.co</code> (Docente) y <code>ramiro.rey@example.edu.co</code> (Estudiante).", styles['table_cell'])],
         [Paragraph("<b>Paso 4: Auditoría en Vivo</b>", styles['table_cell_bold']),
-         Paragraph("Demostrar el Centro de Mando Territorial y mostrar la consola técnica SA-02 evidenciando cómo cada acción queda grabada de forma inmutable en la tabla <code>audit_logs</code>.", styles['table_cell'])],
+         Paragraph("Demostrar el Centro de Mando Territorial y mostrar la consola técnica SA-02 evidenciando cómo cada acción queda grabada de forma inmutable en la tabla <code>audit_logs</code> (3.084 eventos sintéticos de prueba).", styles['table_cell'])],
     ]
     t_proto = Table(proto_steps, colWidths=[120, PRINTABLE_WIDTH - 120])
     t_proto.setStyle(TableStyle([
@@ -575,7 +588,7 @@ def generate_pdf(output_pdf_path, project_root):
 
     story.append(Spacer(1, 15))
 
-    story.append(Paragraph("<b>Validación y Cierre Técnico DOC-03-R1:</b> La presente guía institucional integral describe el estado verificado internamente en el repositorio, asegurando consistencia técnica entre la documentación, el Tour Interactivo de Producto, las pruebas automatizadas y los componentes implementados.", styles['caption']))
+    story.append(Paragraph("<b>Validación y Cierre Técnico DOC-04-R1:</b> La presente guía institucional integral describe el estado verificado internamente en el repositorio, asegurando consistencia técnica entre la documentación, el Tour Interactivo de Producto, las pruebas automatizadas y los componentes implementados. Estado de aceptación: CONDITIONAL PASS (limitado por la indisponibilidad de PostgreSQL en puerto 5433 y Redis en puerto 6379 en el entorno local de auditoría).", styles['caption']))
 
     doc.build(story, canvasmaker=InstitutionalNumberedCanvas)
     print(f"PDF generado exitosamente en: {output_pdf_path}")

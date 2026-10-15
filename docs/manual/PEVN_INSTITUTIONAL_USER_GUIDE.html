@@ -450,7 +450,7 @@
     .status-planned { background: #F1F5F9; color: #475569; border: 1px solid #CBD5E1; }
     .status-unverified { background: #FEE2E2; color: #991B1B; border: 1px solid #FCA5A5; }
 
-    /* CAPTURAS CON CLICK-TO-ENLARGE */
+    /* CAPTURAS CON CLICK-TO-ENLARGE (ESTÁNDAR VISUAL DOC-04-R2) */
     .figure-card {
       margin: 1.75rem 0;
       background: #FFFFFF;
@@ -459,6 +459,8 @@
       overflow: hidden;
       box-shadow: var(--shadow-md);
       transition: box-shadow 0.2s ease;
+      width: 100%;
+      box-sizing: border-box;
     }
     .figure-card:hover {
       box-shadow: var(--shadow-lg);
@@ -468,11 +470,18 @@
       cursor: zoom-in;
       background: #EDF2F7;
       overflow: hidden;
+      width: 100%;
+      box-sizing: border-box;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
     .figure-img {
       width: 100%;
+      max-width: 100%;
       height: auto;
       display: block;
+      object-fit: contain;
       transition: transform 0.25s ease;
     }
     .figure-img-container:hover .figure-img {
@@ -891,7 +900,7 @@
           </div>
           <div class="kpi-card">
             <span class="kpi-num">v2.4.0</span>
-            <span class="kpi-label">Versión de Producción</span>
+            <span class="kpi-label">Versión de Demostración</span>
           </div>
         </div>
       </section>
@@ -992,29 +1001,29 @@
                 <td>Login JWT seguro, refresco silencioso en memoria (Single-Flight), recuperación de contraseña y cierre de sesión.</td>
                 <td><code>/login</code>, <code>/forgot-password</code></td>
                 <td><code>/api/v1/auth/login</code>, <code>/refresh</code>, <code>tokens.py</code></td>
-                <td><code>test_auth_security_hardening.py</code> (100% pass)</td>
+                <td><code>test_auth_security_hardening.py</code> (Unitarias passing; <code>test_sec26</code> requiere Redis local activo)</td>
                 <td><span class="status-pill status-verified">IMPLEMENTED AND VERIFIED</span></td>
                 <td>Apta para demostración en vivo</td>
               </tr>
               <tr>
                 <td><strong>Centro de Mando Territorial</strong></td>
                 <td>SuperAdmin / MEN / SED</td>
-                <td>Monitoreo en 4 capas de los 33 departamentos, 1.119 municipios, 18.031 planteles y 38 tenants operativos.</td>
+                <td>Monitoreo en 4 capas de los 33 departamentos, 1.119 municipios, 18.031 planteles en catálogo abierto DANE y 38 inquilinos sintéticos de prueba.</td>
                 <td><code>/analytics/territorial</code></td>
                 <td><code>/api/v1/analytics/territorial/control-center</code></td>
-                <td><code>test_nta05_territorial_control_center.py</code> (15 pass)</td>
-                <td><span class="status-pill status-verified">IMPLEMENTED AND VERIFIED</span></td>
-                <td>Apta — Muestra datos consolidados de Colombia</td>
+                <td><code>test_nta05_territorial_control_center.py</code> (15 pruebas de integración; requiere PostgreSQL en puerto 5433)</td>
+                <td><span class="status-pill status-external">IMPLEMENTED — REQUIRES LIVE POSTGRESQL</span></td>
+                <td>Apta en vivo levantando PostgreSQL en puerto 5433 (fail-closed activo)</td>
               </tr>
               <tr>
                 <td><strong>Diagnóstico Operacional SA-02</strong></td>
                 <td>SuperAdmin Técnico</td>
-                <td>Inspección de salud de inquilinos, auditoría inmutable en PostgreSQL (3.084 registros) y telemetría de cola.</td>
+                <td>Inspección de salud de inquilinos, auditoría inmutable en PostgreSQL (3.084 registros sintéticos de prueba) y telemetría de cola.</td>
                 <td><code>/operations/diagnostics</code></td>
                 <td><code>/api/v1/operations/tenant-diagnostics</code>, <code>audit_logs</code></td>
-                <td><code>test_sa02_technical_operations_portal.py</code> (100% pass)</td>
-                <td><span class="status-pill status-verified">IMPLEMENTED AND VERIFIED</span></td>
-                <td>Apta — Auditoría real en base de datos</td>
+                <td><code>test_sa02_technical_operations_portal.py</code> (9 pruebas de integración; requiere PostgreSQL en puerto 5433)</td>
+                <td><span class="status-pill status-external">IMPLEMENTED — REQUIRES LIVE POSTGRESQL</span></td>
+                <td>Apta en vivo levantando PostgreSQL en puerto 5433</td>
               </tr>
               <tr>
                 <td><strong>Aprovisionamiento Territorial</strong></td>
@@ -1232,7 +1241,7 @@
             <div class="tour-meta-item"><strong>Objetivo:</strong><span>Auditar la cobertura territorial en 4 capas (DIVIPOLA, DUE, Matrículas y Tenancy).</span></div>
             <div class="tour-meta-item"><strong>Rol Inicial:</strong><span>SuperAdmin / Administrador Nacional (MEN) / Admin Departamental (SED)</span></div>
             <div class="tour-meta-item"><strong>Ruta de Acceso:</strong><span><code>/analytics/territorial</code></span></div>
-            <div class="tour-meta-item"><strong>Evidencia de Código:</strong><span><code>test_nta05_territorial_control_center.py</code> (15 pruebas unitarias passing)</span></div>
+            <div class="tour-meta-item"><strong>Evidencia de Código:</strong><span><code>test_nta05_territorial_control_center.py</code> (15 pruebas de integración PostgreSQL)</span></div>
           </div>
 
           <div class="steps-container">
@@ -1245,7 +1254,7 @@
                 </div>
                 <p class="step-desc">El funcionario nacional visualiza la desagregación de colegios oficiales catalogados frente a inquilinos activos en el sistema.</p>
                 <div class="step-io-grid">
-                  <div class="step-io-item"><strong>Datos Expuestos:</strong>33 departamentos, 1.119 municipios, 18.031 planteles DUE y 38 colegios operativos.</div>
+                  <div class="step-io-item"><strong>Datos Expuestos:</strong>33 departamentos, 1.119 municipios, 18.031 planteles en catálogo abierto DANE y 38 colegios sintéticos de prueba.</div>
                   <div class="step-io-item"><strong>Regla Anti-IDOR:</strong>Si ingresa un Admin Departamental, solo visualiza la fila de su propio departamento (HTTP 403 en otros).</div>
                 </div>
               </div>
@@ -1278,7 +1287,7 @@
             <div class="tour-meta-item"><strong>Objetivo:</strong><span>Monitorear la salud de las bases de datos de inquilinos y consultar el log de auditoría.</span></div>
             <div class="tour-meta-item"><strong>Rol Inicial:</strong><span>SuperAdmin Técnico</span></div>
             <div class="tour-meta-item"><strong>Ruta de Acceso:</strong><span><code>/operations/diagnostics</code></span></div>
-            <div class="tour-meta-item"><strong>Evidencia Backend:</strong><span>Tabla PostgreSQL <code>audit_logs</code> con 3.084 registros inmutables.</span></div>
+            <div class="tour-meta-item"><strong>Evidencia Backend:</strong><span>Tabla PostgreSQL <code>audit_logs</code> con 3.084 registros sintéticos de prueba.</span></div>
           </div>
 
           <div class="figure-card">
@@ -1793,7 +1802,7 @@
               <h5 class="step-title">Verificación de Base de Datos PostgreSQL</h5>
               <p class="step-desc">
                 Asegúrese de que el servicio PostgreSQL esté activo en el puerto 5433 (<code>pevn_db</code>).
-                La base de datos contiene los 38 inquilinos y 18.031 colegios de catálogo.
+                La base de datos contiene los 38 inquilinos sintéticos de prueba y 18.031 colegios del catálogo abierto DANE.
               </p>
             </div>
           </div>

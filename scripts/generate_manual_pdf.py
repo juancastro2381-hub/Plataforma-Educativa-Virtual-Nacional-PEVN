@@ -196,7 +196,7 @@ def make_callout(text, styles, width=PRINTABLE_WIDTH):
     return t
 
 
-def make_screenshot_flowable(img_path, caption_text, route_text, styles, max_w=PRINTABLE_WIDTH * 0.95):
+def make_screenshot_flowable(img_path, caption_text, route_text, styles, max_h=285):
     if not os.path.exists(img_path):
         return Spacer(1, 1)
 
@@ -204,31 +204,37 @@ def make_screenshot_flowable(img_path, caption_text, route_text, styles, max_w=P
         orig_w, orig_h = pil_img.size
 
     aspect = orig_h / orig_w
-    target_w = max_w
-    target_h = max_w * aspect
+    pad_x = 4.0
+    inner_w = PRINTABLE_WIDTH - (2 * pad_x)
+    target_w = inner_w
+    target_h = inner_w * aspect
     
-    # Limitar altura máxima para no desbordar página
-    if target_h > 240:
-        target_h = 240
+    # Limitar altura máxima proporcionalmente si excede el límite vertical para la página
+    if max_h is not None and target_h > max_h:
+        target_h = max_h
         target_w = target_h / aspect
 
     img_flowable = Image(img_path, width=target_w, height=target_h)
     
     cap_para = Paragraph(f"<b>{caption_text}</b> · <i>{route_text}</i>", styles['caption'])
     
-    table = Table([[img_flowable], [cap_para]], colWidths=[target_w])
+    # El contenedor de tabla SIEMPRE abarca el 100% del ancho imprimible (márgenes alineados)
+    table = Table([[img_flowable], [cap_para]], colWidths=[PRINTABLE_WIDTH])
     table.setStyle(TableStyle([
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ('BOX', (0, 0), (-1, -1), 0.5, COLOR_BORDER),
         ('BACKGROUND', (0, 0), (-1, -1), COLOR_BG_LIGHT),
-        ('TOPPADDING', (0, 0), (-1, -1), 4),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
-        ('LEFTPADDING', (0, 0), (-1, -1), 4),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 4),
+        ('TOPPADDING', (0, 0), (-1, 0), 4),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 2),
+        ('LEFTPADDING', (0, 0), (-1, -1), pad_x),
+        ('RIGHTPADDING', (0, 0), (-1, -1), pad_x),
+        ('TOPPADDING', (0, 1), (-1, 1), 3),
+        ('BOTTOMPADDING', (0, 1), (-1, 1), 5),
     ]))
     
     return KeepTogether([table, Spacer(1, 8)])
+
 
 
 def build_manual_pdf():
