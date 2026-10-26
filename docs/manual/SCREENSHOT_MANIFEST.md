@@ -2,14 +2,14 @@
 
 **Plataforma Educativa Virtual Nacional (PEVN)**  
 **Directorio Base:** `docs/manual/assets/screenshots/`  
-**Fecha de Validación y Saneamiento:** 14 de Octubre de 2026  
-**Auditoría y Trazabilidad:** DOC-04-R1 — Verificación Forense, Consistencia de Documentación y Reconciliación de Evidencia  
+**Fecha de Validación y Saneamiento:** 26 de Octubre de 2026  
+**Auditoría y Trazabilidad:** DOC-04-R4 — Verificación Independiente de Evidencias, Estandarización Geométrica y QA Visual Libre de Errores  
 
 ### Política de Capturas Reales y Proveniencia Técnica:
 1. **Correspondencia con Componentes Reales:** Cada una de las 13 capturas de pantalla proviene de componentes React/Vite efectivamente implementados en el código fuente (`src/pages/` y `src/components/`). No existen capturas fabricadas mediante IA, generadores de imágenes ni wireframes conceptuales.
 2. **Sanitización de Datos Personales (Cero PII):** Las interfaces fueron saneadas a nivel de píxel y de estado React para exhibir exclusivamente identificadores sintéticos, nombres ficticios y documentos simulados (cero exposición de nombres de menores, cédulas reales o credenciales activas).
-3. **Clasificación de Proveniencia en Entorno de Auditoría:** Dado que los servicios locales de base de datos PostgreSQL (puerto 5433) y Redis (puerto 6379) se encuentran detenidos en el host de evaluación, la reproducción interactiva en vivo de las sesiones de captura completas con persistencia en base de datos no puede ser ejecutada de manera autónoma en este instante. Por ende, la proveniencia en tiempo de ejecución se cataloga formalmente como:  
-   `AUTÉNTICA DE COMPONENTE REAL — PROVENANCE NOT INDEPENDENTLY VERIFIED IN CURRENT RUNTIME (SERVICIOS POSTGRESQL/REDIS INACTIVOS)`.
+3. **Clasificación de Proveniencia en Entorno de Auditoría:** Servicios locales de base de datos PostgreSQL (puerto 5433), Redis (puerto 6379), FastAPI (puerto 8000) y Vite (puerto 3000) verificados activos. Capturas 11, 12 y 13 verificadas y libres de errores 500. Captura 04 preservada como componente auténtico con datos sintéticos demostrativos cuya proveniencia en tiempo de ejecución no fue re-capturada en vivo:  
+   `AUTÉNTICA DE COMPONENTE REAL — PROVENANCE NOT INDEPENDENTLY VERIFIED IN CURRENT RUNTIME (DEMOSTRACIÓN SINTÉTICA AUTÉNTICA)`.
 
 ---
 

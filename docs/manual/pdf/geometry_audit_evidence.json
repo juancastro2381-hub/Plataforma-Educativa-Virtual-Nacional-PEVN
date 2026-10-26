@@ -1,0 +1,648 @@
+{
+  "PEVN_INSTITUTIONAL_USER_GUIDE.pdf": {
+    "spec": {
+      "page_width": 595.2756,
+      "page_height": 841.8898,
+      "margin_x": 36.0,
+      "margin_y": 40.0,
+      "printable_width": 523.2756,
+      "tolerance_pt": 1.0
+    },
+    "total_pages": 9,
+    "pages_with_figures": [
+      {
+        "page_number": 3,
+        "image_count": 2,
+        "container_box_count": 8,
+        "figures": [
+          {
+            "xref": 8,
+            "image_rect": {
+              "x0": 97.64,
+              "y0": 399.0,
+              "x1": 497.64,
+              "y1": 589.0,
+              "width": 400.0,
+              "height": 190.0
+            },
+            "container_rect": {
+              "x0": 36.0,
+              "x1": 559.28,
+              "width": 523.28
+            },
+            "alignment_error_left_pt": 0.0,
+            "alignment_error_right_pt": 0.0,
+            "image_inside_container": true,
+            "status": "PASS"
+          },
+          {
+            "xref": 4,
+            "image_rect": {
+              "x0": 99.11,
+              "y0": 180.0,
+              "x1": 496.17,
+              "y1": 370.0,
+              "width": 397.06,
+              "height": 190.0
+            },
+            "container_rect": {
+              "x0": 36.0,
+              "x1": 559.28,
+              "width": 523.28
+            },
+            "alignment_error_left_pt": 0.0,
+            "alignment_error_right_pt": 0.0,
+            "image_inside_container": true,
+            "status": "PASS"
+          }
+        ]
+      },
+      {
+        "page_number": 4,
+        "image_count": 2,
+        "container_box_count": 8,
+        "figures": [
+          {
+            "xref": 9,
+            "image_rect": {
+              "x0": 98.29,
+              "y0": 126.0,
+              "x1": 496.98,
+              "y1": 316.0,
+              "width": 398.69,
+              "height": 190.0
+            },
+            "container_rect": {
+              "x0": 36.0,
+              "x1": 559.28,
+              "width": 523.28
+            },
+            "alignment_error_left_pt": 0.0,
+            "alignment_error_right_pt": 0.0,
+            "image_inside_container": true,
+            "status": "PASS"
+          },
+          {
+            "xref": 11,
+            "image_rect": {
+              "x0": 99.51,
+              "y0": 345.0,
+              "x1": 495.76,
+              "y1": 535.0,
+              "width": 396.25,
+              "height": 190.0
+            },
+            "container_rect": {
+              "x0": 36.0,
+              "x1": 559.28,
+              "width": 523.28
+            },
+            "alignment_error_left_pt": 0.0,
+            "alignment_error_right_pt": 0.0,
+            "image_inside_container": true,
+            "status": "PASS"
+          }
+        ]
+      },
+      {
+        "page_number": 5,
+        "image_count": 2,
+        "container_box_count": 8,
+        "figures": [
+          {
+            "xref": 15,
+            "image_rect": {
+              "x0": 107.64,
+              "y0": 333.0,
+              "x1": 487.64,
+              "y1": 523.0,
+              "width": 380.0,
+              "height": 190.0
+            },
+            "container_rect": {
+              "x0": 36.0,
+              "x1": 559.28,
+              "width": 523.28
+            },
+            "alignment_error_left_pt": 0.0,
+            "alignment_error_right_pt": 0.0,
+            "image_inside_container": true,
+            "status": "PASS"
+          },
+          {
+            "xref": 13,
+            "image_rect": {
+              "x0": 97.88,
+              "y0": 114.0,
+              "x1": 497.39,
+              "y1": 304.0,
+              "width": 399.51,
+              "height": 190.0
+            },
+            "container_rect": {
+              "x0": 36.0,
+              "x1": 559.28,
+              "width": 523.28
+            },
+            "alignment_error_left_pt": 0.0,
+            "alignment_error_right_pt": 0.0,
+            "image_inside_container": true,
+            "status": "PASS"
+          }
+        ]
+      },
+      {
+        "page_number": 6,
+        "image_count": 2,
+        "container_box_count": 8,
+        "figures": [
+          {
+            "xref": 18,
+            "image_rect": {
+              "x0": 100.32,
+              "y0": 333.0,
+              "x1": 494.96,
+              "y1": 523.0,
+              "width": 394.64,
+              "height": 190.0
+            },
+            "container_rect": {
+              "x0": 36.0,
+              "x1": 559.28,
+              "width": 523.28
+            },
+            "alignment_error_left_pt": 0.0,
+            "alignment_error_right_pt": 0.0,
+            "image_inside_container": true,
+            "status": "PASS"
+          },
+          {
+            "xref": 17,
+            "image_rect": {
+              "x0": 99.11,
+              "y0": 114.0,
+              "x1": 496.17,
+              "y1": 304.0,
+              "width": 397.06,
+              "height": 190.0
+            },
+            "container_rect": {
+              "x0": 36.0,
+              "x1": 559.28,
+              "width": 523.28
+            },
+            "alignment_error_left_pt": 0.0,
+            "alignment_error_right_pt": 0.0,
+            "image_inside_container": true,
+            "status": "PASS"
+          }
+        ]
+      },
+      {
+        "page_number": 7,
+        "image_count": 2,
+        "container_box_count": 8,
+        "figures": [
+          {
+            "xref": 22,
+            "image_rect": {
+              "x0": 154.28,
+              "y0": 333.0,
+              "x1": 441.0,
+              "y1": 523.0,
+              "width": 286.72,
+              "height": 190.0
+            },
+            "container_rect": {
+              "x0": 36.0,
+              "x1": 559.28,
+              "width": 523.28
+            },
+            "alignment_error_left_pt": 0.0,
+            "alignment_error_right_pt": 0.0,
+            "image_inside_container": true,
+            "status": "PASS"
+          },
+          {
+            "xref": 20,
+            "image_rect": {
+              "x0": 99.91,
+              "y0": 114.0,
+              "x1": 495.36,
+              "y1": 304.0,
+              "width": 395.45,
+              "height": 190.0
+            },
+            "container_rect": {
+              "x0": 36.0,
+              "x1": 559.28,
+              "width": 523.28
+            },
+            "alignment_error_left_pt": 0.0,
+            "alignment_error_right_pt": 0.0,
+            "image_inside_container": true,
+            "status": "PASS"
+          }
+        ]
+      },
+      {
+        "page_number": 8,
+        "image_count": 3,
+        "container_box_count": 11,
+        "figures": [
+          {
+            "xref": 24,
+            "image_rect": {
+              "x0": 180.23,
+              "y0": 114.0,
+              "x1": 415.04,
+              "y1": 244.0,
+              "width": 234.81,
+              "height": 130.0
+            },
+            "container_rect": {
+              "x0": 36.0,
+              "x1": 559.28,
+              "width": 523.28
+            },
+            "alignment_error_left_pt": 0.0,
+            "alignment_error_right_pt": 0.0,
+            "image_inside_container": true,
+            "status": "PASS"
+          },
+          {
+            "xref": 26,
+            "image_rect": {
+              "x0": 160.8,
+              "y0": 428.0,
+              "x1": 434.48,
+              "y1": 558.0,
+              "width": 273.68,
+              "height": 130.0
+            },
+            "container_rect": {
+              "x0": 36.0,
+              "x1": 559.28,
+              "width": 523.28
+            },
+            "alignment_error_left_pt": 0.0,
+            "alignment_error_right_pt": 0.0,
+            "image_inside_container": true,
+            "status": "PASS"
+          },
+          {
+            "xref": 25,
+            "image_rect": {
+              "x0": 160.8,
+              "y0": 271.0,
+              "x1": 434.48,
+              "y1": 401.0,
+              "width": 273.68,
+              "height": 130.0
+            },
+            "container_rect": {
+              "x0": 36.0,
+              "x1": 559.28,
+              "width": 523.28
+            },
+            "alignment_error_left_pt": 0.0,
+            "alignment_error_right_pt": 0.0,
+            "image_inside_container": true,
+            "status": "PASS"
+          }
+        ]
+      }
+    ],
+    "geometry_violations": []
+  },
+  "PEVN_INTERACTIVE_USER_MANUAL.pdf": {
+    "spec": {
+      "page_width": 595.2756,
+      "page_height": 841.8898,
+      "margin_x": 40.0,
+      "margin_y": 40.0,
+      "printable_width": 515.2756,
+      "tolerance_pt": 1.0
+    },
+    "total_pages": 9,
+    "pages_with_figures": [
+      {
+        "page_number": 2,
+        "image_count": 2,
+        "container_box_count": 11,
+        "figures": [
+          {
+            "xref": 7,
+            "image_rect": {
+              "x0": 44.0,
+              "y0": 516.24,
+              "x1": 551.28,
+              "y1": 757.2,
+              "width": 507.28,
+              "height": 240.96
+            },
+            "container_rect": {
+              "x0": 40.0,
+              "x1": 555.28,
+              "width": 515.28
+            },
+            "alignment_error_left_pt": 0.0,
+            "alignment_error_right_pt": 0.0,
+            "image_inside_container": true,
+            "status": "PASS"
+          },
+          {
+            "xref": 5,
+            "image_rect": {
+              "x0": 44.0,
+              "y0": 170.0,
+              "x1": 551.28,
+              "y1": 412.74,
+              "width": 507.28,
+              "height": 242.74
+            },
+            "container_rect": {
+              "x0": 40.0,
+              "x1": 555.28,
+              "width": 515.28
+            },
+            "alignment_error_left_pt": 0.0,
+            "alignment_error_right_pt": 0.0,
+            "image_inside_container": true,
+            "status": "PASS"
+          }
+        ]
+      },
+      {
+        "page_number": 3,
+        "image_count": 1,
+        "container_box_count": 5,
+        "figures": [
+          {
+            "xref": 8,
+            "image_rect": {
+              "x0": 44.0,
+              "y0": 212.0,
+              "x1": 551.28,
+              "y1": 453.75,
+              "width": 507.28,
+              "height": 241.75
+            },
+            "container_rect": {
+              "x0": 40.0,
+              "x1": 555.28,
+              "width": 515.28
+            },
+            "alignment_error_left_pt": 0.0,
+            "alignment_error_right_pt": 0.0,
+            "image_inside_container": true,
+            "status": "PASS"
+          }
+        ]
+      },
+      {
+        "page_number": 4,
+        "image_count": 2,
+        "container_box_count": 8,
+        "figures": [
+          {
+            "xref": 12,
+            "image_rect": {
+              "x0": 44.0,
+              "y0": 391.75,
+              "x1": 551.28,
+              "y1": 645.39,
+              "width": 507.28,
+              "height": 253.64
+            },
+            "container_rect": {
+              "x0": 40.0,
+              "x1": 555.28,
+              "width": 515.28
+            },
+            "alignment_error_left_pt": 0.0,
+            "alignment_error_right_pt": 0.0,
+            "image_inside_container": true,
+            "status": "PASS"
+          },
+          {
+            "xref": 10,
+            "image_rect": {
+              "x0": 44.0,
+              "y0": 118.0,
+              "x1": 551.28,
+              "y1": 359.25,
+              "width": 507.28,
+              "height": 241.25
+            },
+            "container_rect": {
+              "x0": 40.0,
+              "x1": 555.28,
+              "width": 515.28
+            },
+            "alignment_error_left_pt": 0.0,
+            "alignment_error_right_pt": 0.0,
+            "image_inside_container": true,
+            "status": "PASS"
+          }
+        ]
+      },
+      {
+        "page_number": 5,
+        "image_count": 2,
+        "container_box_count": 8,
+        "figures": [
+          {
+            "xref": 15,
+            "image_rect": {
+              "x0": 44.0,
+              "y0": 330.24,
+              "x1": 551.28,
+              "y1": 574.46,
+              "width": 507.28,
+              "height": 244.23
+            },
+            "container_rect": {
+              "x0": 40.0,
+              "x1": 555.28,
+              "width": 515.28
+            },
+            "alignment_error_left_pt": 0.0,
+            "alignment_error_right_pt": 0.0,
+            "image_inside_container": true,
+            "status": "PASS"
+          },
+          {
+            "xref": 14,
+            "image_rect": {
+              "x0": 44.0,
+              "y0": 55.0,
+              "x1": 551.28,
+              "y1": 297.74,
+              "width": 507.28,
+              "height": 242.74
+            },
+            "container_rect": {
+              "x0": 40.0,
+              "x1": 555.28,
+              "width": 515.28
+            },
+            "alignment_error_left_pt": 0.0,
+            "alignment_error_right_pt": 0.0,
+            "image_inside_container": true,
+            "status": "PASS"
+          }
+        ]
+      },
+      {
+        "page_number": 6,
+        "image_count": 2,
+        "container_box_count": 8,
+        "figures": [
+          {
+            "xref": 19,
+            "image_rect": {
+              "x0": 82.6,
+              "y0": 426.23,
+              "x1": 512.68,
+              "y1": 711.23,
+              "width": 430.08,
+              "height": 285.0
+            },
+            "container_rect": {
+              "x0": 40.0,
+              "x1": 555.28,
+              "width": 515.28
+            },
+            "alignment_error_left_pt": 0.0,
+            "alignment_error_right_pt": 0.0,
+            "image_inside_container": true,
+            "status": "PASS"
+          },
+          {
+            "xref": 17,
+            "image_rect": {
+              "x0": 44.0,
+              "y0": 118.0,
+              "x1": 551.28,
+              "y1": 361.73,
+              "width": 507.28,
+              "height": 243.73
+            },
+            "container_rect": {
+              "x0": 40.0,
+              "x1": 555.28,
+              "width": 515.28
+            },
+            "alignment_error_left_pt": 0.0,
+            "alignment_error_right_pt": 0.0,
+            "image_inside_container": true,
+            "status": "PASS"
+          }
+        ]
+      },
+      {
+        "page_number": 7,
+        "image_count": 2,
+        "container_box_count": 8,
+        "figures": [
+          {
+            "xref": 22,
+            "image_rect": {
+              "x0": 44.0,
+              "y0": 391.46,
+              "x1": 551.28,
+              "y1": 672.31,
+              "width": 507.28,
+              "height": 280.85
+            },
+            "container_rect": {
+              "x0": 40.0,
+              "x1": 555.28,
+              "width": 515.28
+            },
+            "alignment_error_left_pt": 0.0,
+            "alignment_error_right_pt": 0.0,
+            "image_inside_container": true,
+            "status": "PASS"
+          },
+          {
+            "xref": 21,
+            "image_rect": {
+              "x0": 44.0,
+              "y0": 118.0,
+              "x1": 551.28,
+              "y1": 358.96,
+              "width": 507.28,
+              "height": 240.96
+            },
+            "container_rect": {
+              "x0": 40.0,
+              "x1": 555.28,
+              "width": 515.28
+            },
+            "alignment_error_left_pt": 0.0,
+            "alignment_error_right_pt": 0.0,
+            "image_inside_container": true,
+            "status": "PASS"
+          }
+        ]
+      },
+      {
+        "page_number": 8,
+        "image_count": 1,
+        "container_box_count": 5,
+        "figures": [
+          {
+            "xref": 23,
+            "image_rect": {
+              "x0": 44.0,
+              "y0": 55.0,
+              "x1": 551.28,
+              "y1": 295.96,
+              "width": 507.28,
+              "height": 240.96
+            },
+            "container_rect": {
+              "x0": 40.0,
+              "x1": 555.28,
+              "width": 515.28
+            },
+            "alignment_error_left_pt": 0.0,
+            "alignment_error_right_pt": 0.0,
+            "image_inside_container": true,
+            "status": "PASS"
+          }
+        ]
+      },
+      {
+        "page_number": 9,
+        "image_count": 1,
+        "container_box_count": 12,
+        "figures": [
+          {
+            "xref": 24,
+            "image_rect": {
+              "x0": 44.0,
+              "y0": 118.0,
+              "x1": 551.28,
+              "y1": 361.23,
+              "width": 507.28,
+              "height": 243.23
+            },
+            "container_rect": {
+              "x0": 40.0,
+              "x1": 555.28,
+              "width": 515.28
+            },
+            "alignment_error_left_pt": 0.0,
+            "alignment_error_right_pt": 0.0,
+            "image_inside_container": true,
+            "status": "PASS"
+          }
+        ]
+      }
+    ],
+    "geometry_violations": []
+  }
+}
