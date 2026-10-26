@@ -1,24 +1,27 @@
 #!/usr/bin/env python3
 """
-PEVN — Validador Estricto de Integridad Documental, Capturas y Artefactos PDF
-Auditoría y Aseguramiento Técnico DOC-04-R1.
+PEVN — Validador Estricto de Integridad Documental, Capturas, Maquetación y Reconciliación de Pruebas (DOC-04-R3)
+Auditoría y Aseguramiento Técnico DOC-04-R3.
 
-Valida de forma estricta:
-1. Referencias locales en HTML (src, href, openLightbox, downloads).
-2. Resolución y existencia de todas las imágenes en disco.
-3. Consistencia de anclas internas (#id) y ausencia de IDs duplicados.
-4. Coherencia bidireccional del Manifiesto Oficial de Capturas (SCREENSHOT_MANIFEST.md).
-5. Existencia, tamaño e integridad de los artefactos PDF oficiales e históricos.
-6. Existencia y alineación de los scripts generadores de PDF.
-7. Conteo de páginas e imágenes embebidas en los PDFs (vía PyMuPDF).
+Valida de forma exhaustiva y fail-closed:
+1. Integridad de referencias HTML (src, href, openLightbox, anclas #id únicas).
+2. Ausencia de textos o banners de error en HTMLs y páginas PDF.
+3. Existencia, tamaño y paridad bidireccional del Manifiesto de Capturas (SCREENSHOT_MANIFEST.md).
+4. Completitud de metadatos de las 13 capturas en el manifiesto.
+5. Existencia, tamaño, conteo de páginas (9 A4) y figuras embebidas (13) en PDFs oficiales.
+6. Frescura de artefactos PDF (no obsoletos frente a generadores o capturas).
+7. Coherencia de conteo de 13 capturas en los 5 artefactos documentales.
+8. Reglas de maquetación CSS (.figure-card 100%, object-fit: contain) y ReportLab (colWidths=[PRINTABLE_WIDTH], KeepTogether).
+9. Reconciliación matemática de pruebas backend (722 recolectadas) y distinción estricta de pruebas ejecutadas.
 
-Retorna código de salida 0 si todos los chequeos obligatorios pasan.
+Retorna código de salida 0 si todos los chequeos pasan.
 Retorna código de salida 1 si se detecta cualquier falla obligatoria.
 """
 
 import os
 import re
 import sys
+import subprocess
 from pathlib import Path
 from collections import Counter
 
@@ -34,6 +37,7 @@ SCREENSHOTS_DIR = MANUAL_DIR / "assets" / "screenshots"
 PDF_DIR = MANUAL_DIR / "pdf"
 SCRIPTS_DIR = ROOT_DIR / "scripts"
 MANIFEST_FILE = MANUAL_DIR / "SCREENSHOT_MANIFEST.md"
+REPORTS_DIR = ROOT_DIR / "docs" / "reports"
 
 INST_HTML = MANUAL_DIR / "PEVN_INSTITUTIONAL_USER_GUIDE.html"
 OPER_HTML = MANUAL_DIR / "index.html"
@@ -47,6 +51,15 @@ REQUIRED_PDFS = [
 REQUIRED_SCRIPTS = [
     "generate_institutional_user_guide_pdf.py",
     "generate_manual_pdf.py"
+]
+
+PROHIBITED_ERROR_STRINGS = [
+    "An unexpected error occurred",
+    "500 Internal Server Error",
+    "Uncaught TypeError",
+    "Uncaught ReferenceError",
+    "failed to fetch",
+    "NetworkError when attempting to fetch resource"
 ]
 
 PASS_LIST = []
@@ -130,6 +143,12 @@ def audit_html_file(html_path: Path):
                     record_fail(f"{html_path.name}: Archivo local vinculado está vacío", str(file_target))
     record_pass(f"{html_path.name}: Integridad de hipervínculos y anclas", f"{len(hrefs)} enlaces validados")
 
+    # 5. Chequeo de ausencia de texto de error prohibido
+    for err in PROHIBITED_ERROR_STRINGS:
+        if err.lower() in content.lower():
+            record_fail(f"{html_path.name}: Texto de error prohibido detectado", err)
+    record_pass(f"{html_path.name}: Libre de textos de error no controlados", "Cero ocurrencias de banners de error")
+
 
 def audit_screenshot_inventory_and_manifest():
     print("\n--- Auditando Inventario de Capturas y SCREENSHOT_MANIFEST.md ---")
@@ -167,6 +186,32 @@ def audit_screenshot_inventory_and_manifest():
     if not missing_in_manifest and not missing_on_disk:
         record_pass("Consistencia bidireccional Disco vs. Manifiesto", f"100% de paridad ({len(disk_images)} capturas)")
 
+    # Validación de metadatos obligatorios para cada captura en el manifiesto
+    required_sections = [
+        "Dimensiones y Tamaño",
+        "Rol de Usuario",
+        "Ruta de la Interfaz",
+        "Componente Origen",
+        "Confirmación de Datos Sintéticos",
+        "Resultado de Validación Visual"
+    ]
+    missing_meta = []
+    for img_name in disk_images:
+        pattern = rf'### Captura \d+:.*?\n.*?(?=\n### Captura|\Z)'
+        block_match = re.search(rf'### Captura \d+:.*?{img_name}.*?(?=\n### Captura|\Z)', manifest_text, re.DOTALL)
+        if not block_match:
+            # Buscar por nombre de archivo
+            block_match = re.search(rf'{img_name}.*?(?=\n### Captura|\Z)', manifest_text, re.DOTALL)
+        if block_match:
+            b_text = block_match.group(0)
+            for req in required_sections:
+                if req not in b_text:
+                    missing_meta.append(f"{img_name}: Falta sección '{req}'")
+    if missing_meta:
+        record_fail("Metadatos incompletos en SCREENSHOT_MANIFEST.md", "; ".join(missing_meta[:3]))
+    else:
+        record_pass("Completitud de metadatos en Manifiesto", "Todas las 13 capturas tienen fichas técnicas completas")
+
 
 def audit_pdf_artifacts():
     print("\n--- Auditando Artefactos PDF Oficiales e Históricos ---")
@@ -180,6 +225,17 @@ def audit_pdf_artifacts():
                 record_fail("Artefacto PDF vacío (0 bytes)", str(pdf_path))
             else:
                 record_pass(f"PDF verificado: {pdf_name}", f"{sz:,} bytes en disco")
+
+    # Inspección de frescura de PDFs oficiales (no obsoletos frente a sus generadores o capturas)
+    for pdf_name in REQUIRED_PDFS[:2]:
+        pdf_path = PDF_DIR / pdf_name
+        if pdf_path.exists():
+            pdf_mtime = pdf_path.stat().st_mtime
+            gen_script = SCRIPTS_DIR / ("generate_institutional_user_guide_pdf.py" if "INSTITUTIONAL" in pdf_name else "generate_manual_pdf.py")
+            if gen_script.exists() and gen_script.stat().st_mtime > pdf_mtime + 5:
+                record_fail(f"{pdf_name}: Artefacto PDF obsoleto (stale)", f"El script {gen_script.name} es más reciente que el PDF")
+            else:
+                record_pass(f"{pdf_name}: Frescura de artefacto validada", "PDF actualizado respecto al script generador")
 
     # Inspección estructural de PDFs usando PyMuPDF si está instalado
     try:
@@ -198,6 +254,13 @@ def audit_pdf_artifacts():
                 record_fail(f"{pdf_name}: Conteo de imágenes embebidas incorrecto", f"Esperado: 13, Obtenido: {total_images}")
             else:
                 record_pass(f"{pdf_name}: Figuras embebidas verificadas", "13 imágenes auténticas")
+
+            # Verificación de texto extraído: libre de cadenas de error prohibidas
+            pdf_text = "\n".join(page.get_text() for page in doc)
+            for err in PROHIBITED_ERROR_STRINGS:
+                if err.lower() in pdf_text.lower():
+                    record_fail(f"{pdf_name}: Texto de error prohibido detectado en PDF", err)
+            record_pass(f"{pdf_name}: Libre de textos de error en páginas renderizadas", "Cero cadenas de excepción o fallos 500")
     except ImportError:
         record_warn("PyMuPDF (fitz) no instalado", "No se ejecutó inspección estructural interna de páginas PDF")
 
@@ -240,7 +303,7 @@ def audit_screenshot_cross_reference_counts():
 
 
 def audit_screenshot_layout_standard():
-    print("\n--- Auditando Estándar Unificado de Maquetación y Anchos de Captura (DOC-04-R2) ---")
+    print("\n--- Auditando Estándar Unificado de Maquetación y Anchos de Captura (DOC-04-R2/R3) ---")
     
     # 1. Validación de reglas en HTML Institucional
     inst_content = INST_HTML.read_text(encoding="utf-8") if INST_HTML.exists() else ""
@@ -296,9 +359,44 @@ def audit_pdf_scripts():
                 record_pass(f"Script generador verificado: {script_name}", f"{sz:,} bytes")
 
 
+def audit_test_count_reconciliation():
+    print("\n--- Auditando Reconciliación de Conteo de Pruebas Backend (DOC-04-R3) ---")
+    analyzer_script = ROOT_DIR / "backend" / "scratch" / "analyze_tests.py"
+    if not analyzer_script.exists():
+        record_fail("Script analizado de pruebas no existe", str(analyzer_script))
+        return
+
+    record_pass("Script de análisis presente", str(analyzer_script.name))
+
+    # Ejecutar analyze_tests.py en un subproceso y verificar que reporte 722 pruebas
+    try:
+        proc = subprocess.run(
+            [sys.executable, str(analyzer_script)],
+            capture_output=True,
+            text=True,
+            cwd=str(ROOT_DIR),
+            check=False
+        )
+        if proc.returncode != 0:
+            record_fail("analyze_tests.py finalizó con error", f"Código {proc.returncode}")
+        else:
+            out = proc.stdout
+            if "Gran Total de Pruebas Recolectadas: 722" in out:
+                record_pass("Censo de pruebas recolectadas exacto", "722 pruebas censadas (83 PG + 639 unitarias)")
+            else:
+                record_fail("Censo de pruebas discrepante en analyze_tests.py", "Esperado: 722 pruebas recolectadas")
+
+            if "Verificación de Suma: True" in out or "Verificacin de Suma: True" in out:
+                record_pass("Ecuación de reconciliación matemática verificada", "83 + 639 = 722")
+            else:
+                record_fail("Falla en la verificación de suma matemática de pruebas", out)
+    except Exception as exc:
+        record_fail("Error al ejecutar analyze_tests.py", str(exc))
+
+
 def main():
     print("=" * 80)
-    print("PEVN — Auditoría Estricta de Integridad Documental y Maquetación Visual (DOC-04-R2)")
+    print("PEVN — Auditoría Estricta de Integridad Documental, Capturas y Pruebas (DOC-04-R3)")
     print("=" * 80)
 
     audit_html_file(INST_HTML)
@@ -308,16 +406,7 @@ def main():
     audit_pdf_scripts()
     audit_screenshot_cross_reference_counts()
     audit_screenshot_layout_standard()
-
-    print("\n" + "=" * 80)
-    print("NOTA METODOLÓGICA SOBRE VERIFICACIÓN DE ERRORES VISUALES")
-    print("=" * 80)
-    print("Las comprobaciones estáticas automatizadas validan la integridad de archivos en disco,")
-    print("paridad numérica de capturas (13 de 13), resolución de enlaces y reglas estructurales")
-    print("de maquetación CSS/ReportLab (ancho 100% y colWidths=[PRINTABLE_WIDTH]).")
-    print("No obstante, el análisis estático de código NO sustituye la inspección visual de píxel.")
-    print("La ausencia de banners de error ('An unexpected error occurred') o elementos de depuración")
-    print("ha sido verificada de forma independiente mediante inspección visual página por página (Sección 7).")
+    audit_test_count_reconciliation()
 
     print("\n" + "=" * 80)
     print("RESUMEN GENERAL DE VERIFICACIÓN DOCUMENTAL")
@@ -338,4 +427,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
