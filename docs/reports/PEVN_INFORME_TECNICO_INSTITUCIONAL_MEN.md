@@ -112,55 +112,55 @@ A continuación se presenta la **Matriz de Madurez de Capacidades de PEVN**, con
 
 ## 5. Inventario Funcional por Rol y Módulo
 
-PEVN cuenta con una arquitectura de permisos granular segmentada en **11 perfiles de usuario**, implementados en el enumerado canónico de base de datos (`UserRole`):
+PEVN cuenta con una arquitectura de permisos granular segmentada en **11 roles de base de datos** (9 arquetipos canónicos funcionales y 2 alias operacionales de compatibilidad), registrados en el catálogo canónico de base de datos (`roles` y `UserRole`):
 
 ```mermaid
 graph TD
-    SA[1. superadmin: Administrador Nacional PEVN] --> DA[2. department_admin: Secretaría de Educación Departamental]
-    DA --> MA[3. municipal_admin: Secretaría de Educación Municipal]
-    MA --> REC[4. rector: Rector / Director Institucional]
-    REC --> COORD[5. coordinator: Coordinador Académico / Disciplinario]
-    REC --> ADM[6. administrative: Personal Administrativo / Matrículas]
-    REC --> DOC[7. teacher: Docente de Área / Grupo]
-    DOC --> EST[8. student: Estudiante Matriculado]
-    EST --> ACU[9. guardian: Acudiente / Padre de Familia]
-    REC --> ORI[10. counselor: Orientador Escolar]
-    SA --> SUP[11. supervisor: Auditor Territorial / MEN]
+    SA[1. superadmin: Super Administrador Nacional PEVN - Nivel 100] --> NA[2. national_admin: Administrador Nacional MEN - Nivel 90]
+    NA --> DA[3. department_admin: Secretaría de Educación Departamental - Nivel 80]
+    DA --> MA[4. municipality_admin: Secretaría de Educación Municipal - Nivel 70]
+    MA --> REC[5. rector: Rector / Director Institucional - Nivel 60]
+    REC -.-> IA[6. institution_admin: Alias Compatibilidad Rector - Nivel 60]
+    REC --> COORD[7. coordinator: Coordinador Académico / Sede - Nivel 50]
+    COORD -.-> AC[8. academic_coordinator: Alias Compatibilidad Coordinador - Nivel 50]
+    REC --> DOC[9. teacher: Docente de Área / Aula - Nivel 30]
+    DOC --> EST[10. student: Estudiante Matriculado - Nivel 10]
+    EST --> ACU[11. guardian: Acudiente / Tutor Legal - Nivel 10]
 ```
 
 ### 5.1. Matriz de Módulos y Accesos por Rol
 
-1. **`superadmin` (Administrador Nacional PEVN):**
-   - Configuración global de la plataforma, alta y mantenimiento de Secretarías Departamentales.
-   - Supervisión de telemetría, auditoría de seguridad y parámetros globales del sistema.
-2. **`department_admin` (Secretaría de Educación Departamental):**
+1. **`superadmin` (Super Administrador Nacional PEVN — Nivel 100):**
+   - Configuración global de la plataforma, alta y mantenimiento de gobernanza y Secretarías Departamentales.
+   - Supervisión de telemetría de infraestructura, auditoría de seguridad y parámetros globales del sistema.
+2. **`national_admin` (Administrador Nacional MEN — Nivel 90):**
+   - Gestión y supervisión nacional de entidades territoriales certificadas, catálogo DIVIPOLA nacional y auditoría centralizada.
+   - Aprovisionamiento masivo territorial y enlace con políticas nacionales del Ministerio de Educación Nacional.
+3. **`department_admin` (Secretaría de Educación Departamental — Nivel 80):**
    - Gestión y supervisión de las instituciones educativas y administradores municipales adscritos a su entidad territorial certificada (código DANE departamental).
-   - Acceso a consolidados estadísticos de matrícula, cobertura y retención escolar.
-3. **`municipal_admin` (Secretaría de Educación Municipal):**
-   - Gestión de instituciones educativas ubicadas en la jurisdicción municipal (DIVIPOLA municipal).
-   - Aprovisionamiento e invitación de rectores; monitoreo de capacidades operativas.
-4. **`rector` (Rector / Director Institucional):**
-   - Máxima autoridad en el tenant de la Institución Educativa.
-   - Creación y administración de sedes, calendarios académicos, comités de evaluación y asignación de coordinadores y docentes.
-5. **`coordinator` (Coordinador Académico):**
-   - Planificación de horarios, grupos, asignaturas y supervisión de planillas docentes.
-   - Cierre y consolidación de periodos evaluativos.
-6. **`administrative` (Personal de Apoyo / Matrículas):**
-   - Registro, verificación de documentos y formalización de matrículas de estudiantes.
-   - Emisión de constancias de estudio e historial académico.
-7. **`teacher` (Docente de Aula):**
-   - Registro de calificaciones parciales y definitivas por indicador y competencia.
+   - Acceso a consolidados estadísticos de matrícula, cobertura y retención escolar territorial.
+4. **`municipality_admin` (Secretaría de Educación Municipal — Nivel 70):**
+   - Gestión de instituciones educativas ubicadas en la jurisdicción municipal (código DIVIPOLA municipal).
+   - Aprovisionamiento e invitación criptográfica de rectores; monitoreo de capacidades operativas municipales.
+5. **`rector` (Rector / Director Institucional — Nivel 60):**
+   - Máxima autoridad directiva en el tenant de la Institución Educativa.
+   - Creación y administración de sedes, calendarios académicos, comités de evaluación y delegación de coordinadores y docentes.
+6. **`institution_admin` (Administrador Institucional — Nivel 60, Alias de Compatibilidad):**
+   - Perfil administrativo de respaldo directo institucional con equivalencia de permisos respecto al rol `rector`.
+7. **`coordinator` (Coordinador Académico / de Sede — Nivel 50):**
+   - Planificación de horarios, grupos, sedes asignadas, asignaturas y supervisión de planillas docentes.
+   - Cierre y consolidación de periodos evaluativos institucionales.
+8. **`academic_coordinator` (Coordinador Académico — Nivel 50, Alias de Compatibilidad):**
+   - Alias operacional estandarizado en contratos de interfaz para coordinación pedagógica y curricular de sede.
+9. **`teacher` (Docente de Aula — Nivel 30):**
+   - Registro de calificaciones parciales y definitivas por indicador y competencia curricular.
    - Control diario de asistencia, justificación de ausencias y asignación de tareas/guías de aprendizaje.
    - Creación y moderación de salas de clase virtual (BigBlueButton).
-8. **`student` (Estudiante):**
-   - Consulta personalizada de calificaciones, asistencia, observaciones disciplinarias y calendario de evaluaciones.
-   - Acceso a guías de estudio, entrega de evidencias y acceso a clases sincrónicas.
-9. **`guardian` (Acudiente / Padre de Familia):**
-   - Seguimiento del desempeño de sus hijos vinculados, control de ausencias y comunicación con docentes y orientadores.
-10. **`counselor` (Orientador Escolar):**
-    - Registro confidencial de acompañamiento psicosocial, seguimiento de casos de convivencia escolar (Ley 1620 de 2013) con estricta reserva de sumario.
-11. **`supervisor` (Auditor / Inspector Territorial):**
-    - Perfil transversal de solo lectura para supervisores del MEN o Secretarías de Educación, con trazabilidad de acceso para verificación de cumplimiento curricular.
+10. **`student` (Estudiante — Nivel 10):**
+    - Consulta personalizada de calificaciones, asistencia, observaciones disciplinarias y calendario de evaluaciones.
+    - Acceso a guías de estudio, entrega de evidencias y acceso a clases sincrónicas.
+11. **`guardian` (Acudiente / Tutor Legal — Nivel 10):**
+    - Seguimiento del desempeño de sus hijos vinculados, control de ausencias y comunicación con docentes y directivos.
 
 ---
 

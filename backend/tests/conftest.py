@@ -146,3 +146,16 @@ async def client(
         yield test_client
 
     get_settings.cache_clear()
+
+    # Clean up singletons and connection pools initialized during test requests
+    from app.core.security.rate_limiter import rate_limiter
+    from app.db.session import close_engine
+
+    try:
+        await rate_limiter.close()
+    except Exception:
+        pass
+    try:
+        await close_engine()
+    except Exception:
+        pass
