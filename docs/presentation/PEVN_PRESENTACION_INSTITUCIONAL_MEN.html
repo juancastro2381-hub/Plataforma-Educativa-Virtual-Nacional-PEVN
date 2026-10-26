@@ -1,0 +1,2072 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PEVN — Presentación Institucional y Técnica | Ministerio de Educación Nacional</title>
+  <style>
+    /* ==========================================================================
+       PEVN — Presentación Institucional para el MEN (Oficina de Tecnología)
+       Diseño: Institucional, Sobrio, Alta Legibilidad, Offline-First (Cero CDN)
+       ========================================================================== */
+    :root {
+      --color-primary: #0f2942;       /* Azul institucional profundo */
+      --color-primary-light: #1a446c; /* Azul medio */
+      --color-accent: #1d68a7;        /* Azul de énfasis interactivo */
+      --color-gold: #c59b27;          /* Dorado institucional sobrio */
+      --color-gold-soft: #fcf8ec;     /* Fondo ámbar sutil */
+      --color-bg-main: #f4f7fa;       /* Gris claro de fondo general */
+      --color-surface: #ffffff;       /* Superficie blanca */
+      --color-surface-alt: #e9eff5;   /* Superficie gris-azulada */
+      --color-text-main: #1e293b;     /* Texto principal pizarra oscura */
+      --color-text-muted: #475569;    /* Texto secundario */
+      --color-border: #cbd5e1;        /* Borde neutro */
+      --color-border-subtle: #e2e8f0; /* Borde suave */
+      --color-success: #15803d;       /* Verde verificación */
+      --color-success-bg: #f0fdf4;
+      --color-warning: #b45309;       /* Ámbar advertencia */
+      --color-warning-bg: #fffbeb;
+      --color-info: #0369a1;          /* Azul informativo */
+      --color-info-bg: #f0f9ff;
+      --color-danger: #b91c1c;        /* Rojo limitación */
+      --color-danger-bg: #fef2f2;
+      
+      --font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+      
+      --shadow-sm: 0 1px 3px rgba(15, 41, 66, 0.08);
+      --shadow-md: 0 4px 6px -1px rgba(15, 41, 66, 0.12), 0 2px 4px -2px rgba(15, 41, 66, 0.08);
+      --shadow-lg: 0 10px 15px -3px rgba(15, 41, 66, 0.15), 0 4px 6px -4px rgba(15, 41, 66, 0.1);
+      
+      --transition-speed: 0.25s;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-family);
+      color: var(--color-text-main);
+      background-color: var(--color-bg-main);
+      line-height: 1.5;
+      overflow: hidden;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+    }
+
+    /* Barra Superior de Progreso */
+    #progress-container {
+      width: 100%;
+      height: 4px;
+      background-color: rgba(15, 41, 66, 0.1);
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 100;
+    }
+    #progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--color-accent), var(--color-gold));
+      transition: width var(--transition-speed) ease-out;
+    }
+
+    /* Barra de Navegación Superior */
+    header#top-bar {
+      height: 52px;
+      background-color: var(--color-primary);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      box-shadow: var(--shadow-sm);
+      z-index: 90;
+      flex-shrink: 0;
+    }
+    .brand-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+    .brand-badge {
+      background-color: var(--color-gold);
+      color: var(--color-primary);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .top-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .top-button {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #ffffff;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background var(--transition-speed), border-color var(--transition-speed);
+    }
+    .top-button:hover {
+      background: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.35);
+    }
+    .top-button.active {
+      background: var(--color-gold);
+      color: var(--color-primary);
+      font-weight: 600;
+      border-color: var(--color-gold);
+    }
+
+    /* Contenedor Principal de Presentación */
+    main#deck-container {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .slide {
+      position: absolute;
+      top: 24px;
+      left: 24px;
+      right: 24px;
+      bottom: 24px;
+      background: var(--color-surface);
+      border-radius: 12px;
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--color-border);
+      padding: 40px 48px;
+      display: flex;
+      flex-direction: column;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(40px);
+      transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease;
+      overflow-y: auto;
+      user-select: text;
+    }
+
+    .slide.active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateX(0);
+      z-index: 10;
+    }
+
+    .slide.prev {
+      opacity: 0;
+      transform: translateX(-40px);
+    }
+
+    /* Tipografía y Encabezados de Diapositiva */
+    .slide-header {
+      margin-bottom: 24px;
+      border-bottom: 2px solid var(--color-surface-alt);
+      padding-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+    .slide-category {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--color-accent);
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .slide-title {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--color-primary);
+      line-height: 1.2;
+    }
+    .slide-subtitle {
+      font-size: 15px;
+      color: var(--color-text-muted);
+      margin-top: 4px;
+    }
+    .slide-counter-badge {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--color-text-muted);
+      background: var(--color-surface-alt);
+      padding: 4px 10px;
+      border-radius: 16px;
+    }
+
+    .slide-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      font-size: 16px;
+      color: var(--color-text-main);
+    }
+
+    /* Grillas y Componentes de Contenido */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    .card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+      position: relative;
+    }
+    .card.highlight {
+      border-left: 4px solid var(--color-accent);
+      background-color: var(--color-info-bg);
+    }
+    .card.warning {
+      border-left: 4px solid var(--color-warning);
+      background-color: var(--color-warning-bg);
+    }
+    .card.success {
+      border-left: 4px solid var(--color-success);
+      background-color: var(--color-success-bg);
+    }
+    .card-title {
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--color-primary);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card-text {
+      font-size: 14px;
+      color: var(--color-text-muted);
+      line-height: 1.5;
+    }
+
+    /* Tablas Institucionales */
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      background: #ffffff;
+    }
+    table.institutional-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13.5px;
+      text-align: left;
+    }
+    table.institutional-table th {
+      background-color: var(--color-primary);
+      color: #ffffff;
+      padding: 10px 14px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+    table.institutional-table td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--color-border-subtle);
+      color: var(--color-text-main);
+    }
+    table.institutional-table tr:last-child td {
+      border-bottom: none;
+    }
+    table.institutional-table tr:nth-child(even) td {
+      background-color: #f8fafc;
+    }
+
+    /* Badges de Estado */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      white-space: nowrap;
+    }
+    .status-verified {
+      background: #dcfce7;
+      color: #166534;
+      border: 1px solid #86efac;
+    }
+    .status-partial {
+      background: #fef9c3;
+      color: #854d0e;
+      border: 1px solid #fde047;
+    }
+    .status-synthetic {
+      background: #e0f2fe;
+      color: #075985;
+      border: 1px solid #7dd3fc;
+    }
+    .status-external {
+      background: #f3e8ff;
+      color: #6b21a8;
+      border: 1px solid #d8b4fe;
+    }
+    .status-planned {
+      background: #f1f5f9;
+      color: #475569;
+      border: 1px solid #cbd5e1;
+    }
+    .status-unverified {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fca5a5;
+    }
+
+    /* Secciones Desplegables de Profundización Técnica */
+    details.tech-deep-dive {
+      background: #f8fafc;
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      padding: 10px 14px;
+      margin-top: 10px;
+      font-size: 13.5px;
+    }
+    details.tech-deep-dive summary {
+      font-weight: 600;
+      color: var(--color-primary-light);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    details.tech-deep-dive summary:hover {
+      color: var(--color-accent);
+    }
+    details.tech-deep-dive .deep-dive-content {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px dashed var(--color-border);
+      color: var(--color-text-muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    /* Barra Inferior de Navegación */
+    footer#bottom-bar {
+      height: 56px;
+      background: var(--color-surface);
+      border-top: 1px solid var(--color-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      flex-shrink: 0;
+      z-index: 90;
+    }
+    .nav-buttons {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .btn-nav {
+      background: var(--color-primary);
+      color: #ffffff;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background var(--transition-speed);
+    }
+    .btn-nav:hover {
+      background: var(--color-accent);
+    }
+    .btn-nav:disabled {
+      background: var(--color-border);
+      color: var(--color-text-muted);
+      cursor: not-allowed;
+    }
+    .quick-jump-select {
+      padding: 7px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--color-border);
+      background: #ffffff;
+      font-size: 13px;
+      color: var(--color-text-main);
+      max-width: 320px;
+    }
+
+    /* Panel Lateral de Notas del Presentador (Drawer) */
+    #presenter-drawer {
+      position: fixed;
+      right: -420px;
+      top: 52px;
+      bottom: 56px;
+      width: 420px;
+      background: #1e293b;
+      color: #f8fafc;
+      box-shadow: -4px 0 15px rgba(0, 0, 0, 0.25);
+      border-left: 2px solid var(--color-gold);
+      z-index: 80;
+      transition: right var(--transition-speed) cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    #presenter-drawer.open {
+      right: 0;
+    }
+    .drawer-header {
+      padding: 14px 18px;
+      background: #0f172a;
+      border-bottom: 1px solid #334155;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .drawer-header h3 {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--color-gold);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .drawer-content {
+      flex: 1;
+      padding: 18px;
+      overflow-y: auto;
+      font-size: 13.5px;
+      line-height: 1.6;
+    }
+    .drawer-content h4 {
+      font-size: 13px;
+      color: #93c5fd;
+      text-transform: uppercase;
+      margin: 12px 0 4px 0;
+      font-weight: 700;
+    }
+    .drawer-content ul {
+      margin-left: 18px;
+      margin-bottom: 12px;
+    }
+    .drawer-content li {
+      margin-bottom: 4px;
+    }
+    .timing-badge {
+      display: inline-block;
+      background: #334155;
+      color: #fde047;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    /* Modal de Vista General (Overview) */
+    #overview-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(15, 23, 42, 0.8);
+      backdrop-filter: blur(4px);
+      z-index: 120;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+    }
+    #overview-modal.open {
+      display: flex;
+    }
+    .overview-card {
+      background: #ffffff;
+      border-radius: 12px;
+      max-width: 960px;
+      width: 100%;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+    }
+    .overview-header {
+      padding: 16px 24px;
+      background: var(--color-primary);
+      color: #ffffff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .overview-grid {
+      padding: 24px;
+      overflow-y: auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 14px;
+    }
+    .overview-item {
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      padding: 14px;
+      cursor: pointer;
+      transition: border-color var(--transition-speed), background var(--transition-speed), transform var(--transition-speed);
+    }
+    .overview-item:hover {
+      border-color: var(--color-accent);
+      background: var(--color-info-bg);
+      transform: translateY(-2px);
+    }
+    .overview-item.current {
+      border-color: var(--color-gold);
+      border-width: 2px;
+      background: #fffdf5;
+    }
+    .overview-item-num {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--color-accent);
+      text-transform: uppercase;
+    }
+    .overview-item-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--color-primary);
+      margin-top: 2px;
+    }
+
+    /* Modal de Instrucciones y Atajos */
+    #help-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(15, 23, 42, 0.75);
+      z-index: 130;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    #help-modal.open {
+      display: flex;
+    }
+    .help-card {
+      background: #ffffff;
+      border-radius: 10px;
+      max-width: 600px;
+      width: 100%;
+      padding: 24px;
+      box-shadow: var(--shadow-lg);
+    }
+    .help-card h3 {
+      color: var(--color-primary);
+      font-size: 18px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .shortcut-list {
+      margin-top: 14px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      font-size: 13px;
+    }
+    kbd {
+      background: #e2e8f0;
+      border: 1px solid #cbd5e1;
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      color: #1e293b;
+    }
+
+    /* Diagrama SVG Responsivo */
+    .arch-diagram-wrapper {
+      width: 100%;
+      background: #f8fafc;
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      padding: 16px;
+      display: flex;
+      justify-content: center;
+    }
+    .arch-diagram-wrapper svg {
+      width: 100%;
+      max-width: 880px;
+      height: auto;
+    }
+
+    /* Estilos de Impresión (@media print) */
+    @media print {
+      body {
+        overflow: visible !important;
+        height: auto !important;
+        background: #ffffff !important;
+      }
+      #top-bar, #bottom-bar, #progress-container, #presenter-drawer, #overview-modal, #help-modal {
+        display: none !important;
+      }
+      main#deck-container {
+        display: block !important;
+        padding: 0 !important;
+      }
+      .slide {
+        position: relative !important;
+        top: auto !important;
+        left: auto !important;
+        right: auto !important;
+        bottom: auto !important;
+        opacity: 1 !important;
+        transform: none !important;
+        page-break-after: always !important;
+        break-after: page !important;
+        border: 1px solid #ccc !important;
+        box-shadow: none !important;
+        margin-bottom: 20mm !important;
+        padding: 15mm !important;
+        height: 180mm !important;
+        overflow: visible !important;
+      }
+      details.tech-deep-dive {
+        display: block !important;
+      }
+      details.tech-deep-dive[open] summary,
+      details.tech-deep-dive summary {
+        font-weight: bold !important;
+      }
+      details.tech-deep-dive .deep-dive-content {
+        display: block !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Barra de Progreso Superior -->
+  <div id="progress-container">
+    <div id="progress-bar"></div>
+  </div>
+
+  <!-- Barra Superior -->
+  <header id="top-bar">
+    <div class="brand-title">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"></path>
+        <path d="M6 6h10"></path>
+        <path d="M6 10h10"></path>
+      </svg>
+      <span>Plataforma Educativa Virtual Nacional (PEVN)</span>
+      <span class="brand-badge">Sesión Técnica MEN</span>
+    </div>
+    <div class="top-controls">
+      <button class="top-button" id="btn-overview" title="Índice de Diapositivas (O)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+        <span>Índice</span>
+      </button>
+      <button class="top-button" id="btn-notes" title="Notas del Presentador (N)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+          <line x1="16" y1="13" x2="8" y2="13"></line>
+          <line x1="16" y1="17" x2="8" y2="17"></line>
+          <polyline points="10 9 9 9 8 9"></polyline>
+        </svg>
+        <span>Notas</span>
+      </button>
+      <button class="top-button" id="btn-fullscreen" title="Pantalla Completa (F)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+        </svg>
+        <span>Completa</span>
+      </button>
+      <button class="top-button" id="btn-help" title="Atajos de Teclado (H)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Contenedor Principal de Diapositivas -->
+  <main id="deck-container">
+
+    <!-- Diapositiva 1: Portada -->
+    <section class="slide active" id="slide-1" data-slide-index="1">
+      <div class="slide-header">
+        <div>
+          <div class="slide-category">Introducción Institucional</div>
+          <h1 class="slide-title">Plataforma Educativa Virtual Nacional (PEVN)</h1>
+          <p class="slide-subtitle">Sesión Técnica con la Oficina de Tecnología y Sistemas de Información — MEN</p>
+        </div>
+        <div class="slide-counter-badge">1 / 13</div>
+      </div>
+      <div class="slide-body" style="justify-content: center; align-items: center; text-align: center;">
+        <div style="max-width: 820px; background: #ffffff; border: 1px solid var(--color-border); border-radius: 12px; padding: 36px; box-shadow: var(--shadow-md);">
+          <div style="display: inline-flex; align-items: center; justify-content: center; width: 64px; height: 64px; background: var(--color-surface-alt); border-radius: 50%; margin-bottom: 20px; color: var(--color-primary);">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+              <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+            </svg>
+          </div>
+          <h2 style="font-size: 24px; color: var(--color-primary); margin-bottom: 12px; font-weight: 700;">
+            Arquitectura, Madurez Técnica y Propuesta de Colaboración
+          </h2>
+          <p style="font-size: 15px; color: var(--color-text-muted); line-height: 1.6; margin-bottom: 24px;">
+            Presentación técnica orientada a evaluar la pertinencia, solidez de ingeniería, gobernanza de datos y factibilidad de articulación con los lineamientos del Ministerio de Educación Nacional de Colombia.
+          </p>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; text-align: left; background: var(--color-bg-main); padding: 18px; border-radius: 8px; border: 1px solid var(--color-border-subtle);">
+            <div>
+              <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--color-accent); display: block;">Presentador / Liderazgo Técnico</span>
+              <strong style="font-size: 15px; color: var(--color-primary);">Juan Carlos Castro Narváez</strong>
+              <div style="font-size: 12px; color: var(--color-text-muted); margin-top: 2px;">Ingeniero de Software / Arquitecto de Solución</div>
+            </div>
+            <div>
+              <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--color-accent); display: block;">Audiencia Institucional</span>
+              <strong style="font-size: 15px; color: var(--color-primary);">Oficina de Tecnología y Sistemas de Información</strong>
+              <div style="font-size: 12px; color: var(--color-text-muted); margin-top: 2px;">Ministerio de Educación Nacional (MEN) — Bogotá D.C.</div>
+            </div>
+          </div>
+          <div style="margin-top: 24px; font-size: 12px; color: var(--color-text-muted); display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--color-border-subtle); padding-top: 14px;">
+            <span><strong>Fecha de Sesión:</strong> Octubre 2026 (Programada)</span>
+            <span><strong>Alcance:</strong> Presentación Técnica y Demostración en Vivo</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Diapositiva 2: La Iniciativa -->
+    <section class="slide" id="slide-2" data-slide-index="2">
+      <div class="slide-header">
+        <div>
+          <div class="slide-category">Contexto y Propósito</div>
+          <h2 class="slide-title">La Iniciativa PEVN en el Contexto Educativo Nacional</h2>
+          <p class="slide-subtitle">Problema estructural en los territorios y propuesta de valor del ecosistema</p>
+        </div>
+        <div class="slide-counter-badge">2 / 13</div>
+      </div>
+      <div class="slide-body">
+        <div class="grid-2">
+          <div class="card warning">
+            <div class="card-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              El Desafío Estructural en las Instituciones
+            </div>
+            <ul style="margin-left: 20px; font-size: 14px; color: var(--color-text-muted); line-height: 1.7;">
+              <li><strong>Fragmentación y Aislamiento:</strong> Múltiples herramientas no integradas, dispersión de notas, registros académicos y asistencia en hojas de cálculo aisladas.</li>
+              <li><strong>Altos Costos de Licenciamiento:</strong> Dependencia de software privativo con costos en divisas inasequibles para el sector oficial.</li>
+              <li><strong>Brecha Rural y Conectividad Dispersa:</strong> Soluciones pesadas que fallan en condiciones de baja velocidad o conexiones intermitentes.</li>
+              <li><strong>Falta de Aislamiento Institucional:</strong> Riesgo de fuga de información entre colegios y ausencia de trazabilidad formal.</li>
+            </ul>
+          </div>
+
+          <div class="card highlight">
+            <div class="card-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+              </svg>
+              La Propuesta de Valor de PEVN
+            </div>
+            <ul style="margin-left: 20px; font-size: 14px; color: var(--color-text-muted); line-height: 1.7;">
+              <li><strong>Ecosistema Integral Unificado:</strong> Gestión institucional, administración académica, aula virtual, calificaciones y portal del estudiante en una sola plataforma.</li>
+              <li><strong>Soberanía Tecnológica:</strong> Código abierto, arquitectura FastAPI + React sin licencias privativas por usuario o sede.</li>
+              <li><strong>Diseño Optimizado para el Territorio:</strong> Frontend liviano compilado con Vite y PWA, estructurado para operar con latencia variable.</li>
+              <li><strong>Alineación Territorial Oficial:</strong> Estructura jerárquica basada en codificación oficial DANE y DIVIPOLA.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="card" style="background: #ffffff; border-left: 4px solid var(--color-gold);">
+          <div style="font-size: 13.5px; line-height: 1.6;">
+            <strong style="color: var(--color-primary);">Distinción Obligatoria entre Objetivos y Resultados Verificados:</strong>
+            PEVN es una iniciativa técnica y funcional en maduración operativa. Los componentes descritos a continuación representan capacidades <strong>verificadas en código, base de datos y entorno de ejecución local</strong>. La iniciativa <em>no afirma</em> contar con homologación oficial previa, contratos públicos, ni certificación formal del MEN, motivo por el cual esta sesión busca abrir un canal técnico riguroso de evaluación.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Diapositiva 3: Principios Rectores -->
+    <section class="slide" id="slide-3" data-slide-index="3">
+      <div class="slide-header">
+        <div>
+          <div class="slide-category">Fundamentos</div>
+          <h2 class="slide-title">Visión y Principios Rectores de Ingeniería</h2>
+          <p class="slide-subtitle">Pilares arquitectónicos que guían el diseño de la plataforma</p>
+        </div>
+        <div class="slide-counter-badge">3 / 13</div>
+      </div>
+      <div class="slide-body">
+        <div class="grid-4">
+          <div class="card">
+            <div style="color: var(--color-accent); margin-bottom: 10px;">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              </svg>
+            </div>
+            <h3 style="font-size: 16px; color: var(--color-primary); margin-bottom: 6px;">Seguridad y RBAC Estricto</h3>
+            <p style="font-size: 13px; color: var(--color-text-muted);">
+              11 roles jerárquicos con principio de mínimo privilegio. Aislamiento multi-tenant por <code>institution_id</code> y validación anti-IDOR en capa de servicio y repositorio.
+            </p>
+          </div>
+
+          <div class="card">
+            <div style="color: var(--color-accent); margin-bottom: 10px;">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="2" y1="12" x2="22" y2="12"></line>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+              </svg>
+            </div>
+            <h3 style="font-size: 16px; color: var(--color-primary); margin-bottom: 6px;">Estructura Territorial DANE</h3>
+            <p style="font-size: 13px; color: var(--color-text-muted);">
+              Soporte nativo para 33 entidades territoriales y 1,122 municipios según DIVIPOLA. Catálogo precargado de 18,031 colegios y 51,521 sedes.
+            </p>
+          </div>
+
+          <div class="card">
+            <div style="color: var(--color-accent); margin-bottom: 10px;">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                <line x1="8" y1="21" x2="16" y2="21"></line>
+                <line x1="12" y1="17" x2="12" y2="21"></line>
+              </svg>
+            </div>
+            <h3 style="font-size: 16px; color: var(--color-primary); margin-bottom: 6px;">Accesibilidad y Bajo Ancho</h3>
+            <p style="font-size: 13px; color: var(--color-text-muted);">
+              Frontend React optimizado, tipografías del sistema sin peticiones externas, navegación accesible por teclado y tiempos de carga reducidos para entornos rurales.
+            </p>
+          </div>
+
+          <div class="card">
+            <div style="color: var(--color-accent); margin-bottom: 10px;">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+            </div>
+            <h3 style="font-size: 16px; color: var(--color-primary); margin-bottom: 6px;">Trazabilidad y Ley 1581</h3>
+            <p style="font-size: 13px; color: var(--color-text-muted);">
+              Registro de eventos de auditoría (quién, cuándo, qué IP, qué recurso). Tratamiento confidencial de datos personales y Habeas Data sin retención no justificada.
+            </p>
+          </div>
+        </div>
+
+        <details class="tech-deep-dive">
+          <summary>Detalle de Separación de Responsabilidades y Cumplimiento Normativo</summary>
+          <div class="deep-dive-content">
+            El diseño sigue el principio de defensa en profundidad: los tokens JWT encapsulan el rol, el <code>tenant_id</code> y la <code>institution_id</code> del usuario. La inyección de dependencias de FastAPI (<code>get_current_active_user</code>, <code>check_role_permission</code>) valida los permisos antes de alcanzar la lógica de negocio. Todas las consultas a la base de datos PostgreSQL filtran obligatoriamente por la institución del contexto, previniendo fugas cross-tenant incluso ante errores en parámetros de URL.
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <!-- Diapositiva 4: Panorama General de la Plataforma -->
+    <section class="slide" id="slide-4" data-slide-index="4">
+      <div class="slide-header">
+        <div>
+          <div class="slide-category">Áreas Operativas</div>
+          <h2 class="slide-title">Panorama Funcional y Modelo de Roles (RBAC)</h2>
+          <p class="slide-subtitle">Estructura de 11 perfiles soportados por el modelo de datos y la interfaz</p>
+        </div>
+        <div class="slide-counter-badge">4 / 13</div>
+      </div>
+      <div class="slide-body">
+        <div class="grid-2">
+          <!-- Columna 1: Áreas del Sistema -->
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <div class="card" style="padding: 14px 18px;">
+              <h4 style="color: var(--color-primary); font-size: 15px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                <span style="display: inline-block; width: 8px; height: 8px; background: var(--color-accent); border-radius: 50%;"></span>
+                1. Gobernanza Territorial e Institucional
+              </h4>
+              <p style="font-size: 13px; color: var(--color-text-muted);">
+                Gestión de entidades territoriales (Secretarías de Educación Departamentales y Municipales), sedes educativas, directivos docentes (Rectores) y parámetros globales.
+              </p>
+            </div>
+
+            <div class="card" style="padding: 14px 18px;">
+              <h4 style="color: var(--color-primary); font-size: 15px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                <span style="display: inline-block; width: 8px; height: 8px; background: var(--color-accent); border-radius: 50%;"></span>
+                2. Administración Académica
+              </h4>
+              <p style="font-size: 13px; color: var(--color-text-muted);">
+                Apertura y cierre de años lectivos, periodos académicos, grados, grupos, asignaturas y matrículas con validación de cupos y cruces de horarios.
+              </p>
+            </div>
+
+            <div class="card" style="padding: 14px 18px;">
+              <h4 style="color: var(--color-primary); font-size: 15px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                <span style="display: inline-block; width: 8px; height: 8px; background: var(--color-accent); border-radius: 50%;"></span>
+                3. Gestión Docente y Aula Virtual
+              </h4>
+              <p style="font-size: 13px; color: var(--color-text-muted);">
+                Planillas de calificaciones con escala porcentual, control de asistencia en tiempo real, publicación de guías/tareas y enlaces a clases virtuales.
+              </p>
+            </div>
+
+            <div class="card" style="padding: 14px 18px;">
+              <h4 style="color: var(--color-primary); font-size: 15px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                <span style="display: inline-block; width: 8px; height: 8px; background: var(--color-accent); border-radius: 50%;"></span>
+                4. Portal del Estudiante y Familia
+              </h4>
+              <p style="font-size: 13px; color: var(--color-text-muted);">
+                Consulta de boletines, historial académico, entregas de trabajos y retroalimentación docente con vista protegida para acudientes.
+              </p>
+            </div>
+          </div>
+
+          <!-- Columna 2: Tabla de Roles RBAC -->
+          <div class="table-container">
+            <table class="institutional-table">
+              <thead>
+                <tr>
+                  <th>Rol en Código</th>
+                  <th>Denominación Institucional</th>
+                  <th>Nivel de Alcance</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td><code>superadmin</code></td><td>Administrador Nacional PEVN</td><td>Plataforma Global</td></tr>
+                <tr><td><code>department_admin</code></td><td>Secretaría de Educación Dptal.</td><td>Entidad DANE Dptal.</td></tr>
+                <tr><td><code>municipal_admin</code></td><td>Secretaría de Educación Mpal.</td><td>Municipio DIVIPOLA</td></tr>
+                <tr><td><code>rector</code></td><td>Rector / Director Institucional</td><td>Institución Educativa</td></tr>
+                <tr><td><code>coordinator</code></td><td>Coordinador Académico / Sede</td><td>Sedes Asignadas</td></tr>
+                <tr><td><code>administrative</code></td><td>Personal Administrativo / Matrículas</td><td>Institución Educativa</td></tr>
+                <tr><td><code>teacher</code></td><td>Docente de Área / Grupo</td><td>Carga Académica</td></tr>
+                <tr><td><code>student</code></td><td>Estudiante Matriculado</td><td>Grupo / Cursos Activos</td></tr>
+                <tr><td><code>guardian</code></td><td>Padre / Acudiente</td><td>Hijos Vinculados</td></tr>
+                <tr><td><code>counselor</code></td><td>Orientador Escolar / Psicosocial</td><td>Casos Institucionales</td></tr>
+                <tr><td><code>supervisor</code></td><td>Auditor / Supervisor Territorial</td><td>Lectura y Fiscalización</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Diapositiva 5: Funcionalidad Actual -->
+    <section class="slide" id="slide-5" data-slide-index="5">
+      <div class="slide-header">
+        <div>
+          <div class="slide-category">Inventario Técnico</div>
+          <h2 class="slide-title">Estado de Madurez de Módulos y Capacidades</h2>
+          <p class="slide-subtitle">Evaluación objetiva entre capacidades verificadas, parciales y externas</p>
+        </div>
+        <div class="slide-counter-badge">5 / 13</div>
+      </div>
+      <div class="slide-body">
+        <div class="table-container">
+          <table class="institutional-table">
+            <thead>
+              <tr>
+                <th>Módulo Funcional</th>
+                <th>Capacidad Específica</th>
+                <th>Estado Actual</th>
+                <th>Demostrable en Vivo</th>
+                <th>Observación Técnica</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Autenticación y Seguridad</strong></td>
+                <td>Login JWT, RBAC 11 roles, control de sesiones Redis, limitador de tasa</td>
+                <td><span class="status-badge status-verified">Implementado</span></td>
+                <td>Sí (Local / Red)</td>
+                <td>Tokens con revocación y blacklist en Redis.</td>
+              </tr>
+              <tr>
+                <td><strong>Gobernanza Territorial</strong></td>
+                <td>Filtro DANE/DIVIPOLA, gestión de municipios y entidades certificadas</td>
+                <td><span class="status-badge status-verified">Implementado</span></td>
+                <td>Sí (Local / Red)</td>
+                <td>Catálogos oficiales integrados en PostgreSQL.</td>
+              </tr>
+              <tr>
+                <td><strong>Gestión Institucional</strong></td>
+                <td>Aprovisionamiento de rector, configuración de sedes, calendarios</td>
+                <td><span class="status-badge status-verified">Implementado</span></td>
+                <td>Sí (Local / Red)</td>
+                <td>Flujo integral verificado con 32 pruebas directas.</td>
+              </tr>
+              <tr>
+                <td><strong>Administración Académica</strong></td>
+                <td>Apertura de periodos, grupos, asignaturas y matrículas</td>
+                <td><span class="status-badge status-verified">Implementado</span></td>
+                <td>Sí (Local / Red)</td>
+                <td>Restricciones de cupo y asignación docente activas.</td>
+              </tr>
+              <tr>
+                <td><strong>Calificaciones y Asistencia</strong></td>
+                <td>Planilla interactiva de notas, ponderación, reporte de ausencias</td>
+                <td><span class="status-badge status-verified">Implementado</span></td>
+                <td>Sí (Local / Red)</td>
+                <td>Cálculo automático de definitivas y alertas.</td>
+              </tr>
+              <tr>
+                <td><strong>Clases Virtuales (Videollamada)</strong></td>
+                <td>Integración API con BigBlueButton (creación de salas, moderación)</td>
+                <td><span class="status-badge status-external">Depende de Infra</span></td>
+                <td>Condicional</td>
+                <td>Cliente API listo; requiere clúster BBB externo en vivo.</td>
+              </tr>
+              <tr>
+                <td><strong>Interoperabilidad SIMAT</strong></td>
+                <td>Importación/exportación de estructuras de datos estándar</td>
+                <td><span class="status-badge status-partial">Parcial / Catálogo</span></td>
+                <td>Datos Sintéticos</td>
+                <td>Catálogos DANE precargados; sin endpoint transaccional MEN.</td>
+              </tr>
+              <tr>
+                <td><strong>Auditoría y Trazabilidad</strong></td>
+                <td>Logs de eventos de seguridad y transacciones críticas</td>
+                <td><span class="status-badge status-verified">Implementado</span></td>
+                <td>Sí (Local / Red)</td>
+                <td>Registro con timestamp UTC, usuario y tenant.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="font-size: 13px; color: var(--color-text-muted); background: var(--color-bg-main); padding: 12px; border-radius: 6px; border-left: 3px solid var(--color-info);">
+          <strong>Criterio de Honestidad Técnica:</strong> Solo se declaran como "Implementados" los módulos respaldados por rutas en FastAPI, componentes frontend activos y pruebas automatizadas en la suite del repositorio.
+        </div>
+      </div>
+    </section>
+
+    <!-- Diapositiva 6: Secuencia de Demostración -->
+    <section class="slide" id="slide-6" data-slide-index="6">
+      <div class="slide-header">
+        <div>
+          <div class="slide-category">Guion Operativo</div>
+          <h2 class="slide-title">Secuencia de Demostración en Vivo (Runbook)</h2>
+          <p class="slide-subtitle">Ruta recomendada para la sesión presencial de 15 minutos</p>
+        </div>
+        <div class="slide-counter-badge">6 / 13</div>
+      </div>
+      <div class="slide-body">
+        <div class="grid-3">
+          <div class="card">
+            <div style="font-size: 11px; font-weight: 700; color: var(--color-accent); text-transform: uppercase;">Paso 1 — 3 Minutos</div>
+            <h3 style="font-size: 16px; color: var(--color-primary); margin: 6px 0;">Acceso y Gobernanza Institucional</h3>
+            <ul style="font-size: 13px; color: var(--color-text-muted); line-height: 1.6; margin-left: 16px;">
+              <li><strong>Punto de Entrada:</strong> <code>/login</code></li>
+              <li><strong>Rol:</strong> Rector Institucional</li>
+              <li><strong>Acción:</strong> Inicio de sesión autenticado, revisión del dashboard directivo, indicadores de sede y matrícula general.</li>
+              <li><strong>Evidencia Verificada:</strong> Aislamiento de métricas exclusivas del colegio.</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <div style="font-size: 11px; font-weight: 700; color: var(--color-accent); text-transform: uppercase;">Paso 2 — 4 Minutos</div>
+            <h3 style="font-size: 16px; color: var(--color-primary); margin: 6px 0;">Administración Académica y Matrículas</h3>
+            <ul style="font-size: 13px; color: var(--color-text-muted); line-height: 1.6; margin-left: 16px;">
+              <li><strong>Punto de Entrada:</strong> <code>/academic-management</code></li>
+              <li><strong>Rol:</strong> Coordinador / Administrativo</li>
+              <li><strong>Acción:</strong> Consulta de grupos vigentes, asignación de carga docente, visualización de estudiantes matriculados.</li>
+              <li><strong>Evidencia Verificada:</strong> Validación de unicidad de documento y cupo.</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <div style="font-size: 11px; font-weight: 700; color: var(--color-accent); text-transform: uppercase;">Paso 3 — 4 Minutos</div>
+            <h3 style="font-size: 16px; color: var(--color-primary); margin: 6px 0;">Calificaciones y Aula del Docente</h3>
+            <ul style="font-size: 13px; color: var(--color-text-muted); line-height: 1.6; margin-left: 16px;">
+              <li><strong>Punto de Entrada:</strong> <code>/grades</code> y <code>/attendance</code></li>
+              <li><strong>Rol:</strong> Docente de Asignatura</li>
+              <li><strong>Acción:</strong> Registro de calificaciones numéricas, cálculo de promedios en tiempo real, registro de inasistencias.</li>
+              <li><strong>Evidencia Verificada:</strong> Persistencia inmediata en base de datos.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div style="font-size: 11px; font-weight: 700; color: var(--color-accent); text-transform: uppercase;">Paso 4 — 2 Minutos</div>
+            <h3 style="font-size: 15px; color: var(--color-primary); margin: 4px 0;">Portal del Estudiante</h3>
+            <p style="font-size: 13px; color: var(--color-text-muted); line-height: 1.5;">
+              Ingreso como estudiante a <code>/student-portal</code> para comprobar la visualización de notas publicadas y estado de aprobación sin acceso a opciones administrativas (control anti-IDOR).
+            </p>
+          </div>
+
+          <div class="card">
+            <div style="font-size: 11px; font-weight: 700; color: var(--color-accent); text-transform: uppercase;">Paso 5 — 2 Minutos</div>
+            <h3 style="font-size: 15px; color: var(--color-primary); margin: 4px 0;">Inspección Técnica de Auditoría</h3>
+            <p style="font-size: 13px; color: var(--color-text-muted); line-height: 1.5;">
+              Consulta en vivo de la tabla de auditoría en PostgreSQL o endpoint administrativo para evidenciar la trazabilidad completa de los eventos ejecutados durante la demostración.
+            </p>
+          </div>
+        </div>
+
+        <div style="font-size: 12px; color: var(--color-text-muted); display: flex; align-items: center; gap: 8px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--color-warning);">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+          <span><strong>Protocolo de Seguridad:</strong> Todos los datos mostrados en la demostración son datos sintéticos generados para pruebas. No se exponen datos personales reales ni credenciales de producción.</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Diapositiva 7: Arquitectura Técnica -->
+    <section class="slide" id="slide-7" data-slide-index="7">
+      <div class="slide-header">
+        <div>
+          <div class="slide-category">Ingeniería de Software</div>
+          <h2 class="slide-title">Arquitectura Técnica y Separación de Capas</h2>
+          <p class="slide-subtitle">Diseño desacoplado, asíncrono y de alto rendimiento</p>
+        </div>
+        <div class="slide-counter-badge">7 / 13</div>
+      </div>
+      <div class="slide-body">
+        <div class="arch-diagram-wrapper">
+          <svg viewBox="0 0 840 230" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Capa Cliente -->
+            <rect x="20" y="20" width="170" height="190" rx="8" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="2"/>
+            <rect x="20" y="20" width="170" height="34" rx="8" fill="#1D68A7"/>
+            <text x="105" y="42" fill="#FFFFFF" font-family="system-ui" font-size="12" font-weight="bold" text-anchor="middle">CAPA CLIENTE / SPA</text>
+            <text x="105" y="80" fill="#0F2942" font-family="system-ui" font-size="13" font-weight="bold" text-anchor="middle">React 18 + Vite</text>
+            <text x="105" y="105" fill="#475569" font-family="system-ui" font-size="11" text-anchor="middle">TypeScript Estricto</text>
+            <text x="105" y="125" fill="#475569" font-family="system-ui" font-size="11" text-anchor="middle">TailwindCSS / Lucide</text>
+            <text x="105" y="150" fill="#166534" font-family="system-ui" font-size="10" font-weight="bold" text-anchor="middle">✓ Cero Fuentes Externas</text>
+            <text x="105" y="170" fill="#166534" font-family="system-ui" font-size="10" font-weight="bold" text-anchor="middle">✓ PWA Offline Ready</text>
+
+            <!-- Flecha Cliente -> API -->
+            <path d="M190 115 L230 115" stroke="#1D68A7" stroke-width="2" marker-end="url(#arrow)"/>
+            <text x="210" y="108" fill="#1D68A7" font-family="system-ui" font-size="9" font-weight="bold" text-anchor="middle">HTTPS / REST</text>
+
+            <!-- Capa API Gateway / Backend -->
+            <rect x="235" y="20" width="185" height="190" rx="8" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="2"/>
+            <rect x="235" y="20" width="185" height="34" rx="8" fill="#0F2942"/>
+            <text x="327" y="42" fill="#FFFFFF" font-family="system-ui" font-size="12" font-weight="bold" text-anchor="middle">BACKEND CORE / API</text>
+            <text x="327" y="80" fill="#0F2942" font-family="system-ui" font-size="13" font-weight="bold" text-anchor="middle">FastAPI (Python 3.12)</text>
+            <text x="327" y="105" fill="#475569" font-family="system-ui" font-size="11" text-anchor="middle">Asíncrono (ASGI / Uvicorn)</text>
+            <text x="327" y="125" fill="#475569" font-family="system-ui" font-size="11" text-anchor="middle">Pydantic v2 Validación</text>
+            <text x="327" y="150" fill="#475569" font-family="system-ui" font-size="11" text-anchor="middle">Inyección de Dependencias</text>
+            <text x="327" y="175" fill="#166534" font-family="system-ui" font-size="10" font-weight="bold" text-anchor="middle">✓ RBAC / Middleware Auth</text>
+
+            <!-- Flecha API -> Datos -->
+            <path d="M420 115 L460 115" stroke="#1D68A7" stroke-width="2"/>
+
+            <!-- Capa Persistencia -->
+            <rect x="465" y="20" width="175" height="190" rx="8" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="2"/>
+            <rect x="465" y="20" width="175" height="34" rx="8" fill="#166534"/>
+            <text x="552" y="42" fill="#FFFFFF" font-family="system-ui" font-size="12" font-weight="bold" text-anchor="middle">PERSISTENCIA Y CACHÉ</text>
+            <text x="552" y="80" fill="#0F2942" font-family="system-ui" font-size="13" font-weight="bold" text-anchor="middle">PostgreSQL 15</text>
+            <text x="552" y="100" fill="#475569" font-family="system-ui" font-size="11" text-anchor="middle">SQLAlchemy 2.0 Async</text>
+            <text x="552" y="120" fill="#475569" font-family="system-ui" font-size="11" text-anchor="middle">Aislamiento por Institution ID</text>
+            <line x1="480" y1="135" x2="625" y2="135" stroke="#E2E8F0" stroke-width="1"/>
+            <text x="552" y="155" fill="#B45309" font-family="system-ui" font-size="12" font-weight="bold" text-anchor="middle">Redis 7</text>
+            <text x="552" y="175" fill="#475569" font-family="system-ui" font-size="10" text-anchor="middle">Sesiones / Rate Limiting / TTL</text>
+
+            <!-- Flecha API -> Servicios Externos -->
+            <path d="M640 115 L675 115" stroke="#6B21A8" stroke-width="2" stroke-dasharray="4"/>
+
+            <!-- Capa Servicios Externos -->
+            <rect x="680" y="20" width="140" height="190" rx="8" fill="#FAF5FF" stroke="#D8B4FE" stroke-width="2"/>
+            <rect x="680" y="20" width="140" height="34" rx="8" fill="#6B21A8"/>
+            <text x="750" y="42" fill="#FFFFFF" font-family="system-ui" font-size="11" font-weight="bold" text-anchor="middle">SERVICIOS EXT.</text>
+            <text x="750" y="85" fill="#4C1D95" font-family="system-ui" font-size="12" font-weight="bold" text-anchor="middle">BigBlueButton</text>
+            <text x="750" y="105" fill="#6B21A8" font-family="system-ui" font-size="10" text-anchor="middle">Videoclases (API)</text>
+            <text x="750" y="135" fill="#4C1D95" font-family="system-ui" font-size="12" font-weight="bold" text-anchor="middle">SIMAT / DANE</text>
+            <text x="750" y="155" fill="#6B21A8" font-family="system-ui" font-size="10" text-anchor="middle">Catálogos Locales</text>
+            <text x="750" y="175" fill="#6B21A8" font-family="system-ui" font-size="9" text-anchor="middle">(Sin enlace transaccional)</text>
+          </svg>
+        </div>
+
+        <div class="grid-3" style="margin-top: 10px;">
+          <div class="card" style="padding: 12px;">
+            <strong style="color: var(--color-primary); font-size: 13.5px;">Frontend decoupled:</strong>
+            <p style="font-size: 12.5px; color: var(--color-text-muted);">Sin lógica de negocio sensible en el cliente. Todo acceso condicionado a endpoints con autorización previa.</p>
+          </div>
+          <div class="card" style="padding: 12px;">
+            <strong style="color: var(--color-primary); font-size: 13.5px;">Backend asíncrono:</strong>
+            <p style="font-size: 12.5px; color: var(--color-text-muted);">Pool de conexiones asíncronas con SQLAlchemy, permitiendo alta concurrencia de peticiones I/O.</p>
+          </div>
+          <div class="card" style="padding: 12px;">
+            <strong style="color: var(--color-primary); font-size: 13.5px;">Cero Vendor Lock-in:</strong>
+            <p style="font-size: 12.5px; color: var(--color-text-muted);">Desplegable en contenedores Docker estándar sobre cualquier infraestructura pública o privada del Estado.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Diapositiva 8: Seguridad y Gobernanza -->
+    <section class="slide" id="slide-8" data-slide-index="8">
+      <div class="slide-header">
+        <div>
+          <div class="slide-category">Ciberseguridad y Cumplimiento</div>
+          <h2 class="slide-title">Seguridad, Aislamiento Multi-Tenant y Habeas Data</h2>
+          <p class="slide-subtitle">Controles implementados contra fugas de información y accesos no autorizados</p>
+        </div>
+        <div class="slide-counter-badge">8 / 13</div>
+      </div>
+      <div class="slide-body">
+        <div class="grid-2">
+          <div class="card highlight">
+            <div class="card-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+              Controles de Seguridad Verificados
+            </div>
+            <ul style="font-size: 13.5px; color: var(--color-text-muted); line-height: 1.7; margin-left: 18px;">
+              <li><strong>Autenticación Robusta:</strong> Passwords hasheadas con bcrypt, tokens JWT HS256 firmados, TTL configurable y revocación centralizada en Redis.</li>
+              <li><strong>Aislamiento Multi-Tenant:</strong> Particionamiento lógico donde toda entidad académica está obligatoriamente asociada a un <code>institution_id</code> validado.</li>
+              <li><strong>Mitigación Anti-IDOR:</strong> Verificación cruzada en repositorios; un usuario no puede consultar notas, actas o perfiles de otra sede modificando el ID en la petición.</li>
+              <li><strong>Rate Limiting:</strong> Limitación de intentos en endpoints sensibles de login para prevenir ataques de fuerza bruta.</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <div class="card-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+              </svg>
+              Gobernanza de Datos y Ley 1581 de 2012
+            </div>
+            <ul style="font-size: 13.5px; color: var(--color-text-muted); line-height: 1.7; margin-left: 18px;">
+              <li><strong>Principio de Finalidad:</strong> Los datos de directivos, docentes y menores de edad se restringen estrictamente al ciclo pedagógico.</li>
+              <li><strong>No Retención de Credenciales:</strong> El sistema no almacena contraseñas en texto claro en ninguna tabla ni log de servidor.</li>
+              <li><strong>Pistas de Auditoría:</strong> Registro sistemático de creación, actualización y borrado de notas, actas y matrículas con timestamp UTC y usuario ejecutor.</li>
+              <li><strong>Validación Pendiente:</strong> Se requiere auditoría externa formal de ciberseguridad y prueba de penetración (pentest) antes de una salida masiva.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="card warning" style="padding: 12px 16px;">
+          <div style="font-size: 13px; line-height: 1.5;">
+            <strong>Aclaración Institucional sobre Certificaciones:</strong> PEVN <em>no posee</em> actualmente certificación ISO 27001, ENS, ni homologación formal del MEN. Los controles aquí descritos corresponden al diseño de software y pruebas unitarias/integración ejecutadas en el repositorio.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Diapositiva 9: Evidencia de Pruebas y Calidad -->
+    <section class="slide" id="slide-9" data-slide-index="9">
+      <div class="slide-header">
+        <div>
+          <div class="slide-category">Aseguramiento de Calidad</div>
+          <h2 class="slide-title">Evidencia de Pruebas y Auditoría de Calidad</h2>
+          <p class="slide-subtitle">Reconciliación verificable de la batería de pruebas y validaciones estáticas</p>
+        </div>
+        <div class="slide-counter-badge">9 / 13</div>
+      </div>
+      <div class="slide-body">
+        <div class="grid-4">
+          <div class="card success">
+            <div style="font-size: 26px; font-weight: 700; color: var(--color-success);">169 / 169</div>
+            <div style="font-size: 13px; font-weight: 700; color: var(--color-primary); margin-top: 4px;">Pruebas Backend Ejecutadas</div>
+            <p style="font-size: 11.5px; color: var(--color-text-muted); margin-top: 4px;">
+              100% PASS en ciclo focalizado con PostgreSQL y Redis activos.
+            </p>
+          </div>
+
+          <div class="card">
+            <div style="font-size: 26px; font-weight: 700; color: var(--color-accent);">722</div>
+            <div style="font-size: 13px; font-weight: 700; color: var(--color-primary); margin-top: 4px;">Pruebas Recolectadas</div>
+            <p style="font-size: 11.5px; color: var(--color-text-muted); margin-top: 4px;">
+              Inventario total en 70 archivos de test (553 no ejecutadas en ciclo corto).
+            </p>
+          </div>
+
+          <div class="card success">
+            <div style="font-size: 26px; font-weight: 700; color: var(--color-success);">41 / 41</div>
+            <div style="font-size: 13px; font-weight: 700; color: var(--color-primary); margin-top: 4px;">Auditorías de Documentación</div>
+            <p style="font-size: 11.5px; color: var(--color-text-muted); margin-top: 4px;">
+              Validación de enlaces, activos, imágenes y consistencia textual (0 fallas).
+            </p>
+          </div>
+
+          <div class="card success">
+            <div style="font-size: 26px; font-weight: 700; color: var(--color-success);">0 Errores</div>
+            <div style="font-size: 13px; font-weight: 700; color: var(--color-primary); margin-top: 4px;">TypeScript & Build</div>
+            <p style="font-size: 11.5px; color: var(--color-text-muted); margin-top: 4px;">
+              <code>tsc --noEmit</code> y <code>npm run build</code> ejecutados sin alertas bloqueantes.
+            </p>
+          </div>
+        </div>
+
+        <div class="table-container" style="margin-top: 10px;">
+          <table class="institutional-table">
+            <thead>
+              <tr>
+                <th>Categoría de Verificación</th>
+                <th>Herramienta / Comando</th>
+                <th>Alcance Evaluado</th>
+                <th>Resultado Verificado</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Integración de Base de Datos</strong></td>
+                <td><code>pytest tests/test_database_integration.py</code></td>
+                <td>83 pruebas con PostgreSQL 15 y migraciones SQLAlchemy</td>
+                <td><span class="status-badge status-verified">83 PASSED</span></td>
+              </tr>
+              <tr>
+                <td><strong>Seguridad de Base de Datos</strong></td>
+                <td><code>pytest tests/test_db_safety.py</code></td>
+                <td>18 pruebas de validación de transacciones y sanitización</td>
+                <td><span class="status-badge status-verified">18 PASSED</span></td>
+              </tr>
+              <tr>
+                <td><strong>Aprovisionamiento Institucional</strong></td>
+                <td><code>pytest tests/test_rector_provisioning_flow.py</code></td>
+                <td>32 pruebas de creación de sedes, asignación y activación rector</td>
+                <td><span class="status-badge status-verified">32 PASSED</span></td>
+              </tr>
+              <tr>
+                <td><strong>Hardening Auth y Redis</strong></td>
+                <td><code>pytest tests/test_auth_redis_hardening.py</code></td>
+                <td>36 pruebas de revocación de tokens y persistencia de sesión</td>
+                <td><span class="status-badge status-verified">36 PASSED</span></td>
+              </tr>
+              <tr>
+                <td><strong>Auditoría Visual de Manuales</strong></td>
+                <td>PyMuPDF / Scripts de Geometría</td>
+                <td>13 capturas de pantalla estandarizadas a márgenes de documento</td>
+                <td><span class="status-badge status-verified">13 / 13 ALINEADAS</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Diapositiva 10: Alcance Actual y Limitaciones -->
+    <section class="slide" id="slide-10" data-slide-index="10">
+      <div class="slide-header">
+        <div>
+          <div class="slide-category">Límites y Transparencia</div>
+          <h2 class="slide-title">Alcance Actual, Dependencias y Limitaciones</h2>
+          <p class="slide-subtitle">Declaración explícita de componentes dependientes de infraestructura o acuerdos</p>
+        </div>
+        <div class="slide-counter-badge">10 / 13</div>
+      </div>
+      <div class="slide-body">
+        <div class="grid-3">
+          <div class="card warning">
+            <h3 style="font-size: 15px; color: var(--color-warning); margin-bottom: 8px;">1. Clúster BigBlueButton Externo</h3>
+            <p style="font-size: 13px; color: var(--color-text-muted); line-height: 1.6;">
+              El cliente API y la lógica de creación de salas están integrados. Sin embargo, la transmisión de videollamadas en vivo depende de un servidor BBB dedicado con certificados SSL válidos y servidores TURN/STUN para zonas rurales con NAT estricto.
+            </p>
+          </div>
+
+          <div class="card warning">
+            <h3 style="font-size: 15px; color: var(--color-warning); margin-bottom: 8px;">2. Integración SIMAT / DUE No Transaccional</h3>
+            <p style="font-size: 13px; color: var(--color-text-muted); line-height: 1.6;">
+              Se dispone de la estructura DIVIPOLA y códigos DANE cargados localmente (18,031 colegios y 51,521 sedes). <strong>No existe una conexión web service activa ni autorizada</strong> con las bases de datos transaccionales del MEN.
+            </p>
+          </div>
+
+          <div class="card warning">
+            <h3 style="font-size: 15px; color: var(--color-warning); margin-bottom: 8px;">3. Pruebas de Carga a Escala Nacional</h3>
+            <p style="font-size: 13px; color: var(--color-text-muted); line-height: 1.6;">
+              La solución ha sido verificada en entornos de desarrollo y pruebas locales. No se han ejecutado pruebas de estrés concurrentes con cientos de miles de usuarios simultáneos, las cuales forman parte de la propuesta de evaluación conjunta.
+            </p>
+          </div>
+        </div>
+
+        <div class="card" style="background: #ffffff; border-left: 4px solid var(--color-primary);">
+          <h4 style="font-size: 14px; color: var(--color-primary); margin-bottom: 4px;">Resumen de Supuestos Operativos:</h4>
+          <p style="font-size: 13px; color: var(--color-text-muted); line-height: 1.6;">
+            PEVN no pretende sustituir los sistemas de matrícula oficiales del Estado (SIMAT) sino articularse como una capa académica pedagógica de uso institucional y comunitario. Cualquier mecanismo de sincronización requerirá las directrices técnicas y de seguridad que la Oficina de Tecnología del MEN defina.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Diapositiva 11: Propuesta de Colaboración con MEN -->
+    <section class="slide" id="slide-11" data-slide-index="11">
+      <div class="slide-header">
+        <div>
+          <div class="slide-category">Modelo de Articulación</div>
+          <h2 class="slide-title">Propuesta de Colaboración Estructurada con el MEN</h2>
+          <p class="slide-subtitle">Ruta por fases con compuertas de decisión técnica (Decision Gates)</p>
+        </div>
+        <div class="slide-counter-badge">11 / 13</div>
+      </div>
+      <div class="slide-body">
+        <div class="grid-4">
+          <div class="card">
+            <div style="font-size: 12px; font-weight: 700; color: var(--color-accent); margin-bottom: 6px;">FASE 1</div>
+            <h3 style="font-size: 15px; color: var(--color-primary); margin-bottom: 6px;">Mesa Técnica y Discovery</h3>
+            <p style="font-size: 12.5px; color: var(--color-text-muted); line-height: 1.5;">
+              Revisión técnica de código, arquitectura, diagramas de datos y lineamientos de interoperabilidad de la Oficina de Tecnología.
+            </p>
+            <div style="margin-top: 10px; font-size: 11px; font-weight: 600; color: var(--color-primary);">Compuerta: Dictamen de Viabilidad</div>
+          </div>
+
+          <div class="card">
+            <div style="font-size: 12px; font-weight: 700; color: var(--color-accent); margin-bottom: 6px;">FASE 2</div>
+            <h3 style="font-size: 15px; color: var(--color-primary); margin-bottom: 6px;">Evaluación de Ciberseguridad</h3>
+            <p style="font-size: 12.5px; color: var(--color-text-muted); line-height: 1.5;">
+              Pruebas de vulnerabilidades, auditoría de código estático (SAST/DAST) y definición de esquemas de interoperabilidad oficiales.
+            </p>
+            <div style="margin-top: 10px; font-size: 11px; font-weight: 600; color: var(--color-primary);">Compuerta: Aval de Seguridad</div>
+          </div>
+
+          <div class="card">
+            <div style="font-size: 12px; font-weight: 700; color: var(--color-accent); margin-bottom: 6px;">FASE 3</div>
+            <h3 style="font-size: 15px; color: var(--color-primary); margin-bottom: 6px;">Piloto Controlado</h3>
+            <p style="font-size: 12.5px; color: var(--color-text-muted); line-height: 1.5;">
+              Implementación experimental en 2 a 5 instituciones educativas oficiales seleccionadas por el MEN, con acompañamiento y soporte técnico.
+            </p>
+            <div style="margin-top: 10px; font-size: 11px; font-weight: 600; color: var(--color-primary);">Compuerta: Evaluación de Adopción</div>
+          </div>
+
+          <div class="card">
+            <div style="font-size: 12px; font-weight: 700; color: var(--color-accent); margin-bottom: 6px;">FASE 4</div>
+            <h3 style="font-size: 15px; color: var(--color-primary); margin-bottom: 6px;">Consolidación y Escalamiento</h3>
+            <p style="font-size: 12.5px; color: var(--color-text-muted); line-height: 1.5;">
+              Ajustes basados en la experiencia del piloto y análisis institucional de viabilidad para incorporación en políticas de transformación digital.
+            </p>
+            <div style="margin-top: 10px; font-size: 11px; font-weight: 600; color: var(--color-primary);">Compuerta: Decisión de Escalado</div>
+          </div>
+        </div>
+
+        <div class="card" style="background: var(--color-info-bg); border-left: 4px solid var(--color-accent); padding: 14px 18px;">
+          <div style="font-size: 13.5px; line-height: 1.6; color: var(--color-primary);">
+            <strong>Principio de Voluntariedad y No Compromiso:</strong> Esta propuesta se presenta como una alternativa técnica al servicio de los objetivos de conectividad y educación digital del Gobierno Nacional. El Ministerio de Educación Nacional no adquiere compromiso contractual, financiero o regulatorio alguno mediante la recepción de esta presentación.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Diapositiva 12: Próximos Pasos Sugeridos -->
+    <section class="slide" id="slide-12" data-slide-index="12">
+      <div class="slide-header">
+        <div>
+          <div class="slide-category">Plan de Acción</div>
+          <h2 class="slide-title">Próximos Pasos Sugeridos y Agenda de Trabajo</h2>
+          <p class="slide-subtitle">Acciones inmediatas propuestas para el equipo técnico</p>
+        </div>
+        <div class="slide-counter-badge">12 / 13</div>
+      </div>
+      <div class="slide-body">
+        <div class="grid-2">
+          <div class="card">
+            <h3 style="font-size: 16px; color: var(--color-primary); margin-bottom: 10px;">Acciones Concretas Propuestas</h3>
+            <ol style="margin-left: 20px; font-size: 14px; color: var(--color-text-muted); line-height: 1.8;">
+              <li><strong>Entrega de Documentación Técnica Completa:</strong> Poner a disposición del equipo técnico el <em>Informe Técnico Institucional</em>, el <em>Manual Institucional</em> y el <em>Manual Interactivo</em>.</li>
+              <li><strong>Acceso a Repositorio y Ambiente de Pruebas:</strong> Habilitar un entorno sandbox para que los ingenieros del MEN verifiquen de forma independiente el código y las APIs.</li>
+              <li><strong>Definición de Contraparte Técnica:</strong> Establecer un canal formal de contacto técnico con la Oficina de Tecnología y Sistemas de Información.</li>
+              <li><strong>Taller de Requerimientos de Interoperabilidad:</strong> Sesión de trabajo para conocer los lineamientos de arquitectura del MEN y definir interfaces estándar.</li>
+            </ol>
+          </div>
+
+          <div class="card highlight">
+            <h3 style="font-size: 16px; color: var(--color-primary); margin-bottom: 10px;">Punto de Contacto Técnico</h3>
+            <div style="font-size: 14px; color: var(--color-text-muted); line-height: 1.7;">
+              <p><strong>Líder del Proyecto:</strong> Juan Carlos Castro Narváez</p>
+              <p><strong>Rol:</strong> Arquitecto de Software / Desarrollador Principal</p>
+              <p><strong>Iniciativa:</strong> Plataforma Educativa Virtual Nacional (PEVN)</p>
+              <p><strong>Disponibilidad:</strong> Sesiones de trabajo técnicas, demostraciones de código y mesas de interoperabilidad en Bogotá D.C. o virtuales.</p>
+              <p style="margin-top: 12px; font-size: 12.5px; color: var(--color-primary); background: #ffffff; padding: 10px; border-radius: 6px; border: 1px solid var(--color-border-subtle);">
+                <em>"El objetivo primordial es construir una solución robusta, segura y pública que garantice el derecho a la educación digital con altos estándares de ingeniería de software."</em>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Diapositiva 13: Anexo Técnico -->
+    <section class="slide" id="slide-13" data-slide-index="13">
+      <div class="slide-header">
+        <div>
+          <div class="slide-category">Documentación y Evidencias</div>
+          <h2 class="slide-title">Anexo Técnico y Repositorio de Evidencias</h2>
+          <p class="slide-subtitle">Índice de documentos complementarios y referencias de auditoría</p>
+        </div>
+        <div class="slide-counter-badge">13 / 13</div>
+      </div>
+      <div class="slide-body">
+        <div class="grid-3">
+          <div class="card">
+            <h3 style="font-size: 15px; color: var(--color-primary); margin-bottom: 8px;">Informe Técnico Institucional</h3>
+            <p style="font-size: 13px; color: var(--color-text-muted); margin-bottom: 12px;">
+              Documento exhaustivo de 22 capítulos con respuestas directas a las preguntas previsibles del MEN, matriz de madurez y arquitectura.
+            </p>
+            <div style="font-size: 11.5px; font-family: var(--font-mono); color: var(--color-accent); word-break: break-all;">
+              docs/reports/PEVN_INFORME_TECNICO_INSTITUCIONAL_MEN.md
+            </div>
+          </div>
+
+          <div class="card">
+            <h3 style="font-size: 15px; color: var(--color-primary); margin-bottom: 8px;">Manual Institucional de Usuario</h3>
+            <p style="font-size: 13px; color: var(--color-text-muted); margin-bottom: 12px;">
+              Guía paso a paso ilustrada para rectores, coordinadores y docentes con 13 capturas de pantalla verificadas y sin datos confidenciales.
+            </p>
+            <div style="font-size: 11.5px; font-family: var(--font-mono); color: var(--color-accent); word-break: break-all;">
+              docs/manual/PEVN_INSTITUTIONAL_USER_GUIDE.html
+            </div>
+          </div>
+
+          <div class="card">
+            <h3 style="font-size: 15px; color: var(--color-primary); margin-bottom: 8px;">Manual Interactivo Web</h3>
+            <p style="font-size: 13px; color: var(--color-text-muted); margin-bottom: 12px;">
+              Manual operativo en HTML navegable localmente con buscador interactivo y diagramas de flujo por cada uno de los 11 roles.
+            </p>
+            <div style="font-size: 11.5px; font-family: var(--font-mono); color: var(--color-accent); word-break: break-all;">
+              docs/manual/index.html
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="background: var(--color-surface-alt); padding: 16px;">
+          <h4 style="font-size: 14px; color: var(--color-primary); margin-bottom: 6px;">Instrucciones para el Operador de la Presentación:</h4>
+          <p style="font-size: 13px; color: var(--color-text-muted); line-height: 1.6;">
+            Esta presentación opera de forma 100% autónoma y offline sin requerir conexión a internet. Puede proyectarse a pantalla completa pulsando la tecla <kbd>F</kbd>. Para consultar las notas y tiempos sugeridos durante la reunión, pulse la tecla <kbd>N</kbd>. Si desea imprimir el documento como minuta institucional en PDF, utilice la función de impresión del navegador (<kbd>Ctrl+P</kbd>).
+          </p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Barra Inferior de Navegación -->
+  <footer id="bottom-bar">
+    <div class="nav-buttons">
+      <button class="btn-nav" id="btn-prev" title="Diapositiva Anterior (Flecha Izquierda)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        <span>Anterior</span>
+      </button>
+      <button class="btn-nav" id="btn-next" title="Diapositiva Siguiente (Flecha Derecha / Espacio)">
+        <span>Siguiente</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+      </button>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <span style="font-size: 13px; color: var(--color-text-muted); font-weight: 500;" id="slide-indicator">
+        Diapositiva 1 de 13
+      </span>
+      <select class="quick-jump-select" id="slide-select" aria-label="Saltar a diapositiva">
+        <option value="1">1. Portada Institucional</option>
+        <option value="2">2. La Iniciativa en el Contexto Nacional</option>
+        <option value="3">3. Visión y Principios Rectores</option>
+        <option value="4">4. Panorama y Modelo de Roles (RBAC)</option>
+        <option value="5">5. Estado de Madurez de Módulos</option>
+        <option value="6">6. Secuencia de Demostración en Vivo</option>
+        <option value="7">7. Arquitectura Técnica de Capas</option>
+        <option value="8">8. Seguridad, Aislamiento y Habeas Data</option>
+        <option value="9">9. Evidencia de Pruebas y Calidad</option>
+        <option value="10">10. Alcance Actual y Limitaciones</option>
+        <option value="11">11. Propuesta de Colaboración con MEN</option>
+        <option value="12">12. Próximos Pasos Sugeridos</option>
+        <option value="13">13. Anexo Técnico y Evidencias</option>
+      </select>
+    </div>
+
+    <div>
+      <button class="top-button" id="btn-print" style="color: var(--color-primary); background: var(--color-surface-alt); border-color: var(--color-border);" title="Imprimir / Exportar a PDF (Ctrl+P)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="6 9 6 2 18 2 18 9"></polyline>
+          <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+          <rect x="6" y="14" width="12" height="8"></rect>
+        </svg>
+        <span>Imprimir PDF</span>
+      </button>
+    </div>
+  </footer>
+
+  <!-- Panel Lateral de Notas del Presentador -->
+  <aside id="presenter-drawer">
+    <div class="drawer-header">
+      <h3>Notas del Presentador</h3>
+      <button id="btn-close-notes" style="background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 18px;">✕</button>
+    </div>
+    <div class="drawer-content" id="notes-content">
+      <!-- Se inyecta dinámicamente con JS según la diapositiva activa -->
+    </div>
+  </aside>
+
+  <!-- Modal de Vista General (Overview) -->
+  <div id="overview-modal">
+    <div class="overview-card">
+      <div class="overview-header">
+        <h3 style="font-size: 16px; font-weight: 700;">Índice General de la Presentación</h3>
+        <button id="btn-close-overview" style="background: none; border: none; color: #ffffff; cursor: pointer; font-size: 20px;">✕</button>
+      </div>
+      <div class="overview-grid" id="overview-grid">
+        <!-- Generado dinámicamente -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Ayuda y Atajos -->
+  <div id="help-modal">
+    <div class="help-card">
+      <h3>
+        <span>Atajos de Navegación</span>
+        <button id="btn-close-help" style="background: none; border: none; color: #64748b; cursor: pointer; font-size: 18px;">✕</button>
+      </h3>
+      <p style="font-size: 13px; color: var(--color-text-muted);">
+        Esta presentación está diseñada para una exposición fluida y profesional mediante teclado o control remoto de diapositivas:
+      </p>
+      <div class="shortcut-list">
+        <div><kbd>→</kbd> o <kbd>Espacio</kbd> Siguiente diapositiva</div>
+        <div><kbd>←</kbd> o <kbd>Retroceso</kbd> Diapositiva anterior</div>
+        <div><kbd>F</kbd> Pantalla completa</div>
+        <div><kbd>N</kbd> Panel de notas</div>
+        <div><kbd>O</kbd> Índice visual</div>
+        <div><kbd>Inicio</kbd> / <kbd>Fin</kbd> Primera / Última</div>
+        <div><kbd>H</kbd> Esta ayuda</div>
+        <div><kbd>Ctrl+P</kbd> Imprimir / PDF</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lógica JavaScript (Standalone / Cero CDN) -->
+  <script>
+    (function() {
+      'use strict';
+
+      // Estado de la Presentación
+      let currentSlide = 1;
+      const totalSlides = 13;
+
+      // Notas del Presentador para Juan Carlos Castro Narváez
+      const presenterNotes = {
+        1: {
+          timing: "Minutos 00:00 - 02:00",
+          title: "Portada e Introducción Institucional",
+          talkingPoints: [
+            "Agradecer el espacio a la Oficina de Tecnología y Sistemas de Información del MEN.",
+            "Presentarse formalmente: Juan Carlos Castro Narváez, arquitecto de software y líder de la iniciativa.",
+            "Definir el propósito de la reunión: una sesión de ingeniería, honesta, basada en código y pruebas, para evaluar la arquitectura y explorar una colaboración técnica formal.",
+            "Aclarar desde el inicio que PEVN no se presenta como un producto final cerrado o comercial, sino como una solución abierta y soberana en desarrollo activo."
+          ],
+          anticipatedQuestions: [
+            "¿Quién respalda este proyecto? -> Proyecto técnico independiente orientado al bien público y a la transformación digital del sector educativo oficial colombiano."
+          ]
+        },
+        2: {
+          timing: "Minutos 02:00 - 04:00",
+          title: "La Iniciativa y Contexto Nacional",
+          talkingPoints: [
+            "Enfatizar la realidad de los colegios públicos: directivos y docentes usan múltiples sistemas desconectados o cuadernos físicos.",
+            "Subrayar el problema del licenciamiento privativo: muchas soluciones en dólares resultan financieramente insostenibles para municipios no certificados.",
+            "Resaltar la distinción obligatoria: 'Lo que verán hoy son resultados probados en código, no promesas de marketing'."
+          ],
+          anticipatedQuestions: [
+            "¿Busca competir con los sistemas de las Secretarías? -> No, busca unificar la capa pedagógica escolar y articularse con las directrices territoriales."
+          ]
+        },
+        3: {
+          timing: "Minutos 04:00 - 06:00",
+          title: "Visión y Principios Rectores",
+          talkingPoints: [
+            "Destacar los 4 pilares: Seguridad RBAC estricto, Estructura territorial DANE/DIVIPOLA, Bajo ancho de banda y Trazabilidad Ley 1581.",
+            "Explicar que la solución fue pensada desde el inicio con la división territorial colombiana (Departamentos y Municipios oficiales).",
+            "Mencionar la optimización de recursos: cero tipografías o librerías descargadas desde servidores externos para garantizar autonomía y privacidad."
+          ],
+          anticipatedQuestions: [
+            "¿Cómo se maneja la privacidad de menores? -> Mínimo dato necesario, hashing de claves, sin cesión de datos a terceros, trazabilidad de accesos en base de datos."
+          ]
+        },
+        4: {
+          timing: "Minutos 06:00 - 08:00",
+          title: "Panorama Funcional y Modelo de Roles",
+          talkingPoints: [
+            "Detallar las 4 áreas del sistema: Institucional, Académica, Docente y Estudiantil.",
+            "Explicar la jerarquía de los 11 roles RBAC, desde el Administrador Nacional hasta el Acudiente y Supervisor.",
+            "Mostrar cómo cada rol tiene delimitadas sus vistas y permisos a nivel de base de datos."
+          ],
+          anticipatedQuestions: [
+            "¿Puede un profesor ver notas de otro grupo? -> Solo si tiene la asignación académica activa en la base de datos; la API rechaza cualquier intento cruzado."
+          ]
+        },
+        5: {
+          timing: "Minutos 08:00 - 10:00",
+          title: "Estado de Madurez de Módulos",
+          talkingPoints: [
+            "Revisar la tabla de estados con absoluta transparencia.",
+            "Resaltar los módulos verdes (completamente operativos y demostrables).",
+            "Identificar con claridad los módulos dependientes de infraestructura externa (BigBlueButton) y las integraciones parciales (catálogo DANE local vs SIMAT en vivo)."
+          ],
+          anticipatedQuestions: [
+            "¿Tienen conexión en vivo con SIMAT? -> No, tenemos precargado el catálogo DANE/DIVIPOLA con 18,031 colegios y 51,521 sedes, pero no un endpoint transaccional con el MEN."
+          ]
+        },
+        6: {
+          timing: "Minutos 10:00 - 15:00",
+          title: "Secuencia de Demostración en Vivo",
+          talkingPoints: [
+            "Guiar la atención hacia la pantalla de demostración en vivo local.",
+            "Paso 1: Ingresar como Rector -> mostrar dashboard institucional aislado.",
+            "Paso 2: Mostrar administración académica y asignación de asignaturas.",
+            "Paso 3: Ingresar como Docente -> calificar alumnos y tomar asistencia.",
+            "Paso 4: Ingresar como Estudiante -> ver cómo se reflejan sus notas.",
+            "Paso 5: Mostrar la tabla de auditoría en PostgreSQL para evidenciar la trazabilidad."
+          ],
+          anticipatedQuestions: [
+            "¿Los datos son reales? -> Son datos 100% sintéticos estructurados bajo parámetros colombianos para proteger la privacidad."
+          ]
+        },
+        7: {
+          timing: "Minutos 15:00 - 17:00",
+          title: "Arquitectura Técnica y Separación de Capas",
+          talkingPoints: [
+            "Desglosar el diagrama de arquitectura: React 18 en frontend, FastAPI en backend, PostgreSQL 15 y Redis 7.",
+            "Enfatizar que FastAPI es completamente asíncrono, ideal para manejar miles de conexiones simultáneas con bajo consumo de memoria.",
+            "Explicar la independencia de la solución: empaquetable en contenedores estándar Docker para nubes de gobierno o infraestructura local."
+          ],
+          anticipatedQuestions: [
+            "¿Por qué FastAPI sobre Django o Spring? -> Rendimiento en I/O asíncrono, tipado estricto con Pydantic y menor huella de recursos computacionales."
+          ]
+        },
+        8: {
+          timing: "Minutos 17:00 - 19:00",
+          title: "Seguridad, Aislamiento y Habeas Data",
+          talkingPoints: [
+            "Explicar el modelo anti-IDOR: los repositorios filtran por institución y usuario a nivel de consulta SQL, no solo en la interfaz gráfica.",
+            "Aclarar que los tokens JWT caducan y se revocan inmediatamente en Redis si hay cierre de sesión o cambio de permisos.",
+            "Reiterar con honestidad: 'Aún no contamos con una certificación ISO o pentesting de un tercero, y por eso proponemos una auditoría conjunta'."
+          ],
+          anticipatedQuestions: [
+            "¿Dónde se alojan los servidores hoy? -> Entorno de desarrollo controlado local; para producción se adoptaría la nube de gobierno que el MEN disponga."
+          ]
+        },
+        9: {
+          timing: "Minutos 19:00 - 21:00",
+          title: "Evidencia de Pruebas y Calidad",
+          talkingPoints: [
+            "Presentar las cifras reconciliadas: 169 pruebas ejecutadas y aprobadas en backend sobre PostgreSQL real.",
+            "Explicar que existen 722 pruebas en total en el repositorio (553 no ejecutadas en este ciclo focalizado rápido).",
+            "Mencionar la auditoría de calidad de documentación: 41 chequeos automáticos y cero errores de TypeScript."
+          ],
+          anticipatedQuestions: [
+            "¿Por qué no ejecutaron las 722? -> Se priorizó la suite crítica de base de datos, seguridad, roles y aprovisionamiento para garantizar la estabilidad de la demo."
+          ]
+        },
+        10: {
+          timing: "Minutos 21:00 - 23:00",
+          title: "Alcance Actual y Limitaciones",
+          talkingPoints: [
+            "Exponer sin rodeos las 3 limitaciones principales:",
+            "1. BigBlueButton requiere clúster WebRTC/TURN externo.",
+            "2. No hay sincronización bidireccional en línea con SIMAT.",
+            "3. Pruebas de estrés masivo a escala de millones de usuarios aún pendientes."
+          ],
+          anticipatedQuestions: [
+            "¿Cómo resolverían la videollamada en zonas de baja conectividad? -> Modo audio-first, compresión adaptativa o enlace a grabaciones asíncronas."
+          ]
+        },
+        11: {
+          timing: "Minutos 23:00 - 25:00",
+          title: "Propuesta de Colaboración con MEN",
+          talkingPoints: [
+            "Proponer un camino ordenado de 4 fases con compuertas de decisión claras.",
+            "Fase 1: Mesa técnica y discovery con los ingenieros del MEN.",
+            "Fase 2: Evaluación formal de ciberseguridad y gobernanza de datos.",
+            "Fase 3: Piloto voluntario en 2 a 5 colegios oficiales si el MEN lo autoriza.",
+            "Dejar claro que no se pide presupuesto ni compromiso inmediato, sino apertura técnica."
+          ],
+          anticipatedQuestions: [
+            "¿Qué costo tiene para el MEN esta etapa? -> Cero costo. Es una iniciativa de ingeniería puesta a disposición para evaluación institucional."
+          ]
+        },
+        12: {
+          timing: "Minutos 25:00 - 27:00",
+          title: "Próximos Pasos Sugeridos",
+          talkingPoints: [
+            "Ofrecer formalmente la entrega del repositorio y el acceso al ambiente sandbox.",
+            "Proponer la designación de un enlace técnico del MEN para las mesas de trabajo.",
+            "Reiterar la total disposición a someter el código a cualquier auditoría o estándar que el ministerio exija."
+          ],
+          anticipatedQuestions: [
+            "¿En cuánto tiempo podríamos iniciar la revisión? -> Inmediatamente; los paquetes de documentación y código están listos para inspección."
+          ]
+        },
+        13: {
+          timing: "Minutos 27:00 - 30:00",
+          title: "Anexo Técnico y Preguntas Abiertas",
+          talkingPoints: [
+            "Hacer referencia a los tres documentos complementarios disponibles: Informe Técnico, Manual Institucional y Manual Interactivo.",
+            "Abrir formalmente la sesión de preguntas y respuestas con los funcionarios del MEN."
+          ],
+          anticipatedQuestions: [
+            "Preguntas abiertas de arquitectura, infraestructura o políticas territoriales."
+          ]
+        }
+      };
+
+      // Elementos del DOM
+      const slides = document.querySelectorAll('.slide');
+      const progressBar = document.getElementById('progress-bar');
+      const slideIndicator = document.getElementById('slide-indicator');
+      const slideSelect = document.getElementById('slide-select');
+      const btnPrev = document.getElementById('btn-prev');
+      const btnNext = document.getElementById('btn-next');
+      const btnOverview = document.getElementById('btn-overview');
+      const btnNotes = document.getElementById('btn-notes');
+      const btnFullscreen = document.getElementById('btn-fullscreen');
+      const btnHelp = document.getElementById('btn-help');
+      const btnPrint = document.getElementById('btn-print');
+      
+      const presenterDrawer = document.getElementById('presenter-drawer');
+      const notesContent = document.getElementById('notes-content');
+      const btnCloseNotes = document.getElementById('btn-close-notes');
+      
+      const overviewModal = document.getElementById('overview-modal');
+      const overviewGrid = document.getElementById('overview-grid');
+      const btnCloseOverview = document.getElementById('btn-close-overview');
+      
+      const helpModal = document.getElementById('help-modal');
+      const btnCloseHelp = document.getElementById('btn-close-help');
+
+      // Función para Actualizar Diapositiva
+      function goToSlide(index) {
+        if (index < 1) index = 1;
+        if (index > totalSlides) index = totalSlides;
+        
+        currentSlide = index;
+
+        slides.forEach(function(slide, idx) {
+          const slideNum = idx + 1;
+          slide.classList.remove('active', 'prev');
+          if (slideNum === currentSlide) {
+            slide.classList.add('active');
+          } else if (slideNum < currentSlide) {
+            slide.classList.add('prev');
+          }
+        });
+
+        // Actualizar barra de progreso
+        const progressPct = ((currentSlide - 1) / (totalSlides - 1)) * 100;
+        progressBar.style.width = progressPct + '%';
+
+        // Actualizar indicadores
+        slideIndicator.textContent = 'Diapositiva ' + currentSlide + ' de ' + totalSlides;
+        slideSelect.value = currentSlide;
+
+        // Estado de botones anterior / siguiente
+        btnPrev.disabled = (currentSlide === 1);
+        btnNext.disabled = (currentSlide === totalSlides);
+
+        // Actualizar Notas del Presentador
+        updatePresenterNotes();
+      }
+
+      function updatePresenterNotes() {
+        const note = presenterNotes[currentSlide];
+        if (!note) {
+          notesContent.innerHTML = '<p>No hay notas específicas para esta diapositiva.</p>';
+          return;
+        }
+
+        let html = '<div class="timing-badge">' + note.timing + '</div>';
+        html += '<h4 style="color:#ffffff; font-size:14px; margin-bottom:8px;">' + note.title + '</h4>';
+        
+        html += '<h4>Puntos Clave a Exponer:</h4><ul>';
+        note.talkingPoints.forEach(function(pt) {
+          html += '<li>' + pt + '</li>';
+        });
+        html += '</ul>';
+
+        if (note.anticipatedQuestions && note.anticipatedQuestions.length > 0) {
+          html += '<h4>Preguntas Anticipadas del MEN:</h4><ul>';
+          note.anticipatedQuestions.forEach(function(q) {
+            html += '<li style="color:#fde047;">' + q + '</li>';
+          });
+          html += '</ul>';
+        }
+
+        notesContent.innerHTML = html;
+      }
+
+      // Inicializar Grid de Vista General
+      function buildOverviewGrid() {
+        overviewGrid.innerHTML = '';
+        slides.forEach(function(slide, idx) {
+          const slideNum = idx + 1;
+          const titleElem = slide.querySelector('.slide-title');
+          const title = titleElem ? titleElem.textContent : 'Diapositiva ' + slideNum;
+          
+          const item = document.createElement('div');
+          item.className = 'overview-item' + (slideNum === currentSlide ? ' current' : '');
+          item.innerHTML = '<div class="overview-item-num">Diapositiva ' + slideNum + '</div>' +
+                           '<div class="overview-item-title">' + title + '</div>';
+          item.addEventListener('click', function() {
+            goToSlide(slideNum);
+            overviewModal.classList.remove('open');
+          });
+          overviewGrid.appendChild(item);
+        });
+      }
+
+      // Eventos de Navegación
+      btnPrev.addEventListener('click', function() {
+        goToSlide(currentSlide - 1);
+      });
+
+      btnNext.addEventListener('click', function() {
+        goToSlide(currentSlide + 1);
+      });
+
+      slideSelect.addEventListener('change', function(e) {
+        goToSlide(parseInt(e.target.value, 10));
+      });
+
+      // Modales y Paneles
+      btnNotes.addEventListener('click', function() {
+        presenterDrawer.classList.toggle('open');
+        btnNotes.classList.toggle('active', presenterDrawer.classList.contains('open'));
+      });
+      btnCloseNotes.addEventListener('click', function() {
+        presenterDrawer.classList.remove('open');
+        btnNotes.classList.remove('active');
+      });
+
+      btnOverview.addEventListener('click', function() {
+        buildOverviewGrid();
+        overviewModal.classList.add('open');
+      });
+      btnCloseOverview.addEventListener('click', function() {
+        overviewModal.classList.remove('open');
+      });
+      overviewModal.addEventListener('click', function(e) {
+        if (e.target === overviewModal) overviewModal.classList.remove('open');
+      });
+
+      btnHelp.addEventListener('click', function() {
+        helpModal.classList.add('open');
+      });
+      btnCloseHelp.addEventListener('click', function() {
+        helpModal.classList.remove('open');
+      });
+      helpModal.addEventListener('click', function(e) {
+        if (e.target === helpModal) helpModal.classList.remove('open');
+      });
+
+      // Pantalla Completa
+      btnFullscreen.addEventListener('click', function() {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(function(err) {
+            console.warn('Error al activar pantalla completa:', err);
+          });
+          btnFullscreen.classList.add('active');
+        } else {
+          if (document.exitFullscreen) {
+            document.exitFullscreen();
+          }
+          btnFullscreen.classList.remove('active');
+        }
+      });
+
+      // Impresión
+      btnPrint.addEventListener('click', function() {
+        window.print();
+      });
+
+      // Atajos de Teclado
+      document.addEventListener('keydown', function(e) {
+        // Ignorar si el usuario está interactuando con un formulario o modal abierto
+        if (e.target.tagName === 'SELECT' || e.target.tagName === 'INPUT') return;
+
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === 'PageDown' || e.key === ' ') {
+          e.preventDefault();
+          goToSlide(currentSlide + 1);
+        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'PageUp' || e.key === 'Backspace') {
+          e.preventDefault();
+          goToSlide(currentSlide - 1);
+        } else if (e.key === 'Home') {
+          e.preventDefault();
+          goToSlide(1);
+        } else if (e.key === 'End') {
+          e.preventDefault();
+          goToSlide(totalSlides);
+        } else if (e.key === 'f' || e.key === 'F') {
+          e.preventDefault();
+          btnFullscreen.click();
+        } else if (e.key === 'n' || e.key === 'N') {
+          e.preventDefault();
+          btnNotes.click();
+        } else if (e.key === 'o' || e.key === 'O') {
+          e.preventDefault();
+          btnOverview.click();
+        } else if (e.key === 'h' || e.key === 'H') {
+          e.preventDefault();
+          helpModal.classList.toggle('open');
+        } else if (e.key === 'Escape') {
+          overviewModal.classList.remove('open');
+          helpModal.classList.remove('open');
+          presenterDrawer.classList.remove('open');
+          btnNotes.classList.remove('active');
+        }
+      });
+
+      // Inicialización
+      goToSlide(1);
+    })();
+  </script>
+</body>
+</html>
