@@ -50,9 +50,9 @@ Arquitectónicamente, PEVN está construida bajo un modelo desacoplado:
 3. **Persistencia Relacional:** Motor **PostgreSQL 15** con particionamiento lógico multi-tenant forzado mediante discriminador institucional (`institution_id`), llaves foráneas e integridad referencial estricta.
 4. **Capa de Sesiones y Caché:** Servidor en memoria **Redis 7** utilizado para la revocación inmediata de tokens de acceso (lista negra en memoria volátil) y limitación de tasa de peticiones (*rate limiting*).
 
-La seguridad del sistema descansa en un modelo de Control de Acceso Basado en Roles (**RBAC de 11 roles**) que modela la jerarquía del sector educativo colombiano, articulado con la codificación oficial de la **DIVIPOLA** (1,122 municipios y 33 departamentos) y el **Directorio Único de Establecimientos Educativos (DUE)** del **DANE** (18,031 colegios y 51,521 sedes precargadas en catálogo).
+La seguridad del sistema descansa en un modelo de Control de Acceso Basado en Roles (**RBAC jerárquico canónico de 9 roles funcionales**, estructurado en **11 identificadores de base de datos** al incorporar 2 alias técnicos de compatibilidad), articulado con la codificación oficial de la **DIVIPOLA** (1,122 municipios y 33 departamentos) y el **Directorio Único de Establecimientos Educativos (DUE)** del **DANE / MEN 2024** (catálogo de referencia precargado con 18,031 colegios y 51,521 sedes físicas activas, diferenciado taxativamente de la adopción operacional actual).
 
-En su ciclo de aseguramiento de calidad más reciente (auditorías DOC-04-R7 y DOC-04-R8), el censo dinámico de pruebas del backend arrojó un total de **747 pruebas recolectadas en 72 archivos de prueba**, de las cuales **83 pruebas corresponden a integración real contra PostgreSQL 15** (en 6 archivos) y **664 pruebas a lógica unitaria y memoria** (en 66 archivos). Durante el ciclo de verificación acotada se ejecutaron y aprobaron con 100% de éxito **57 pruebas focalizadas** (13 de endurecimiento de teardown y ciclo de vida de conexiones, 12 de validación del analizador de censo, 17 de aprovisionamiento institucional y 15 de asignación de directivos docentes).
+En su ciclo de aseguramiento de calidad más reciente (auditorías DOC-04-R7 y DOC-04-R8), el censo dinámico de pruebas del backend arrojó un total de **747 pruebas recolectadas en 72 archivos de prueba**, de las cuales **83 pruebas corresponden a integración real contra PostgreSQL 15** (en 6 archivos) y **664 pruebas a lógica unitaria y memoria** (en 66 archivos). Durante el ciclo de verificación acotada se ejecutaron y aprobaron con 100% de éxito **57 pruebas focalizadas** (13 de endurecimiento de teardown y ciclo de vida de conexiones, 12 de validación del analizador de censo, 17 de aprovisionamiento institucional y 15 de asignación de directivos docentes), dejando 690 pruebas no ejecutadas en dicho ciclo acotado.
 
 Este informe expone con rigurosidad matemática y honestidad técnica el estado real de cada componente, diferenciando taxativamente lo **IMPLEMENTADO**, lo **PARCIALMENTE IMPLEMENTADO**, lo **PLANEADO** y lo **NO VERIFICADO**, facilitando una evaluación técnica objetiva por parte del MEN.
 
@@ -104,9 +104,9 @@ A continuación se presenta la matriz de requisitos funcionales y el estado veri
 | Requisito / Módulo | Descripción Funcional | Estado Técnico | Evidencia en Repositorio | Observación / Prerrequisito |
 | :--- | :--- | :--- | :--- | :--- |
 | **REQ-01: Autenticación Robusta** | Inicio de sesión con Argon2id, tokens de acceso JWT y refresh tokens con rotación. | **IMPLEMENTADO** | `backend/app/core/security.py`, `tests/test_auth_redis_hardening.py` | Requiere Redis 7 para revocación instantánea. |
-| **REQ-02: Jerarquía RBAC (11 Roles)** | Modelo jerárquico de permisos con 11 perfiles tipados y verificación de nivel. | **IMPLEMENTADO** | `backend/app/models/role.py`, `backend/app/models/user.py`, `app/api/deps.py` | Sin escalamiento vertical de privilegios. |
+| **REQ-02: Jerarquía Canónica RBAC (9 Roles / 11 en BD)** | Modelo jerárquico con 9 roles canónicos y 2 alias técnicos de compatibilidad tipados en base de datos. | **IMPLEMENTADO** | `backend/app/models/role.py`, `backend/app/models/user.py`, `app/api/deps.py` | Sin escalamiento vertical de privilegios. |
 | **REQ-03: Excepción de Coordinador** | Delegación controlada por Rector para que coordinadores creen docentes y alumnos. | **IMPLEMENTADO** | `app/services/institution_service.py`, reportes NTA-08B / NTA-10-R9 | Controlada por flag booleano a nivel institucional. |
-| **REQ-04: Catálogo Territorial DANE** | Integración de 1,122 municipios, 33 departamentos y 18,031 colegios oficiales. | **IMPLEMENTADO** | `backend/app/models/territorial.py`, migraciones Alembic, catálogos CSV | Catálogo precargado estático. Sincronización en lote. |
+| **REQ-04: Catálogo Territorial DANE (DUE 2024)** | Integración de 1,122 municipios, 33 departamentos, 18,031 colegios y 51,521 sedes en catálogo de referencia. | **IMPLEMENTADO** | `backend/app/models/territorial.py`, migraciones Alembic, catálogos CSV | Catálogo de referencia precargado. No representa adopción operativa actual. |
 | **REQ-05: Aprovisionamiento de Rectores** | Invitación criptográfica por token temporal de un solo uso con verificación de identidad. | **IMPLEMENTADO** | `backend/app/services/rector_service.py`, `tests/test_rector_provisioning_flow.py` | Envío SMTP simulable en local; requiere SMTP formal. |
 | **REQ-06: Estructura Curricular** | Configuración de años, periodos evaluativos, grados, grupos y asignaturas. | **IMPLEMENTADO** | `backend/app/models/academic.py`, `src/pages/AcademicManagementPage.tsx` | Validación estricta de solapamiento de periodos. |
 | **REQ-07: Planilla de Calificaciones** | Registro de notas numéricas (1.0 - 5.0) con ponderación y cálculo de definitivas. | **IMPLEMENTADO** | `backend/app/services/grade_service.py`, `src/pages/GradesPage.tsx` | Ajustable a Sistemas Institucionales de Evaluación (SIEE). |
@@ -252,18 +252,45 @@ erDiagram
     COURSE ||--o{ ATTENDANCE : "registra"
 ```
 
-### 8.1. Integración DIVIPOLA y DANE
-- **Departamentos:** 33 entidades territoriales con código oficial de 2 dígitos.
-- **Municipios:** 1,122 municipios conforme a la división oficial del DANE con código de 5 dígitos.
-- **Establecimientos Educativos:** Catálogo precargado de 18,031 colegios con su código DANE de 12 dígitos, nombre oficial y tipo de sector (oficial / no oficial).
-- **Sedes Educativas:** Catálogo de 51,521 sedes vinculadas jerárquicamente a su establecimiento principal, permitiendo la asignación precisa de sedes rurales y urbanas.
+### 8.1. Integración DIVIPOLA y DANE: Catálogo Oficial de Referencia (DUE 2024)
+La plataforma integra los datos geográficos e institucionales del sector oficial colombiano, estructurados en dos capas claramente diferenciadas:
+
+1. **Procedencia y Conciliación del Catálogo de Referencia:**
+   - **Departamentos:** 33 entidades territoriales de nivel departamental (32 Departamentos y el Distrito Capital de Bogotá), conforme a la codificación oficial de 2 dígitos de la DIVIPOLA (DANE).
+   - **Municipios:** 1,122 municipios conforme a la DIVIPOLA nacional, con cobertura activa de 1,119 municipios con sedes educativas en el censo.
+   - **Establecimientos Educativos (18,031):** Provenientes del recurso oficial `cfw5-qzt5` (`MEN_ESTABLECIMIENTOS_EDUCATIVOS_PREESCOLAR_BÁSICA_Y_MEDIA`, corte 2024, API SODA de `datos.gov.co`). De los 18,076 registros brutos cosechados en 19 bloques, se reconciliaron 17,990 colegios válidos (tras depurar 79 duplicados por jornada múltiple y 7 inconsistencias de secretaría cruzada), que sumados a 41 registros de línea base de calibración histórica totalizan exactamente **18,031 establecimientos educativos** persistidos en `official_institution_catalog`.
+   - **Sedes Educativas Físicas Activas (51,521):** Provenientes del recurso oficial `96t6-cfw4` (`MEN_SEDES_EDUCATIVAS`, corte 2024, API SODA de `datos.gov.co`). Corresponden a 50,107 sedes activas de la encuesta de campo oficial + 1,364 sedes principales institucionales complementarias (para asegurar que cada colegio cuente con su sede principal legal) + 50 sedes semilla de calibración, totalizando **51,521 sedes físicas activas** (17,935 principales y 33,586 anexas) persistidas en `official_campus_catalog`. Asimismo, 3,689 sedes históricas de instituciones cerradas o fusionadas en censos anteriores fueron aisladas en métricas de auditoría para garantizar la integridad referencial y evitar la creación de entidades fantasma.
+
+2. **Aclaración Institucional Mandatoria sobre Adopción Real:**
+   > [!IMPORTANT]
+   > **Aclaración sobre la Naturaleza del Catálogo:**  
+   > Las cifras anteriores (18,031 colegios y 51,521 sedes) constituyen el **catálogo oficial maestro de referencia precargado en base de datos** para posibilitar el aprovisionamiento inmediato y autónomo de rectores mediante validación de código DANE de 12 dígitos, sin requerir digitación manual ni procesos traumáticos de migración.  
+   > **Bajo ninguna circunstancia estas cifras representan una afirmación de adopción, despliegue operativo ni matrícula activa en PEVN.**  
+   > En la capa relacional operativa de la plataforma (`institutions`), existen actualmente **32 instituciones educativas de prueba y calibración** creadas en los entornos de desarrollo y evaluación (29 de ellas en estado activo).
 
 ---
 
 ## 9. Roles RBAC, Permisos, Autoridad Delegada y Control de Alcance
 
-### 9.1. Jerarquía Canónica de Roles
-El sistema cuenta con un catálogo canónico de **11 perfiles de base de datos** tipados con niveles numéricos estrictos para evitar cualquier escalamiento vertical de privilegios:
+### 9.1. Reconciliación del Modelo Canónico de 9 Roles vs. 11 Identificadores en Base de Datos
+Para eliminar cualquier discrepancia entre los documentos de arquitectura y la implementación física, se precisa formalmente la taxonomía de roles:
+
+1. **La Jerarquía Canónica Aprobada por el Product Owner consta de 9 Roles Funcionales (Arquetipos):**
+   - **[Nivel 100] `SUPERADMIN`:** Operador técnico del sistema / Infraestructura global.
+   - **[Nivel  90] `NATIONAL_ADMIN`:** Administrador Nacional (Ministerio de Educación Nacional).
+   - **[Nivel  80] `DEPARTMENT_ADMIN`:** Secretaría de Educación Departamental (SED).
+   - **[Nivel  70] `MUNICIPALITY_ADMIN`:** Secretaría de Educación Municipal (SEM).
+   - **[Nivel  60] `RECTOR`:** Rector / Director Institucional (máxima autoridad del tenant escolar).
+   - **[Nivel  50] `COORDINATOR`:** Coordinador Académico o de Sede.
+   - **[Nivel  30] `TEACHER`:** Docente de Área / Aula.
+   - **[Nivel  10] `STUDENT`:** Estudiante Matriculado (SIMAT).
+   - **[Nivel  10] `GUARDIAN`:** Acudiente / Tutor Legal.
+
+2. **Existencia de 11 Registros en la Tabla `roles` y Enumeración `SystemRole`:**
+   En el código fuente (`backend/app/core/security/interfaces.py`) y en el catálogo inicializado en base de datos (`backend/app/services/rbac_bootstrap_service.py`), existen 11 identificadores debido a la inclusión de **2 alias técnicos de compatibilidad operacional**:
+   - **`institution_admin` (Nivel 60):** Alias técnico de compatibilidad para el rol `rector`, con permisos idénticos sobre el tenant institucional.
+   - **`academic_coordinator` (Nivel 50):** Alias técnico de compatibilidad para el rol `coordinator`, con permisos equivalentes para la gestión curricular.
+   Estos dos identificadores no constituyen roles funcionales independientes ni representan escalamiento de privilegios, sino alias operativos para preservar la retrocompatibilidad con contratos de API previos.
 
 ```
 [NIVEL 100] superadmin            : Super Administrador Nacional PEVN
@@ -274,11 +301,11 @@ El sistema cuenta con un catálogo canónico de **11 perfiles de base de datos**
     │
 [NIVEL  70] municipality_admin    : Secretaría de Educación Municipal
     │
-[NIVEL  60] rector                : Rector / Director Institucional
-   ( = )    institution_admin     : Alias Operacional Institucional
+[NIVEL  60] rector                : Rector / Director Institucional (Canonical)
+   ( = )    institution_admin     : Alias Técnico de Compatibilidad
     │
-[NIVEL  50] coordinator           : Coordinador Académico / de Sede
-   ( = )    academic_coordinator  : Alias Operacional Curricular
+[NIVEL  50] coordinator           : Coordinador Académico / Sede (Canonical)
+   ( = )    academic_coordinator  : Alias Técnico de Compatibilidad
     │
 [NIVEL  30] teacher               : Docente de Área / Aula
     │
@@ -286,14 +313,17 @@ El sistema cuenta con un catálogo canónico de **11 perfiles de base de datos**
    ( = )    guardian              : Acudiente / Tutor Legal
 ```
 
-### 9.2. Modelo de Autoridad y Excepción Aprobada de Coordinador
-El modelo de asignación de roles establece que ningún usuario puede otorgar un rol con nivel igual o superior al suyo. 
+### 9.2. Cadena de Autoridad y Excepción Aprobada de Coordinador
+El modelo de asignación de roles establece que ningún usuario puede otorgar un rol con nivel igual o superior al suyo:
+$$\text{SUPERADMIN} \rightarrow \text{NATIONAL\_ADMIN} \rightarrow \text{DEPARTMENT\_ADMIN} \rightarrow \text{MUNICIPALITY\_ADMIN} \rightarrow \text{RECTOR} \rightarrow \text{COORDINATOR} \rightarrow \text{TEACHER / STUDENT} \rightarrow \text{GUARDIAN}$$
 
-**Excepción Canónica Aprobada de Coordinador:**  
-En la operación cotidiana de las instituciones oficiales, el Rector a menudo delega la creación operativa de docentes, estudiantes y acudientes en los Coordinadores Académicos o de Sede. PEVN implementa esta regla mediante una política de delegación controlada por el Rector:
-- A nivel del tenant institucional existe una directiva booleana (`coordinator_delegated_provisioning_enabled`).
-- Si el Rector mantiene habilitada la política, los coordinadores (`coordinator` / `academic_coordinator`) tienen autorización en la API para registrar docentes, matricular estudiantes y vincular acudientes en sus sedes asignadas.
-- Si el Rector revoca la política, el sistema aplica la regla estricta por defecto, impidiendo de forma inmediata que el coordinador cree usuarios.
+**Excepción Canónica Aprobada de Coordinador (Opción B Refinada):**  
+En el flujo ordinario estricto, el Rector es la única autoridad normal autorizada para aprovisionar docentes, estudiantes y acudientes. No obstante, atendiendo a la realidad operativa de las instituciones oficiales colombianas, el Product Owner aprobó formalmente la delegación operativa condicionada:
+- A nivel del tenant institucional en base de datos existe la directiva persistida `coordinator_delegated_provisioning_enabled`.
+- **Cuando está inhabilitada (`False`, valor por defecto del sistema):** Los coordinadores tienen denegada la creación de usuarios; cualquier solicitud responde con `HTTP 403 Forbidden` (`COORDINATOR_DELEGATION_DISABLED`).
+- **Cuando el Rector la habilita explícitamente (`True`):** Los coordinadores (`coordinator` y su alias `academic_coordinator`) quedan autorizados en la API para registrar docentes, matricular estudiantes y vincular acudientes estrictamente dentro del `institution_id` de su sede.
+- En ningún caso el coordinador puede crear directivos (`rector`), otros coordinadores ni administradores territoriales.
+- El estudiante (`student`) tiene estrictamente bloqueada cualquier administración o vinculación de acudientes.
 
 ---
 
@@ -468,6 +498,9 @@ Durante el ciclo de control riguroso se ejecutaron **57 pruebas focalizadas de i
 2. `backend/tests/test_census_analyzer.py`: **12 pruebas aprobadas** (verificación del motor de análisis dinámico del censo).
 3. `backend/tests/test_institution_provisioning.py`: **17 pruebas aprobadas** (creación institucional, asignación territorial y aislamiento DANE).
 4. `backend/tests/test_nta10_rector_provisioning.py`: **15 pruebas aprobadas** (invitación criptográfica, activación segura y enlace al tenant).
+
+**Pruebas No Ejecutadas en el Ciclo Acotado (690 pruebas):**  
+Las restantes 690 pruebas recolectadas en el censo (pruebas unitarias puras, validación aislada de esquemas Pydantic, servicios auxiliares y mocks en memoria) no fueron ejecutadas durante este ciclo bounded de verificación de infraestructura, reservándose para ejecuciones de integración continua (CI) completas en ambientes dedicados. No se afirma que hayan pasado en esta sesión, manteniéndose delimitadas como "recolectadas estáticamente pero no ejecutadas en el ciclo acotado".
 
 ### 19.3. Hardening de Teardown y Cierre Seguro de Conexiones
 En la auditoría DOC-04-R8 se comprobó que el fixture central `client` en `backend/tests/conftest.py` implementa un bloque de control `try...finally` determinista que:

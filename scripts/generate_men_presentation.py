@@ -220,7 +220,7 @@ def build_presentation(output_path):
              [
                  "**Arquitectura Desacoplada:** Frontend SPA en React 18/TypeScript (Vite) + Backend asíncrono en FastAPI (Python 3.12/3.14).",
                  "**Persistencia y Sesiones:** PostgreSQL 15 con aislamiento multi-tenant forzado + Redis 7 para revocación instantánea de JWT.",
-                 "**Estándares DANE:** 1,122 municipios (DIVIPOLA) y catálogo de 18,031 colegios y 51,521 sedes precargadas."
+                 "**Modelo y Estándares:** Jerarquía canónica de 9 roles (11 en BD). Catálogo DANE precargado (18,031 colegios, 51,521 sedes; no implica adopción)."
              ])
 
     add_card(s2, Inches(8.8), Inches(1.6), Inches(3.7), Inches(5.1),
@@ -318,31 +318,32 @@ def build_presentation(output_path):
              ], bg_color=RGBColor(254, 242, 242), border_color=RGBColor(252, 165, 165), title_color=RGBColor(153, 27, 27))
 
     # =========================================================================
-    # SLIDE 6: MODELO DE AUTORIDAD Y JERARQUÍA RBAC (11 ROLES)
+    # SLIDE 6: MODELO DE AUTORIDAD Y JERARQUÍA CANÓNICA (9 ROLES / 11 EN BD)
     # =========================================================================
     s6 = prs.slides.add_slide(blank_layout)
-    add_header(s6, "Usuarios, Jerarquía RBAC (11 Roles) y Autoridad Delegada")
+    add_header(s6, "Jerarquía Canónica RBAC (9 Roles) y Modelo de Autoridad")
     add_footer(s6, 6)
 
     add_card(s6, Inches(0.8), Inches(1.6), Inches(6.0), Inches(5.1),
-             "Catálogo Canónico de Roles Tipados en Base de Datos",
+             "Catálogo Canónico de 9 Roles (11 Identificadores en BD)",
              [
-                 "**[100] superadmin:** Gobernanza global de plataforma y Secretarías.",
-                 "**[90] national_admin:** Administrador Nacional MEN y auditoría central.",
+                 "**[100] superadmin:** Operador técnico de plataforma e infraestructura.",
+                 "**[90] national_admin:** Administrador Nacional MEN y gobierno general.",
                  "**[80] department_admin:** Secretaría de Educación Departamental.",
                  "**[70] municipality_admin:** Secretaría de Educación Municipal.",
-                 "**[60] rector / institution_admin:** Máxima autoridad directiva del tenant.",
-                 "**[50] coordinator / academic_coordinator:** Coordinación académica/sede.",
+                 "**[60] rector:** Rector / Director Institucional (Alias técnico: institution_admin).",
+                 "**[50] coordinator:** Coordinador Académico / Sede (Alias técnico: academic_coordinator).",
                  "**[30] teacher:** Docente de aula y registro evaluativo.",
-                 "**[10] student / guardian:** Estudiante matriculado y acudiente legal."
+                 "**[10] student:** Estudiante matriculado (SIMAT).",
+                 "**[10] guardian:** Acudiente / Tutor legal civil."
              ])
 
     add_card(s6, Inches(7.1), Inches(1.6), Inches(5.4), Inches(5.1),
              "Fronteras de Autoridad y Excepción Aprobada",
              [
-                 "**Prevención de Escalamiento Vertical:** Ningún usuario puede asignar un rol de nivel igual o superior al suyo en la jerarquía.",
-                 "**Aislamiento de Ámbito:** Los administradores territoriales solo operan sobre municipios o instituciones de su jurisdicción DANE.",
-                 "**Excepción Canónica de Coordinador:**\nPor regla general, los coordinadores no crean usuarios. Sin embargo, en la operación escolar colombiana el Rector delega la matrícula y asignación docente.\n\nPEVN soporta una **política controlada por el Rector** (`coordinator_delegated_provisioning_enabled`): cuando está activa, el coordinador crea docentes y matricula estudiantes en su sede; si el rector la desactiva, la API bloquea la acción inmediatamente."
+                 "**Cadena Canónica Aprobada:**\nSUPERADMIN → NATIONAL_ADMIN → DEPARTMENT_ADMIN → MUNICIPALITY_ADMIN → RECTOR → COORDINATOR → TEACHER / STUDENT → GUARDIAN.",
+                 "**Aislamiento Territorial Forzado:** Ninguna autoridad puede cruzar fronteras departamentales o municipales DANE.",
+                 "**Excepción Canónica de Coordinador:** Por regla general, los coordinadores no crean usuarios. No obstante, mediante la directiva institucional persistida (`coordinator_delegated_provisioning_enabled`):\n• **Si está inhabilitada (Default):** Creación bloqueada (HTTP 403 `COORDINATOR_DELEGATION_DISABLED`).\n• **Si el Rector la habilita:** El coordinador puede crear docentes, matricular estudiantes y vincular acudientes en su sede."
              ])
 
     # =========================================================================
@@ -434,24 +435,24 @@ def build_presentation(output_path):
     # SLIDE 9: GESTIÓN INSTITUCIONAL Y TERRITORIAL (DANE / DIVIPOLA)
     # =========================================================================
     s9 = prs.slides.add_slide(blank_layout)
-    add_header(s9, "Gobernanza Territorial: Integración DANE y DIVIPOLA")
+    add_header(s9, "Gobernanza Territorial: Catálogo DANE/DIVIPOLA (DUE 2024)")
     add_footer(s9, 9)
 
     add_card(s9, Inches(0.8), Inches(1.6), Inches(5.7), Inches(5.1),
-             "Estructura Territorial Oficial Colombiana",
+             "Catálogo Maestro de Referencia (DUE 2024)",
              [
-                 "**33 Entidades Territoriales:** 32 departamentos y el Distrito Capital de Bogotá, identificados por código oficial de 2 dígitos.",
-                 "**1,122 Municipios:** Catálogo nacional completo según codificación DIVIPOLA (5 dígitos).",
-                 "**18,031 Establecimientos Educativos:** Colegios oficiales y no oficiales precargados en base de datos con código DANE de 12 dígitos.",
-                 "**51,521 Sedes Educativas:** Cobertura de sedes principales y anexas (urbanas y rurales) estructuradas en el modelo relacional."
+                 "**33 Entidades Territoriales:** 32 departamentos y Bogotá D.C., conforme a DIVIPOLA oficial.",
+                 "**1,122 Municipios:** Codificación DANE oficial (1,119 con cobertura de sedes en censo).",
+                 "**18,031 Establecimientos Educativos:** Cosechados de SODA cfw5-qzt5 (DUE 2024, 17,990 censados + 41 calibración).",
+                 "**51,521 Sedes Físicas Activas:** SODA 96t6-cfw4 (50,107 activas + 1,364 sedes principales + 50 semilla)."
              ])
 
     add_card(s9, Inches(6.8), Inches(1.6), Inches(5.7), Inches(5.1),
-             "Valor Estratégico para el MEN",
+             "Valor Estratégico y Aclaración de Adopción",
              [
-                 "**Compatibilidad Inmediata:** No requiere normalización previa de nombres de colegios o municipios; las llaves primarias ya coinciden con las del MEN.",
-                 "**Consolidación Estadística:** Capacidad de generar métricas agregadas por departamento, municipio o tipo de sector sin inconsistencias.",
-                 "**Aislamiento Territorial Forzado:** Las Secretarías de Educación Departamentales y Municipales solo pueden gestionar los colegios bajo su jurisdicción legal."
+                 "**Aprovisionamiento Instantáneo:** Validación automática por código DANE de 12 dígitos sin migración manual.",
+                 "**Consolidación Estadística:** Agregación territorial limpia sin riesgo de duplicados o solapamientos.",
+                 "**Aclaración Institucional Mandatoria:** Las cifras anteriores corresponden al **catálogo de referencia precargado** para habilitar la activación directiva.\n• **NO representan adopción operativa actual** ni colegios en producción.\n• En la base operacional (`institutions`), existen actualmente 32 colegios de prueba/laboratorio (29 activos)."
              ])
 
     # =========================================================================
@@ -669,9 +670,9 @@ def build_presentation(output_path):
             p.font.color.rgb = WHITE
 
     rows_data = [
-        ("Autenticación JWT y RBAC (11 Roles)", "IMPLEMENTADO", "backend/app/core/security.py\nbackend/app/models/role.py", "Sí (Verificado en local)"),
+        ("Autenticación JWT y RBAC (9 Canónicos / 11 BD)", "IMPLEMENTADO", "backend/app/core/security/interfaces.py\nbackend/app/models/role.py", "Sí (Verificado en local)"),
         ("Aislamiento Multi-Tenant y Anti-IDOR", "IMPLEMENTADO", "backend/app/services/institution_service.py", "Sí (Verificado en local)"),
-        ("Gobernanza Territorial DANE/DIVIPOLA", "IMPLEMENTADO", "Catálogo CSV / backend/app/models/territorial.py", "Sí (Catálogo precargado)"),
+        ("Catálogo Territorial y DUE 2024 (Precarga)", "CATÁLOGO PRECARGADO", "SODA cfw5-qzt5 / 96t6-cfw4\nofficial_institution_catalog", "Sí (18.031 EE / 51.521 Sedes ref.)"),
         ("Aprovisionamiento de Rectores", "IMPLEMENTADO", "backend/app/services/rector_service.py", "Sí (Token 72h verificado)"),
         ("Planilla de Notas y Asistencia", "IMPLEMENTADO", "backend/app/services/grade_service.py", "Sí (Escala 1.0-5.0 activa)"),
         ("Aulas Virtuales (BigBlueButton)", "CLIENTE IMPLEMENTADO", "backend/app/services/bbb_service.py", "Condicional (Requiere BBB externo)")
@@ -714,6 +715,7 @@ def build_presentation(output_path):
                  "**12 Pruebas de Analizador de Censo:** Validación reproducible de la taxonomía de pruebas (`test_census_analyzer.py`).",
                  "**17 Pruebas de Aprovisionamiento Institucional:** Creación de instituciones y validación DANE (`test_institution_provisioning.py`).",
                  "**15 Pruebas de Aprovisionamiento de Rectores:** Flujo de invitación y control de directivos (`test_nta10_rector_provisioning.py`).",
+                 "**690 Pruebas Restantes No Ejecutadas:** Excluidas deliberadamente de este ciclo acotado para preservar aislamiento y estabilidad.",
                  "**Frontend:** `tsc --noEmit` completado con 0 errores y compilación `npm run build` exitosa."
              ])
 

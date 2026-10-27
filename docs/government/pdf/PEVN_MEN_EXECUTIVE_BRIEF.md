@@ -28,7 +28,7 @@ PEVN es un sistema integral de información y gestión académica construido baj
 - **Frontend SPA Liviano:** Desarrollado en React 18, TypeScript y Vite, sin fuentes externas ni scripts comerciales; 100% autónomo y preparado para operar localmente.
 - **Backend Asíncrono de Alto Rendimiento:** Desarrollado en FastAPI (Python 3.12/3.14) con ORM asíncrono SQLAlchemy 2.0 (`asyncpg`).
 - **Persistencia y Sesiones:** PostgreSQL 15 con aislamiento multi-tenant lógico forzado por discriminador institucional (`institution_id`), y Redis 7 para revocación instantánea de sesiones.
-- **Gobernanza Territorial DANE:** 33 departamentos, 1,122 municipios (DIVIPOLA) y catálogo de 18,031 colegios y 51,521 sedes precargadas en el modelo relacional.
+- **Gobernanza Territorial y Catálogo DUE 2024:** 33 departamentos, 1,122 municipios (DIVIPOLA) y catálogo nacional de 18,031 colegios y 51,521 sedes precargadas en el modelo relacional desde los microdatos abiertos de MinEducación DUE 2024 (SODA `cfw5-qzt5` y `96t6-cfw4`). Esta capa de referencia permite el aprovisionamiento directo por código DANE sin digitación manual. *(Aclaración de adopción: La capa operativa de pruebas cuenta actualmente con 32 instituciones registradas, 29 activas).*
 
 ### Estado Técnico Comprobado (Demostrable en Vivo)
 - **Aprovisionamiento Directivo:** Invitación criptográfica con tokens de un solo uso (vigencia de 72 horas) para activación autónoma de Rectores.
@@ -41,7 +41,7 @@ PEVN es un sistema integral de información y gestión académica construido baj
 
 ## 3. Postura de Ciberseguridad y Cumplimiento Normativo
 
-- **Control de Acceso Basado en Roles (RBAC de 11 Roles):** Jerarquía estricta que previene el escalamiento vertical de privilegios (`superadmin` a `student/guardian`). Incluye la excepción canónica aprobada de coordinador, mediante la cual el Rector puede habilitar o inhabilitar la delegación de creación de docentes y matrícula en coordinadores de sede.
+- **Control de Acceso Basado en Roles (RBAC con 9 Roles Canónicos y 11 en BD):** Jerarquía estricta basada en 9 arquetipos funcionales canónicos y 2 alias técnicos de compatibilidad (`institution_admin` $\rightarrow$ `rector`, `academic_coordinator` $\rightarrow$ `coordinator`). Previene el escalamiento vertical de privilegios (nivel 100 a 10). Incluye la excepción canónica aprobada de coordinador, condicionada a la directiva institucional `coordinator_delegated_provisioning_enabled` (False por defecto / fail-closed, HTTP 403) para delegar de forma controlada la creación de docentes y matrícula.
 - **Mitigación Anti-IDOR y Cross-Tenant:** Toda consulta de base de datos exige obligatoriamente el `institution_id` de la sesión activa. Ningún usuario puede visualizar registros de otra sede modificando parámetros en la URL.
 - **Protección de Datos Personales (Ley 1581 de 2012):** Tratamiento de datos de menores bajo estándar reforzado; cero analítica comercial, cero rastreadores y contraseñas hasheadas con Argon2id / bcrypt.
 - **Sanitización de Traza y Secretos:** Cero contraseñas expuestas en mensajes de error o logs del sistema (máscaras `***` verificadas en pruebas).
@@ -55,6 +55,7 @@ El estado de la solución está respaldado por evidencia auditable en el reposit
   - **83 pruebas de integración con PostgreSQL 15 real** en 6 archivos clave.
   - **664 pruebas unitarias y en memoria** en 66 archivos.
 - **Batería Ejecutada en Ciclo Acotado:** **57 pruebas ejecutadas con 100% PASS** (13 de hardening de teardown y ciclo de vida de conexiones, 12 de analizador de censo, 17 de aprovisionamiento institucional y 15 de asignación de directivos docentes).
+- **Pruebas No Ejecutadas en Ciclo Acotado:** **690 pruebas restantes** de la suite completa permanecieron no ejecutadas deliberadamente en este ciclo acotado para garantizar el aislamiento ambiental y prevenir bloqueos de teardown.
 - **Compilación Limpia:** 0 errores en verificación de tipos de TypeScript (`tsc --noEmit`) y 41 comprobaciones automatizadas de documentación aprobadas al 100%.
 
 ---

@@ -23,15 +23,15 @@
 ## 2. Evidencias y Artefactos a Llevar a la Sesión
 
 ### A. Material Impreso y Dossiers Técnicos
-- [ ] **Informe Técnico Integral:** 3 copias encuadernadas de `PEVN_INFORME_TECNICO_INTEGRAL_PARA_REVISION_MEN.pdf` (15 páginas con las 27 secciones completas).
+- [ ] **Informe Técnico Integral:** 3 copias encuadernadas de `PEVN_INFORME_TECNICO_INTEGRAL_PARA_REVISION_MEN.pdf` (16 páginas con las 27 secciones completas).
 - [ ] **Resumen Ejecutivo:** 5 copias impresas de `PEVN_MEN_EXECUTIVE_BRIEF.pdf` para entrega a directores y asesores.
 - [ ] **Presentación Institucional:** Copias impresas o visualizador listo de `PEVN_PRESENTACION_INSTITUCIONAL_MEN.pptx` y `.pdf` (22 diapositivas).
-- [ ] **Copia del Repositorio en Medio Digital Seguro:** Memoria USB cifrada con el snapshot íntegro del repositorio Git en el commit de referencia `a7ecbed460283bdd55f1ab53f96b315012288876`.
+- [ ] **Copia del Repositorio en Medio Digital Seguro:** Memoria USB cifrada con el snapshot íntegro del repositorio Git en el commit de referencia `3a01c12dd0669447b4195850bddcda43ce0508a6`.
 
 ### B. Entorno de Demostración en Vivo (Demo Standalone)
 - [ ] **Equipo Portátil de Demostración:** Batería cargada al 100%, cargador, adaptador HDMI y configuración de pantalla duplicada lista.
 - [ ] **Servicios Locales Pre-Iniciados y Verificados:**
-  - PostgreSQL 15 activo con base de datos de prueba precargada con catálogo DANE (18,031 colegios y 51,521 sedes).
+  - PostgreSQL 15 activo con base de datos de prueba y catálogo de referencia DUE 2024 precargado (18,031 colegios y 51,521 sedes en tablas de catálogo oficial; 32 instituciones registradas en capa operativa).
   - Redis 7 activo en puerto local estándar (6379) para control de sesiones.
   - Backend FastAPI corriendo en `http://localhost:8000` con documentación interactiva Swagger (`/docs`) y ReDoc (`/redoc`) operativas.
   - Frontend SPA en React/TypeScript compilado y corriendo en `http://localhost:5173`.
@@ -55,7 +55,7 @@
 > **Respuesta:** No. PEVN es un desarrollo técnico independiente. No cuenta a la fecha con homologación, contrato ni certificación formal del MEN o MinTIC. El propósito de esta reunión es precisamente abrir la puerta para que el equipo de ingeniería del MEN audite el código y determine su viabilidad.
 
 ### P3. ¿Existe integración en vivo hoy con el SIMAT o el DUE?
-> **Respuesta:** No existe una conexión web service transaccional activa con las bases de datos centrales del MEN. Lo que tenemos implementado es compatibilidad total en el modelo de datos, ya que el sistema utiliza los códigos oficiales DANE de departamento, municipio, colegio y sede (12 dígitos). La especificación de los web services seguros es uno de los temas propuestos para la Fase 2.
+> **Respuesta:** No existe una conexión web service transaccional activa con las bases de datos centrales del MEN. Lo que tenemos implementado es compatibilidad total en el modelo de datos, ya que el sistema utiliza los códigos oficiales DANE de departamento, municipio, colegio y sede (12 dígitos) precargados desde microdatos abiertos DUE 2024 (`cfw5-qzt5` y `96t6-cfw4`). La especificación de los web services seguros es uno de los temas propuestos para la Fase 2.
 
 ### P4. ¿Cómo se protege la información de menores de edad (Ley 1581 de 2012)?
 > **Respuesta:** Aplicamos privacidad por diseño: las contraseñas se almacenan con Argon2id / bcrypt, las sesiones se protegen con JWT en cabeceras Bearer validadas en Redis, y el sistema carece totalmente de rastreadores comerciales o analítica foránea. Además, la base de datos registra una pista inmutable de auditoría forense (`AuditLog`) con marca de tiempo UTC y dirección IP para cada cambio en notas o matrículas.
@@ -64,7 +64,10 @@
 > **Respuesta:** El aislamiento no se delega a los programadores en cada vista; está forzado en la capa base de repositorios de SQLAlchemy, donde toda consulta inyecta obligatoriamente `WHERE institution_id = :current_user_institution_id`. Cualquier intento de modificar el identificador en la URL responde con `HTTP 403 Forbidden` o `HTTP 404 Not Found`.
 
 ### P6. ¿Qué pruebas se han realizado realmente sobre el sistema?
-> **Respuesta:** En la suite Pytest contamos con un censo dinámico de **747 pruebas recolectadas en 72 archivos**, de las cuales **83 son pruebas de integración real contra PostgreSQL 15** y **664 son pruebas unitarias y en memoria**. En el ciclo de control más reciente ejecutamos **57 pruebas focalizadas con 100% de éxito**, validando el hardening de conexiones (cierre seguro de descriptores en bloque `finally`), sanitización de errores de base de datos y flujos de aprovisionamiento.
+> **Respuesta:** En la suite Pytest contamos con un censo dinámico de **747 pruebas recolectadas en 72 archivos**, de las cuales **83 son pruebas de integración real contra PostgreSQL 15** y **664 son pruebas unitarias y en memoria**. En el ciclo de control más reciente ejecutamos **57 pruebas focalizadas con 100% de éxito**, validando el hardening de conexiones (cierre seguro de descriptores en bloque `finally`), sanitización de errores de base de datos y flujos de aprovisionamiento. Las **690 pruebas restantes** permanecieron deliberadamente no ejecutadas en ese ciclo para asegurar el aislamiento ambiental y evitar bloqueos en el motor relacional.
+
+### P7. ¿Cómo opera el modelo RBAC y la excepción de aprovisionamiento del coordinador?
+> **Respuesta:** El modelo de autoridad se organiza en **9 arquetipos canónicos funcionales** (niveles 100 a 10) y registra **11 identificadores tipados en la tabla `roles`** al incluir 2 alias técnicos de compatibilidad (`institution_admin` como alias de `rector` y `academic_coordinator` como alias de `coordinator`). Respecto al aprovisionamiento, por regla general los coordinadores no pueden crear usuarios; sin embargo, para soportar la delegación rectoral en sedes, se implementó la directiva `coordinator_delegated_provisioning_enabled`. Esta directiva falla cerrada por defecto (`False`, retornando HTTP 403), habilitándose únicamente si el Rector de la institución la activa explícitamente en la configuración institucional.
 
 ---
 
