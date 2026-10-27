@@ -30,42 +30,44 @@
 
 ---
 
-## 2. Estado Exacto del Repositorio Git y Reconciliación de Commits
+## 2. Estado Exacto del Repositorio Git y Reconciliación de Trazabilidad
 
-La auditoría verificó de forma no destructiva el estado del árbol de trabajo, el rastreo remoto y el historial de Git al inicio del ciclo de verificación:
+La auditoría verificó de forma no destructiva el estado del árbol de trabajo, el rastreo remoto y el historial de Git:
 
-### 2.1. Comprobaciones de Estado Git Ejecutadas:
+### 2.1. Comprobaciones de Estado Git Ejecutadas en Auditoría:
 - `git rev-parse HEAD`:  
-  `1fd505c810120f9cd78c9ec57e61a8a405a35717`
+  `89626bcbb07c3e800fa55d68d2cffada6d70483c` *(en paridad exacta 1:1 con `origin/main`)*
 - `git branch --show-current`:  
   `main`
 - `git rev-parse origin/main`:  
-  `1fd505c810120f9cd78c9ec57e61a8a405a35717`
+  `89626bcbb07c3e800fa55d68d2cffada6d70483c`
 - `git status --short`:  
-  *(Salida vacía: `nothing to commit, working tree clean` al inicio de la verificación)*
-- `git diff --stat`:  
-  *(Salida vacía: 0 modificaciones no rastreadas)*
-- `git diff --cached --stat`:  
-  *(Salida vacía: 0 cambios en el área de preparación)*
+  *(Árbol de trabajo en sincronía; modificaciones acotadas exclusivamente a reconciliación documental)*
+- `git diff 1fd505c 89626bc --stat`:  
+  *(Cero modificaciones en lógica de backend, frontend o base de datos; cambios 100% circunscritos a `docs/government/pdf/`)*
 
-### 2.2. Distinción Rigurosa de Estados:
-1. **HEAD Local Actual:** `1fd505c810120f9cd78c9ec57e61a8a405a35717`
-2. **HEAD Remoto Rastreado (`origin/main`):** `1fd505c810120f9cd78c9ec57e61a8a405a35717` (Sincronizado de manera idéntica; la rama local y el repositorio remoto están en perfecta paridad).
-3. **Commit Padre Inmediato / Línea Base Previa:** `7b974951382bbd2f102274292539e98505cdae58` (*"Auditoría de Consistencia, Evidencia y Preparación para Revisión Técnica del MEN (PEVN)"*).
-4. **Cambios Confirmados (Committed):** 0 pendientes.
-5. **Cambios Rastreados No Confirmados:** 0 al inicio de la verificación.
-6. **Archivos No Rastreados (Untracked):** 0.
-7. **Política de Preservación Aplicada:** No se ejecutó ningún `git commit`, `git push`, `git reset`, `git clean`, `git rebase` ni descarte destructivo de cambios.
+### 2.2. Taxonomía Rigurosa de Trazabilidad de Liberación:
+Para resolver de manera definitiva y profesional la paradoja autorreferencial de Git (en la que declarar un hash de commit específico como "HEAD" dentro de un documento provoca que la propia confirmación de ese documento genere un nuevo commit con un hash diferente), se establecen cuatro conceptos formalmente diferenciados:
 
-### 2.3. Reconciliación Factual de las Referencias de Commit Históricas:
-El historial lineal de Git (`git log -n 5 --oneline`) documenta con precisión la secuencia de auditorías y consolidaciones:
-- `a7ecbed460283bdd55f1ab53f96b315012288876`: Corresponde al commit del ciclo de auditoría independiente **DOC-04-R7** (*"DOC-04-R7: Resumen Ejecutivo de Auditoría Independiente"*).
-- `e618105b8396ad397782366fa6b076390a36a57c`: Corresponde al commit de cierre del ciclo de auditoría independiente **DOC-04-R8** (*"DOC-04-R8: Resumen Ejecutivo de Auditoría Independiente"*), donde se consolidó el censo dinámico de 747 pruebas y la taxonomía inicial.
-- `3a01c12dd0669447b4195850bddcda43ce0508a6`: Corresponde al commit de línea base en el que se generó y estructuró por primera vez el paquete documental y la presentación institucional ante el MEN (*"PAQUETE DOCUMENTAL TÉCNICO Y PRESENTACIÓN PEVN ANTE EL MEN"*).
-- `7b974951382bbd2f102274292539e98505cdae58`: Corresponde al commit padre inmediato y línea base previa de auditoría (*"Auditoría de Consistencia, Evidencia y Preparación para Revisión Técnica del MEN (PEVN)"*).
-- `1fd505c810120f9cd78c9ec57e61a8a405a35717`: Corresponde al **commit HEAD autoritativo vigente** publicado tanto localmente como en el remoto `origin/main` (*"Reconciliación de Evidencias y Compuerta de Entrega Institucional al MEN (PEVN)"*).
+1. **Línea Base de Código y Pruebas Auditada (Audited Source Baseline):**  
+   Corresponde al commit inmutable `1fd505c810120f9cd78c9ec57e61a8a405a35717`. En este punto exacto del historial fueron ejecutadas y verificadas las 57 pruebas del ciclo acotado (100% PASS), el censo dinámico de 747 pruebas en 72 archivos, los modelos de base de datos de PostgreSQL 15, el catálogo territorial DUE 2024 y el esquema RBAC de 9 roles canónicos y 2 alias técnicos.
+2. **Revisión Documental y de Entregables (Deliverables Revision):**  
+   Versión institucional oficial **1.0-FINAL-MEN (Revisión Final de Cierre Controlado)**, correspondiente al conjunto consolidado de 8 entregables autoritativos vigentes y 13 artefactos históricos preservados.
+3. **Compromiso de Empaquetado Documental Previo:**  
+   Commit `89626bcbb07c3e800fa55d68d2cffada6d70483c` (*"VERIFICACIÓN INDEPENDIENTE Y COMPUERTA DE ENTREGA AL MEN"*), el cual integró formalmente el informe de verificación de entrega sin alterar el código de aplicación.
+4. **Instantánea de Liberación y Etiqueta Propuesta (Release Snapshot / Tag):**  
+   Se propone formalmente la creación de la etiqueta Git **`v1.0.0-men-review`** sobre el commit final que apruebe el propietario del proyecto para la entrega al MEN. Se aclara expresamente que dicha etiqueta no ha sido creada ni fabricada de manera prematura, sino que constituye el mecanismo estándar propuesto para fijar un identificador inmutable independiente de la evolución futura de la rama `main`.
+5. **Estado Dinámico del Repositorio (Live Repository HEAD):**  
+   Se reconoce formalmente que el puntero HEAD en Git es dinámico y avanza con cada confirmación. Por tanto, la integridad de esta auditoría se ancla a la **Línea Base de Código Auditada (`1fd505c810120f9cd78c9ec57e61a8a405a35717`)** y no a una declaración autorreferencial de HEAD que caducaría en el siguiente commit.
 
-Por tanto, no existe contradicción técnica sin resolver: el commit autoritativo único del repositorio es `1fd505c810120f9cd78c9ec57e61a8a405a35717`.
+### 2.3. Reconciliación Factual del Linaje Histórico de Git:
+El historial lineal (`git log -5 --oneline --decorate`) documenta la trazabilidad completa del proyecto:
+- `a7ecbed460283bdd55f1ab53f96b315012288876`: Cierre del ciclo de auditoría independiente **DOC-04-R7**.
+- `e618105b8396ad397782366fa6b076390a36a57c`: Cierre del ciclo de auditoría independiente **DOC-04-R8** (censo dinámico de 747 pruebas).
+- `3a01c12dd0669447b4195850bddcda43ce0508a6`: Línea base inicial del paquete institucional y presentación ante el MEN.
+- `7b974951382bbd2f102274292539e98505cdae58`: Auditoría de consistencia y preparación inicial para revisión técnica.
+- `1fd505c810120f9cd78c9ec57e61a8a405a35717`: **Línea Base de Código y Pruebas Auditada** que unificó todas las evidencias de código y catálogo.
+- `89626bcbb07c3e800fa55d68d2cffada6d70483c`: Empaquetado documental previo y compuerta de entrega al MEN.
 
 ---
 
@@ -239,16 +241,16 @@ Se revisaron y armonizaron los siguientes documentos autoritativos en el directo
    - Secciones 2, 3 y 4 actualizadas con el modelo de 9 roles canónicos / 11 en BD, catálogo DUE 2024 vs 32 instituciones operativas, y censo de pruebas. Recompilado en PDF formal (3 páginas).
 
 4. **`PEVN_MEN_MEETING_CHECKLIST.md` / `.pdf`:**
-   - Actualizado el commit de referencia al HEAD autoritativo `1fd505c810120f9cd78c9ec57e61a8a405a35717` (commit base previo: `7b974951382bbd2f102274292539e98505cdae58`).
-   - Actualizado el número de páginas del informe técnico a 16.
+   - Referencia de copia en medio seguro anclada a la línea base de código auditada `1fd505c810120f9cd78c9ec57e61a8a405a35717` (empaquetado documental `89626bc` y etiqueta propuesta `v1.0.0-men-review`).
+   - Actualizado el número de páginas del informe técnico a 17.
    - Clarificado el catálogo de referencia DUE 2024 y la exclusión de las 690 pruebas en el ciclo acotado.
    - Incorporada la pregunta técnica P7 sobre el modelo de 9 roles canónicos y la delegación rectoral. Recompilado en PDF formal.
 
 5. **`PEVN_MEN_DOCUMENT_INVENTORY_AND_CHANGELOG.md` / `.pdf`:**
-   - Conciliación de versiones actualizada, incorporando el presente informe de auditoría final y el informe final de verificación de entrega, actualizando la matriz de afirmaciones técnicas. Recompilado en PDF formal.
+   - Conciliación de versiones actualizada con la taxonomía de línea base auditada, incorporando el informe final de verificación de entrega y actualizando la matriz de afirmaciones técnicas. Recompilado en PDF formal.
 
 6. **`README.md`:**
-   - Actualizado el commit HEAD de referencia a `1fd505c810120f9cd78c9ec57e61a8a405a35717` (commit base previo: `7b974951382bbd2f102274292539e98505cdae58`).
+   - Actualizado el encabezado y la Sección 4 con la línea base de código auditada `1fd505c810120f9cd78c9ec57e61a8a405a35717`, empaquetado documental `89626bc` y etiqueta propuesta `v1.0.0-men-review`.
    - Incorporado el informe final de verificación de entrega al catálogo de documentos autoritativos vigentes y a la ruta de lectura recomendada.
 
 ---

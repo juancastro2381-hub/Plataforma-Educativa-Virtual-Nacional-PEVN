@@ -6,9 +6,11 @@
 
 **Iniciativa:** Plataforma Educativa Virtual Nacional (PEVN)  
 **Destinatario Institucional:** Oficina de Tecnología y Sistemas de Información — Ministerio de Educación Nacional (MEN), República de Colombia  
-**Fecha de Entrega:** Octubre 2026 | **Versión del Paquete:** 1.0-FINAL-MEN  
+**Fecha de Entrega:** Octubre 2026 | **Versión del Paquete:** 1.0-FINAL-MEN (Revisión Final de Cierre Controlado)  
 **Repositorio Principal:** `https://github.com/juancastro2381-hub/Plataforma-Educativa-Virtual-Nacional-PEVN.git`  
-**Commit de Referencia Verificado:** `1fd505c810120f9cd78c9ec57e61a8a405a35717` (rama `main`, commit base previo: `7b974951382bbd2f102274292539e98505cdae58`)  
+**Línea Base de Código y Pruebas Auditada:** `1fd505c810120f9cd78c9ec57e61a8a405a35717` (Código fuente, modelos relacionales y suite de pruebas)  
+**Compromiso de Empaquetado Documental:** `89626bcbb07c3e800fa55d68d2cffada6d70483c`  
+**Etiqueta de Liberación Propuesta:** `v1.0.0-men-review` (Para fijación formal sobre el snapshot aprobado)  
 
 ---
 
@@ -77,7 +79,7 @@ Los siguientes 13 archivos corresponden a etapas previas de trabajo (Fase 0.1 te
 
 ## 4. Declaración de Integridad, Verificación y Estado OneDrive
 
-- Todos los archivos en este directorio han sido inspeccionados, verificados en su estructura y validados contra el código fuente del proyecto en el commit autoritativo HEAD `1fd505c810120f9cd78c9ec57e61a8a405a35717` (commit base previo: `7b974951382bbd2f102274292539e98505cdae58`).
+- Todos los archivos en este directorio han sido inspeccionados, verificados en su estructura y validados contra el código fuente y las pruebas en la **línea base auditada `1fd505c810120f9cd78c9ec57e61a8a405a35717`** (incorporados en el empaquetado documental `89626bcbb07c3e800fa55d68d2cffada6d70483c` y formalizados bajo la etiqueta propuesta `v1.0.0-men-review`).
 - No se han realizado operaciones destructivas en el repositorio Git (`git reset`, `git clean` ni `git push`).
 - **Verificación Local vs. Sincronización OneDrive:** La integridad binaria, legibilidad y completitud de todos los archivos fueron verificadas directamente sobre el sistema de archivos local de Windows. El estado de sincronización remota del cliente de Microsoft OneDrive no puede ser determinado programáticamente desde la consola de desarrollo, por lo que su confirmación en la nube permanece como una validación operativa del usuario en Windows.
 

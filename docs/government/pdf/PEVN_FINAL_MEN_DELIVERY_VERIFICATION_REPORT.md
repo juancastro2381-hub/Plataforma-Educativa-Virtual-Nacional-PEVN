@@ -8,7 +8,10 @@
 **Destinatario Institucional:** Oficina de Tecnología y Sistemas de Información (OTSI) — Ministerio de Educación Nacional (MEN), República de Colombia  
 **Liderazgo Técnico y Auditoría:** Juan Carlos Castro Narváez (Arquitecto de Software y Especialista en Transformación Digital)  
 **Fecha de Emisión:** 27 de Octubre de 2026  
-**Versión del Paquete:** 1.0-FINAL-MEN  
+**Versión del Paquete:** 1.0-FINAL-MEN (Revisión Final de Cierre Controlado)  
+**Línea Base de Código y Pruebas Auditada:** `1fd505c810120f9cd78c9ec57e61a8a405a35717` (Línea base inmutable de código fuente, modelos relacionales y suite de pruebas)  
+**Compromiso de Empaquetado Documental Previo:** `89626bcbb07c3e800fa55d68d2cffada6d70483c`  
+**Etiqueta de Liberación Propuesta:** `v1.0.0-men-review` (Para fijación formal sobre el snapshot aprobado)  
 **Clasificación de Seguridad:** Confidencial Técnico / Uso Institucional Oficial  
 **Directorio Mandatorio de Entrega:** `docs/government/pdf/`  
 **Repositorio Principal:** `https://github.com/juancastro2381-hub/Plataforma-Educativa-Virtual-Nacional-PEVN.git`  
@@ -31,35 +34,42 @@ El presente informe constituye el dictamen final e independiente de aseguramient
 
 La auditoría realizó una inspección forense no destructiva del estado del repositorio Git local y de su rastreo remoto en GitHub:
 
-### 2.1. Comprobaciones de Estado Git Ejecutadas:
+### 2.1. Comprobaciones de Estado Git Ejecutadas en Auditoría:
 - `git rev-parse HEAD`:  
-  `1fd505c810120f9cd78c9ec57e61a8a405a35717`
+  `89626bcbb07c3e800fa55d68d2cffada6d70483c` *(en paridad exacta 1:1 con `origin/main`)*
 - `git branch --show-current`:  
   `main`
 - `git rev-parse origin/main`:  
-  `1fd505c810120f9cd78c9ec57e61a8a405a35717`
+  `89626bcbb07c3e800fa55d68d2cffada6d70483c`
 - `git status --short`:  
-  *(Árbol de trabajo limpio al inicio del ciclo de verificación; modificaciones acotadas exclusivamente a la reconciliación documental y generación de entregables en `docs/government/pdf/`)*
-- `git diff --stat` / `git diff --cached --stat`:  
-  *(Cero modificaciones no autorizadas en código de negocio backend o componentes frontend)*
+  *(Árbol de trabajo en sincronía; modificaciones acotadas exclusivamente a reconciliación documental en `docs/government/pdf/`)*
+- `git diff 1fd505c 89626bc --stat`:  
+  *(Cero modificaciones en lógica de negocio backend, frontend o base de datos; cambios 100% circunscritos a `docs/government/pdf/`)*
 
-### 2.2. Linaje Lineal de Commits y Distinción Rigurosa de Estados:
+### 2.2. Taxonomía Rigurosa de Trazabilidad y Resolución del HEAD Autorreferencial:
+Para erradicar la paradoja autorreferencial de Git (en la que declarar un commit específico como HEAD dentro de un documento causa que la propia confirmación de ese documento genere un nuevo commit con hash distinto), se aplican cuatro conceptos formalmente diferenciados:
+
+1. **Línea Base de Código y Pruebas Auditada (Audited Source Baseline):**  
+   Corresponde al commit inmutable **`1fd505c810120f9cd78c9ec57e61a8a405a35717`**. En esta línea base exacta fueron verificadas las 57 pruebas del ciclo acotado (100% PASS), el censo dinámico de 747 pruebas en 72 archivos, los modelos de persistencia relacional en PostgreSQL 15, el catálogo territorial DUE 2024 y el esquema RBAC de 9 roles canónicos y 2 alias técnicos.
+2. **Revisión Documental y de Entregables (Deliverables Revision):**  
+   Versión institucional oficial **1.0-FINAL-MEN (Revisión Final de Cierre Controlado)**, consolidada en el catálogo de 8 entregables autoritativos vigentes y 13 artefactos históricos preservados.
+3. **Compromiso de Empaquetado Documental Previo:**  
+   Commit **`89626bcbb07c3e800fa55d68d2cffada6d70483c`** (*"VERIFICACIÓN INDEPENDIENTE Y COMPUERTA DE ENTREGA AL MEN"*), que formalizó la incorporación de los informes y presentaciones en Git.
+4. **Instantánea de Liberación y Etiqueta Propuesta (Release Snapshot / Tag):**  
+   Se propone formalmente la creación de la etiqueta Git **`v1.0.0-men-review`** sobre el commit final que apruebe el propietario del proyecto para la entrega formal al MEN. Se aclara que esta etiqueta no ha sido fabricada ni creada previamente en el repositorio, constituyendo una propuesta estándar de release engineering.
+5. **Estado Dinámico del Repositorio (Live Repository HEAD):**  
+   Se documenta que el puntero HEAD en Git es dinámico. Por ende, la validez técnica y probatoria de esta auditoría se ancla a la **Línea Base de Código Auditada (`1fd505c810120f9cd78c9ec57e61a8a405a35717`)** y a la etiqueta propuesta, independizándola de futuros commits documentales.
+
+### 2.3. Linaje Lineal de Commits en Git:
 
 | Hash de Commit | Rol en el Linaje | Mensaje de Confirmación | Descripción y Estado de Publicación |
 | :--- | :--- | :--- | :--- |
-| **`1fd505c810120f9cd78c9ec57e61a8a405a35717`** | **HEAD AUTORITATIVO VIGENTE** | *"Reconciliación de Evidencias y Compuerta de Entrega Institucional al MEN (PEVN)"* | **Commit vigente de referencia.** Publicado y sincronizado al 100% en la rama `main` de `origin/main`. Unifica todas las evidencias de pruebas, catálogo DUE y modelo RBAC. |
-| **`7b974951382bbd2f102274292539e98505cdae58`** | **Commit Padre Inmediato / Línea Base Previa** | *"Auditoría de Consistencia, Evidencia y Preparación para Revisión Técnica del MEN (PEVN)"* | Commit inmediatamente anterior a HEAD. Consolidó la auditoría de consistencia DOC-04-R8 y la presentación de 22 diapositivas. |
-| **`3a01c12dd0669447b4195850bddcda43ce0508a6`** | **Línea Base Paquete Inicial MEN** | *"PAQUETE DOCUMENTAL TÉCNICO Y PRESENTACIÓN PEVN ANTE EL MEN"* | Commit histórico donde se formalizó por primera vez la estructura del paquete documental gubernamental. |
-| **`e618105b8396ad397782366fa6b076390a36a57c`** | **Auditoría DOC-04-R8** | *"DOC-04-R8: Resumen Ejecutivo de Auditoría Independiente"* | Cierre del ciclo R8: censo dinámico de 747 pruebas, hardening de teardown y sanitización de credenciales. |
-| **`a7ecbed460283bdd55f1ab53f96b315012288876`** | **Auditoría DOC-04-R7** | *"DOC-04-R7: Resumen Ejecutivo de Auditoría Independiente"* | Cierre del ciclo R7: pruebas iniciales de teardown y validaciones de esquema. |
-
-### 2.3. Resolución de Referencias Obsoletas (Stale Hashes):
-Se realizó un barrido exhaustivo en todo el directorio `docs/government/pdf/` para identificar y corregir referencias desactualizadas:
-- Se eliminó la referencia histórica aislada al commit `a7ecbed4...` en `PEVN_INFORME_TECNICO_INTEGRAL_PARA_REVISION_MEN.md`.
-- Se actualizaron las referencias en `PEVN_MEN_MEETING_CHECKLIST.md`, `PEVN_MEN_DOCUMENT_INVENTORY_AND_CHANGELOG.md`, `PEVN_MEN_FINAL_CONSISTENCY_AND_RELEASE_READINESS_AUDIT.md` y `README.md` que citaban al commit padre `7b974951...` como si fuera el HEAD activo, estableciendo con total claridad que:
-  - El **HEAD actual y autoritativo** del repositorio es `1fd505c810120f9cd78c9ec57e61a8a405a35717`.
-  - El commit `7b974951382bbd2f102274292539e98505cdae58` es su **commit padre inmediato y línea base previa**.
-  - Tanto la rama local `main` como la rama remota `origin/main` se encuentran perfectamente sincronizadas.
+| **`89626bcbb07c3e800fa55d68d2cffada6d70483c`** | **Empaquetado Documental Previo** | *"VERIFICACIÓN INDEPENDIENTE Y COMPUERTA DE ENTREGA AL MEN"* | Commit de confirmación documental en `origin/main`. Paridad 1:1 local y remoto. |
+| **`1fd505c810120f9cd78c9ec57e61a8a405a35717`** | **LÍNEA BASE DE CÓDIGO Y PRUEBAS AUDITADA** | *"Reconciliación de Evidencias y Compuerta de Entrega Institucional al MEN (PEVN)"* | **Línea base inmutable auditada.** Contiene el código fuente probado, catálogo DUE y suites de prueba. |
+| **`7b974951382bbd2f102274292539e98505cdae58`** | **Commit Base Previo** | *"Auditoría de Consistencia, Evidencia y Preparación para Revisión Técnica del MEN (PEVN)"* | Consolidó la auditoría de consistencia DOC-04-R8 y la presentación de 22 diapositivas. |
+| **`3a01c12dd0669447b4195850bddcda43ce0508a6`** | **Línea Base Paquete Inicial MEN** | *"PAQUETE DOCUMENTAL TÉCNICO Y PRESENTACIÓN PEVN ANTE EL MEN"* | Formalización inicial de la estructura del paquete documental gubernamental. |
+| **`e618105b8396ad397782366fa6b076390a36a57c`** | **Auditoría DOC-04-R8** | *"DOC-04-R8: Resumen Ejecutivo de Auditoría Independiente"* | Censo dinámico de 747 pruebas, hardening de teardown y sanitización de credenciales. |
+| **`a7ecbed460283bdd55f1ab53f96b315012288876`** | **Auditoría DOC-04-R7** | *"DOC-04-R7: Resumen Ejecutivo de Auditoría Independiente"* | Pruebas iniciales de teardown y validaciones de esquema. |
 
 ---
 
@@ -69,7 +79,7 @@ A continuación se presenta la tabla exhaustiva de todas las validaciones técni
 
 | # | Validación Realizada | Método o Comando Ejecutado | Resultado Obtenido | Evidencia Concreta / Archivo |
 | :-: | :--- | :--- | :-: | :--- |
-| **1** | **Estado y Paridad Git** | `git rev-parse HEAD`, `git branch`, `git rev-parse origin/main` | **PASS (100%)** | HEAD `1fd505c...` coincide idénticamente con `origin/main`. Rama `main` limpia. |
+| **1** | **Estado y Paridad Git** | `git rev-parse HEAD`, `git branch`, `git rev-parse origin/main` | **PASS (100%)** | HEAD `89626bc` sincronizado 1:1 con `origin/main` en rama `main`. Línea base de código auditada: `1fd505c`. |
 | **2** | **Saneamiento de Hashes Obsoletos** | Script de escaneo regex `re.compile(r'\b[0-9a-f]{7,40}\b')` en `docs/government/pdf/` | **PASS (100%)** | 0 referencias obsoletas huérfanas. Todas las menciones diferencian HEAD de línea base previa. |
 | **3** | **Censo Dinámico de Pruebas** | Ejecución de `python backend/scratch/analyze_tests.py` | **PASS (Exit 0)** | **747 pruebas recolectadas en 72 archivos**: 83 pruebas de integración con PostgreSQL en 6 archivos; 664 pruebas unitarias/memoria en 66 archivos. |
 | **4** | **Pruebas en Ciclo Acotado (Bounded)** | `pytest` sobre `test_teardown_hardening.py`, `test_census_analyzer.py`, `test_institution_provisioning.py`, `test_nta10_rector_provisioning.py` | **PASS (57/57 — 100%)** | **57 pruebas ejecutadas y aprobadas**. Cero fallos, cero regresiones. **690 pruebas no ejecutadas en ciclo acotado** para prevenir sobrecarga de conexiones. |
@@ -169,7 +179,7 @@ El paquete depositado en `docs/government/pdf/` se consolida con 8 entregables a
 | **1** | **`PEVN_PRESENTACION_INSTITUCIONAL_MEN.pptx`** | PPTX (16:9) | 22 diapositivas (~77 KB) | Presentación oficial editable para reunión presencial con la OTSI del MEN. |
 | **2** | **`PEVN_PRESENTACION_INSTITUCIONAL_MEN.pdf`** | PDF (16:9) | 22 diapositivas (~47 KB) | Presentación oficial exportada en alta fidelidad para lectura o proyección directa. |
 | **3** | **`PEVN_INFORME_TECNICO_INTEGRAL_PARA_REVISION_MEN.md`** | Markdown | 27 secciones (~61 KB) | Fuente editable del informe técnico integral de arquitectura y ciberseguridad. |
-| **4** | **`PEVN_INFORME_TECNICO_INTEGRAL_PARA_REVISION_MEN.pdf`** | PDF (A4) | 16 páginas (~63 KB) | Dossier de ingeniería principal formalmente paginado en ReportLab Platypus. |
+| **4** | **`PEVN_INFORME_TECNICO_INTEGRAL_PARA_REVISION_MEN.pdf`** | PDF (A4) | 17 páginas (~64 KB) | Dossier de ingeniería principal formalmente paginado en ReportLab Platypus. |
 | **5** | **`PEVN_MEN_EXECUTIVE_BRIEF.md`** | Markdown | 6 secciones (~8 KB) | Fuente editable del resumen ejecutivo de alto nivel para Directores del MEN. |
 | **6** | **`PEVN_MEN_EXECUTIVE_BRIEF.pdf`** | PDF (A4) | 3 páginas (~10 KB) | Resumen ejecutivo conciso para lectura en 5 minutos por directivos de despacho. |
 | **7** | **`PEVN_MEN_MEETING_CHECKLIST.md`** | Markdown | 5 secciones (~9 KB) | Fuente editable de la lista de chequeo operativa, evidencias y preguntas críticas. |
@@ -178,8 +188,8 @@ El paquete depositado en `docs/government/pdf/` se consolida con 8 entregables a
 | **10** | **`PEVN_MEN_DOCUMENT_INVENTORY_AND_CHANGELOG.pdf`** | PDF (A4) | 4 páginas (~19 KB) | Inventario formal y registro de conciliación de versiones del paquete MEN. |
 | **11** | **`PEVN_MEN_FINAL_CONSISTENCY_AND_RELEASE_READINESS_AUDIT.md`** | Markdown | 11 secciones (~31 KB) | Fuente editable del dictamen de auditoría de consistencia y preparación de lanzamiento. |
 | **12** | **`PEVN_MEN_FINAL_CONSISTENCY_AND_RELEASE_READINESS_AUDIT.pdf`** | PDF (A4) | 8 páginas (~36 KB) | Dictamen independiente de consistencia y respaldo en código fuente. |
-| **13** | **`PEVN_FINAL_MEN_DELIVERY_VERIFICATION_REPORT.md`** | Markdown | 8 secciones (~25 KB) | Fuente editable del presente informe final de verificación y compuerta de entrega. |
-| **14** | **`PEVN_FINAL_MEN_DELIVERY_VERIFICATION_REPORT.pdf`** | PDF (A4) | ~7 páginas (~30 KB) | Informe final de verificación independiente y dictamen formal de entrega. |
+| **13** | **`PEVN_FINAL_MEN_DELIVERY_VERIFICATION_REPORT.md`** | Markdown | 8 secciones (~26 KB) | Fuente editable del presente informe final de verificación y compuerta de entrega. |
+| **14** | **`PEVN_FINAL_MEN_DELIVERY_VERIFICATION_REPORT.pdf`** | PDF (A4) | 8 páginas (~30 KB) | Informe final de verificación independiente y dictamen formal de entrega. |
 | **15** | **`README.md`** | Markdown | 4 secciones (~7.5 KB) | Guía maestra de navegación y orientación del directorio de entrega. |
 
 ### 7.2. Ruta de Lectura Recomendada por Audiencia:
@@ -187,7 +197,7 @@ El paquete depositado en `docs/government/pdf/` se consolida con 8 entregables a
    - `PEVN_MEN_EXECUTIVE_BRIEF.pdf` (3 páginas de síntesis estratégica).
    - `PEVN_PRESENTACION_INSTITUCIONAL_MEN.pdf` (22 diapositivas institucionales).
 2. **Jefe de OTSI, Asesores de TI y Arquitectos de Seguridad:**
-   - `PEVN_INFORME_TECNICO_INTEGRAL_PARA_REVISION_MEN.pdf` (Dossier exhaustivo de 16 páginas).
+   - `PEVN_INFORME_TECNICO_INTEGRAL_PARA_REVISION_MEN.pdf` (Dossier exhaustivo de 17 páginas).
    - `PEVN_FINAL_MEN_DELIVERY_VERIFICATION_REPORT.pdf` (Evidencias de verificación independiente).
    - `PEVN_MEN_FINAL_CONSISTENCY_AND_RELEASE_READINESS_AUDIT.pdf` (Detalle de censo de pruebas y RBAC).
 3. **Líderes de Sistemas Misionales y Equipo Técnico Operativo:**
@@ -198,7 +208,7 @@ El paquete depositado en `docs/government/pdf/` se consolida con 8 entregables a
 
 ## 8. Veredicto Final de Entrega (Release Gate)
 
-Habiéndose ejecutado las validaciones técnicas, arquitectónicas y documentales requeridas, verificado la paridad exacta del repositorio Git (HEAD `1fd505c810120f9cd78c9ec57e61a8a405a35717`), saneado las referencias a hashes obsoletos, confirmado el censo dinámico de pruebas (747 recolectadas, 57 aprobadas con 100% PASS, 690 no ejecutadas en ciclo acotado), verificado el balance contable exacto del catálogo territorial DUE 2024 (18,031 colegios y 51,521 sedes de referencia vs 32 instituciones de prueba) y corroborado la calidad visual de las 22 diapositivas de la presentación oficial, se emite el siguiente dictamen formal:
+Habiéndose ejecutado las validaciones técnicas, arquitectónicas y documentales requeridas, anclada formalmente la trazabilidad a la **línea base de código y pruebas auditada `1fd505c810120f9cd78c9ec57e61a8a405a35717`** (incorporada en el empaquetado documental `89626bcbb07c3e800fa55d68d2cffada6d70483c` y formalizada bajo la etiqueta propuesta `v1.0.0-men-review`), saneado las referencias autorreferenciales de commit, confirmado el censo dinámico de pruebas (747 recolectadas, 57 aprobadas con 100% PASS, 690 no ejecutadas en ciclo acotado), verificado el balance contable exacto del catálogo territorial DUE 2024 (18,031 colegios y 51,521 sedes de referencia vs 32 instituciones de prueba) y corroborado la calidad visual de las 22 diapositivas de la presentación oficial, se emite el siguiente dictamen formal:
 
 ```text
 ========================================================================================

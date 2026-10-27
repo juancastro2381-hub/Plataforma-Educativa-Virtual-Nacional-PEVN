@@ -6,8 +6,10 @@
 
 **Iniciativa:** Plataforma Educativa Virtual Nacional (PEVN)  
 **Destinatario:** Oficina de Tecnología y Sistemas de Información — Ministerio de Educación Nacional (MEN)  
-**Fecha:** Octubre 2026 | **Versión:** 1.0-FINAL-MEN  
-**Commit de Referencia Verificado:** `1fd505c810120f9cd78c9ec57e61a8a405a35717` (rama `main`, commit base previo: `7b974951382bbd2f102274292539e98505cdae58`)  
+**Fecha:** Octubre 2026 | **Versión:** 1.0-FINAL-MEN (Revisión Final de Cierre Controlado)  
+**Línea Base de Código y Pruebas Auditada:** `1fd505c810120f9cd78c9ec57e61a8a405a35717` (Código fuente, modelos relacionales y suite de pruebas)  
+**Compromiso de Empaquetado Documental Previo:** `89626bcbb07c3e800fa55d68d2cffada6d70483c`  
+**Etiqueta de Liberación Propuesta:** `v1.0.0-men-review` (Para fijación formal sobre el snapshot aprobado)  
 **Directorio Auditado:** `docs/government/pdf/`  
 
 ---
@@ -17,7 +19,7 @@
 El presente documento registra el inventario exhaustivo, la trazabilidad de versiones y el dictamen de vigencia de todos los archivos depositados en el directorio mandatorio de entrega `docs/government/pdf/`.
 
 A fin de brindar certeza absoluta a la Oficina de Tecnología y Sistemas de Información del MEN, se establece la siguiente jerarquía de autoridad documental:
-1. **Documentos Autoritativos Vigentes (Versión 1.0-FINAL-MEN):** Corresponden al paquete definitivo generado con base en las evidencias verificadas en el código fuente, el censo dinámico de pruebas (747 pruebas en 72 archivos, 57 ejecutadas y aprobadas en ciclo acotado, 690 no ejecutadas en ciclo), el modelo RBAC canónico de 9 roles funcionales (11 identificadores en base de datos incluyendo 2 alias de compatibilidad), el catálogo territorial oficial DUE 2024 (18,031 colegios y 51,521 sedes de referencia con balance contable exacto) y la auditoría final de consistencia y preparación para revisión técnica en el commit autoritativo HEAD `1fd505c810120f9cd78c9ec57e61a8a405a35717` (commit base previo: `7b974951382bbd2f102274292539e98505cdae58`).
+1. **Documentos Autoritativos Vigentes (Versión 1.0-FINAL-MEN):** Corresponden al paquete definitivo generado con base en las evidencias verificadas en el código fuente, el censo dinámico de pruebas (747 pruebas en 72 archivos, 57 ejecutadas y aprobadas en ciclo acotado, 690 no ejecutadas en ciclo), el modelo RBAC canónico de 9 roles funcionales (11 identificadores en base de datos incluyendo 2 alias de compatibilidad), el catálogo territorial oficial DUE 2024 (18,031 colegios y 51,521 sedes de referencia con balance contable exacto) y la auditoría final de consistencia y preparación para revisión técnica anclada en la línea base de código auditada `1fd505c810120f9cd78c9ec57e61a8a405a35717` (incorporada en el empaquetado documental `89626bcbb07c3e800fa55d68d2cffada6d70483c` y formalizada bajo la etiqueta propuesta `v1.0.0-men-review`).
 2. **Documentos Históricos Preservados:** Corresponden a entregas previas (Fase 0.1 y etapas tempranas) que se mantienen intactas con propósitos de archivo histórico y trazabilidad de ingeniería, pero cuyas cifras técnicas o alcances han sido superados por el paquete autoritativo 1.0-FINAL-MEN.
 
 ---
@@ -89,7 +91,7 @@ Para garantizar coherencia absoluta entre todos los documentos entregados, se si
 - **Creación de la Lista de Verificación Operativa:** Guía de preparación y protocolo para la reunión presencial (`PEVN_MEN_MEETING_CHECKLIST.md` y `.pdf`).
 - **Creación del Inventario Documental y Registro de Cambios:** El presente documento, reconciliando los 13 artefactos históricos con los nuevos entregables autoritativos.
 - **Creación del Informe Final de Consistencia y Preparación para Revisión Técnica:** Auditoría final independiente (`PEVN_MEN_FINAL_CONSISTENCY_AND_RELEASE_READINESS_AUDIT.md` y `.pdf`) consolidando el dictamen institucional y las evidencias de código y catálogo.
-- **Creación del Informe Final de Verificación y Dictamen de Entrega:** Informe exhaustivo (`PEVN_FINAL_MEN_DELIVERY_VERIFICATION_REPORT.md` y `.pdf`) con resolución rigurosa de referencias de commit (HEAD `1fd505c`, commit base `7b97495`), auditoría visual y estructural de las 22 diapositivas, verificación de los 10 pilares temáticos institucionales y compuerta de lanzamiento `READY FOR MEN TECHNICAL REVIEW`.
+- **Creación del Informe Final de Verificación y Dictamen de Entrega:** Informe exhaustivo (`PEVN_FINAL_MEN_DELIVERY_VERIFICATION_REPORT.md` y `.pdf`) con resolución rigurosa de referencias de trazabilidad (Línea base auditada `1fd505c`, empaquetado documental `89626bc` y etiqueta propuesta `v1.0.0-men-review`), auditoría visual y estructural de las 22 diapositivas, verificación de los 10 pilares temáticos institucionales y compuerta de lanzamiento `READY FOR MEN TECHNICAL REVIEW`.
 - **Creación del README Maestro del Directorio:** Documento de bienvenida y orientación para evaluadores técnicos externos en `docs/government/pdf/README.md`.
 - **Preservación Integral del Repositorio:** Cero operaciones de reescritura de historial, cero `git reset` o `git clean`, y preservación intacta de cambios en el working tree.
 
