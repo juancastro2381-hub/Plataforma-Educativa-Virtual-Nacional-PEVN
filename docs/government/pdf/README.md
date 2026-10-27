@@ -8,7 +8,7 @@
 **Destinatario Institucional:** Oficina de Tecnología y Sistemas de Información — Ministerio de Educación Nacional (MEN), República de Colombia  
 **Fecha de Entrega:** Octubre 2026 | **Versión del Paquete:** 1.0-FINAL-MEN  
 **Repositorio Principal:** `https://github.com/juancastro2381-hub/Plataforma-Educativa-Virtual-Nacional-PEVN.git`  
-**Commit de Referencia Verificado:** `3a01c12dd0669447b4195850bddcda43ce0508a6` (rama `main`)  
+**Commit de Referencia Verificado:** `7b974951382bbd2f102274292539e98505cdae58` (rama `main`)  
 
 ---
 
@@ -73,11 +73,11 @@ Los siguientes 13 archivos corresponden a etapas previas de trabajo (Fase 0.1 te
 
 ---
 
-## 4. Declaración de Integridad y Verificación
+## 4. Declaración de Integridad, Verificación y Estado OneDrive
 
-- Todos los archivos en este directorio han sido inspeccionados, verificados en su estructura y validados contra el código fuente del proyecto.
+- Todos los archivos en este directorio han sido inspeccionados, verificados en su estructura y validados contra el código fuente del proyecto en el commit verificado `7b974951382bbd2f102274292539e98505cdae58`.
 - No se han realizado operaciones destructivas en el repositorio Git (`git reset`, `git clean` ni `git push`).
-- La información contenida en el paquete documental refleja el estado real del desarrollo en el commit verificado `3a01c12dd0669447b4195850bddcda43ce0508a6`.
+- **Verificación Local vs. Sincronización OneDrive:** La integridad binaria, legibilidad y completitud de todos los archivos fueron verificadas directamente sobre el sistema de archivos local de Windows. El estado de sincronización remota del cliente de Microsoft OneDrive no puede ser determinado programáticamente desde la consola de desarrollo, por lo que su confirmación en la nube permanece como una validación operativa del usuario en Windows.
 
 ---
 

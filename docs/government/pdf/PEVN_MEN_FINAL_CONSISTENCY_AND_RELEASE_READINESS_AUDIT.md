@@ -20,85 +20,138 @@
 ## 1. Dictamen Ejecutivo (Executive Verdict)
 
 ### **DICTAMEN OFICIAL:**
-> ### `READY FOR MEN TECHNICAL REVIEW — EVIDENCE AND DOCUMENTS RECONCILED`
-> **(Listo para Revisión Técnica del MEN — Evidencias y Documentación Reconciliadas)**
+> ### `READY FOR MEN TECHNICAL REVIEW — ALL MATERIAL DISCREPANCIES RECONCILED`
+> **(Listo para Revisión Técnica del MEN — Todas las Discrepancias Materiales Reconciliadas)**
 
 ### Alcance y Delimitación Estricta del Dictamen:
-1. **Idoneidad para Revisión Técnica:** El presente dictamen certifica que el paquete documental institucional y técnico depositado en `docs/government/pdf/` ha sido plenamente reconciliado, no presenta contradicciones internas en materia de cifras, roles, arquitectura o cobertura, y cuenta con respaldo de evidencia empírica auditable en el repositorio de código fuente.
-2. **Ausencia de Reclamaciones Excesivas:** El dictamen **NO constituye, no certifica ni implica** aprobación formal, adopción, certificación de ciberseguridad, homologación reglamentaria ni adjudicación contractual por parte del Ministerio de Educación Nacional (MEN) ni de ninguna entidad gubernamental de Colombia.
+1. **Idoneidad para Revisión Técnica:** El presente dictamen certifica que el paquete documental institucional y técnico depositado en `docs/government/pdf/` ha sido plenamente reconciliado, no presenta discrepancias internas no resueltas en materia de cifras, roles, arquitectura o cobertura, y cuenta con respaldo de evidencia empírica auditable en el repositorio de código fuente.
+2. **Ausencia de Reclamaciones Excesivas:** El dictamen **NO constituye, no certifica ni implica** aprobación formal, adopción estatal, certificación de ciberseguridad, homologación reglamentaria ni adjudicación contractual por parte del Ministerio de Educación Nacional (MEN) ni de ninguna entidad gubernamental de Colombia.
 3. **Propósito Institucional:** El paquete está formalmente preparado para ser sometido al escrutinio técnico, funcional y de ciberseguridad de la Oficina de Tecnología y Sistemas de Información (OTSI) del MEN en la sesión presencial de trabajo.
 
 ---
 
-## 2. Estado Exacto del Repositorio Git
+## 2. Estado Exacto del Repositorio Git y Reconciliación de Commits
 
-La auditoría verificó el estado del árbol de trabajo y el historial de Git en el entorno de desarrollo local:
+La auditoría verificó de forma no destructiva el estado del árbol de trabajo, el rastreo remoto y el historial de Git al inicio del ciclo de verificación:
 
-- **Ruta Absoluta del Espacio de Trabajo:**  
-  `c:\Users\juanc\OneDrive\Documentos\Desarrollo proyectos\Plataforma Educativa PEVN\Plataforma Educativa Virtual Nacional PEVN`
-- **Rama Activa:** `main`
-- **Commit HEAD Autoritativo:**  
-  `3a01c12dd0669447b4195850bddcda43ce0508a6`
-- **Mensaje del Commit:**  
-  `PAQUETE DOCUMENTAL TÉCNICO Y PRESENTACIÓN PEVN ANTE EL MEN`
-- **Estado con el Remoto:**  
-  Sincronizado con `origin/main` en el commit `3a01c12dd0669447b4195850bddcda43ce0508a6` (`Your branch is up to date with 'origin/main'`).
-- **Estado del Working Tree:**  
-  Modificaciones circunscritas a la armonización de documentación, actualización de scripts de renderizado y generación de artefactos en `docs/government/pdf/`. Cero modificaciones a la lógica de negocio de backend o frontend.
-- **Regla de Seguridad Aplicada:**  
-  No se ejecutaron operaciones destructivas en Git (`git reset`, `git clean`, `git checkout` destructivo ni `git push`). El árbol de trabajo se preservó íntegro.
+### 2.1. Comprobaciones de Estado Git Ejecutadas:
+- `git rev-parse HEAD`:  
+  `7b974951382bbd2f102274292539e98505cdae58`
+- `git branch --show-current`:  
+  `main`
+- `git rev-parse origin/main`:  
+  `7b974951382bbd2f102274292539e98505cdae58`
+- `git status --short`:  
+  *(Salida vacía: `nothing to commit, working tree clean` al inicio de la verificación)*
+- `git diff --stat`:  
+  *(Salida vacía: 0 modificaciones no rastreadas)*
+- `git diff --cached --stat`:  
+  *(Salida vacía: 0 cambios en el área de preparación)*
+
+### 2.2. Distinción Rigurosa de Estados:
+1. **HEAD Local Actual:** `7b974951382bbd2f102274292539e98505cdae58`
+2. **HEAD Remoto Rastreado (`origin/main`):** `7b974951382bbd2f102274292539e98505cdae58` (Sincronizado de manera idéntica; la rama está al día con el remoto).
+3. **Cambios Confirmados (Committed):** 0 pendientes.
+4. **Cambios Rastreados No Confirmados:** 0 al inicio de la verificación.
+5. **Archivos No Rastreados (Untracked):** 0.
+6. **Política de Preservación Aplicada:** No se ejecutó ningún `git commit`, `git push`, `git reset`, `git clean`, `git rebase` ni descarte destructivo de cambios.
+
+### 2.3. Reconciliación Factual de las Referencias de Commit Históricas:
+La presencia previa de dos hashes de commit distintos en borradores de auditoría se explica objetivamente mediante el historial lineal de Git (`git log -n 5 --oneline`):
+- `e618105b8396ad397782366fa6b076390a36a57c`: Corresponde al commit de cierre del ciclo de auditoría independiente **DOC-04-R8** (*"DOC-04-R8: Resumen Ejecutivo de Auditoría Independiente"*), donde se consolidó el censo dinámico de 747 pruebas y la taxonomía inicial.
+- `3a01c12dd0669447b4195850bddcda43ce0508a6`: Corresponde al commit de línea base en el que se generó y estructuró por primera vez el paquete documental y la presentación institucional ante el MEN (*"PAQUETE DOCUMENTAL TÉCNICO Y PRESENTACIÓN PEVN ANTE EL MEN"*).
+- `7b974951382bbd2f102274292539e98505cdae58`: Corresponde al **commit HEAD autoritativo vigente** que unificó y actualizó las evidencias en la rama `main` (*"Auditoría de Consistencia, Evidencia y Preparación para Revisión Técnica del MEN (PEVN)"*).
+
+Por tanto, no existe contradicción técnica sin resolver: el commit autoritativo único del repositorio en este momento es `7b974951382bbd2f102274292539e98505cdae58`.
 
 ---
 
 ## 3. Reconciliación del Modelo Canónico RBAC
 
-### 3.1. Origen de la Discrepancia Identificada
-La documentación previa generó aparente ambigüedad al contrastar un modelo conceptual de 9 roles con un conteo de 11 roles en base de datos. La inspección del código fuente y los modelos de persistencia permitió resolver la discrepancia de manera concluyente:
+### 3.1. Origen de la Discrepancia Identificada y Resolución
+La inspección de `backend/app/core/security/interfaces.py`, `backend/app/models/role.py`, `backend/app/services/rbac_bootstrap_service.py` (`CANONICAL_ROLES`) y las migraciones de base de datos confirmó la arquitectura de control de acceso:
 
-- **Definición de Tipos en Backend:** Inspección de `backend/app/core/security/interfaces.py`, `backend/app/models/role.py`, `backend/app/services/rbac_bootstrap_service.py` (`CANONICAL_ROLES`) y las migraciones Alembic (`001_initial_schema.py`).
-- **Jerarquía de Autoridad Aprobada por el Product Owner:** El sistema se fundamenta en **9 roles canónicos funcionales (arquetipos institucionales)** que reflejan la estructura del sector educativo oficial colombiano:
-  1. `SUPERADMIN` (Nivel 100): Operador de infraestructura técnica y soporte global.
+- **Jerarquía Canónica Funcional de Autoridad (9 Roles Aprobados por Product Owner):**
+  1. `SUPERADMIN` (Nivel 100): Operador técnico de infraestructura global y soporte central.
   2. `NATIONAL_ADMIN` (Nivel 90): Administrador Nacional del MEN (Inspección, Vigilancia y OTSI).
   3. `DEPARTMENT_ADMIN` (Nivel 80): Secretaría de Educación Departamental (SED).
   4. `MUNICIPALITY_ADMIN` (Nivel 70): Secretaría de Educación Municipal (SEM).
-  5. `RECTOR` (Nivel 60): Máxima autoridad institucional y directivo docente del Establecimiento.
+  5. `RECTOR` (Nivel 60): Rector / Director Institucional (máxima autoridad del tenant escolar).
   6. `COORDINATOR` (Nivel 50): Coordinador Académico o de Sede.
-  7. `TEACHER` (Nivel 30): Docente de Área / Aula encargado de evaluación y asistencia.
-  8. `STUDENT` (Nivel 10): Estudiante matriculado activo.
-  9. `GUARDIAN` (Nivel 10): Padre de familia, acudiente o tutor legal.
+  7. `TEACHER` (Nivel 30): Docente de Área / Aula encargado de planilla y asistencia.
+  8. `STUDENT` (Nivel 10): Estudiante matriculado (SIMAT).
+  9. `GUARDIAN` (Nivel 10): Acudiente, padre de familia o tutor legal.
 
-- **Resolución de las 11 Entradas en Base de Datos:**  
-  La tabla `roles` contiene **11 registros** porque incorpora **2 alias técnicos de compatibilidad de API y transición arquitectónica**:
+- **Explicación de las 11 Filas en la Tabla `roles` y el Enum `SystemRole`:**  
+  La base de datos relacional y las definiciones tipadas contienen 11 identificadores debido a la inclusión deliberada de **2 alias técnicos de compatibilidad operacional**:
   - `institution_admin` (Nivel 60): Alias técnico y sinónimo funcional de `rector`.
   - `academic_coordinator` (Nivel 50): Alias técnico y sinónimo funcional de `coordinator`.
-  
-  Ambos alias poseen idéntico nivel jerárquico y juego de permisos que sus respectivos arquetipos principales, garantizando compatibilidad con clientes legados o integraciones externas sin comprometer la integridad del modelo.
+
+- **Verificación de Invarianza de Seguridad:**  
+  Se verificó que los alias poseen idéntico nivel jerárquico (60 y 50 respectivamente), idénticos permisos asignados en `rbac_bootstrap_service.py` y aplican los mismos filtros institucionales forzados. **No crean caminos de privilegio no autorizados, no omiten validaciones en servidor ni permiten escalamiento vertical u horizontal.**
 
 ### 3.2. Excepción Aprobada de Autoridad: Coordinador de Sede
-- **Regla General de Aislamiento:** Los coordinadores no pueden crear usuarios de ningún nivel por diseño de seguridad base (prevención de escalamiento horizontal o vertical).
-- **Necesidad Operativa Escolar:** En instituciones rurales o con múltiples sedes dispersas, el Rector delega materialmente la vinculación de docentes y la matrícula de alumnos en el coordinador de sede.
-- **Implementación Técnica Aprobada:** La plataforma implementa la directiva institucional `coordinator_delegated_provisioning_enabled` en la tabla `institutions`.
-  - **Comportamiento Seguro por Defecto (Fail-Closed):** El valor por defecto es `False`. La API responde con `HTTP 403 Forbidden` (`COORDINATOR_DELEGATION_DISABLED`) ante cualquier intento de aprovisionamiento por parte de un coordinador.
-  - **Habilitación Controlada:** Únicamente si el Rector de la institución activa explícitamente la bandera, el coordinador puede aprovisionar docentes y matricular estudiantes exclusivamente dentro de su institución.
+- **Regla General:** Los coordinadores no pueden crear usuarios de ningún tipo (*fail-closed* base).
+- **Necesidad Operativa Escolar:** Soportar la delegación formal del Rector en instituciones de difícil acceso o con múltiples sedes para registrar docentes y formalizar matrícula.
+- **Implementación Técnica Verificada:** Directiva institucional booleana `coordinator_delegated_provisioning_enabled` en la tabla `institutions`.
+  - **Por Defecto:** `False`. Si un coordinador intenta aprovisionar un usuario, la API responde inmediatamente con `HTTP 403 Forbidden` (`COORDINATOR_DELEGATION_DISABLED`).
+  - **Habilitación Condicionada:** Si el Rector de la institución la activa explícitamente (`True`), el coordinador queda facultado exclusivamente para registrar docentes y estudiantes dentro del tenant de su sede. En ningún caso puede crear rectores, coordinadores ni administradores territoriales.
 
 ---
 
-## 4. Verificación de Cifras Territoriales y Catálogos Educativos
+## 4. Verificación Factual y Reconciliación Contable del Catálogo Educativo y Territorial
 
-Se auditó el origen, fecha y significado técnico de cada una de las cifras territoriales citadas en los documentos institucionales:
+### 4.1. Reconciliación Evidenciada de los Establecimientos Educativos (Diferencia de 45 Registros)
+Se auditó la procedencia de los datos en `backend/app/db/seeds/harvest_due_dataset.py`, `backend/app/db/seeds/official_due_national_dataset_2024.json` y el reporte forense `docs/phase-reports/PHASE_3C_L_FORENSIC_RECONCILIATION_AUDIT.md`.
 
-| Dimensión | Cifra Verificada | Fuente Primaria y Extracción | Significado Técnico y Limitación Mandatoria |
-| :--- | :--- | :--- | :--- |
-| **Departamentos** | **33 Entidades** | DIVIPOLA DANE (2 dígitos). | 32 Departamentos oficiales + 1 Distrito Capital (Bogotá D.C.). La distorsión previa de 45 registros obedecía a consultas no normalizadas con variantes tipográficas en texto; corregido agrupando por código DANE único. |
-| **Municipios** | **1,122 Municipios** | DIVIPOLA DANE (5 dígitos). | Cobertura municipal completa de Colombia. 1,119 municipios cuentan con sedes educativas activas registradas en el catálogo. |
-| **Establecimientos Educativos** | **18,031 Colegios** | Microdatos Abiertos DUE 2024 MinEducación (SODA `cfw5-qzt5`, fecha de corte 2024). | 18,076 registros recolectados de SODA $\rightarrow$ 17,990 colegios activos deduplicados + 41 de calibración = 18,031 registros precargados en la tabla `official_institution_catalog`. |
-| **Sedes Educativas** | **51,521 Sedes** | Microdatos Abiertos DUE 2024 MinEducación (SODA `96t6-cfw4`, fecha de corte 2024). | 50,107 sedes activas de campo + 1,364 sedes principales institucionales + 50 de calibración = 51,521 sedes activas (17,935 principales + 33,586 anexas) en la tabla `official_campus_catalog`. 3,689 sedes inactivas o fusionadas fueron aisladas intencionalmente de la métrica operativa. |
+La relación entre los 18,076 registros cosechados de la fuente oficial y los 18,031 establecimientos en la base de datos queda **plenamente explicada y reconciliada al 100%**:
 
-### Declaración Mandatoria de No Adopción Institucional:
-> **CLÁUSULA DE TRANSPARENCIA FACTUAL:**  
+| Paso / Concepto Contable | Cardinalidad | Evidencia Técnica y Causa Raíz Forense |
+| :--- | :---: | :--- |
+| **Registros Brutos Cosechados de la Fuente** | **18,076** | Descargados de la API SODA del MEN: recurso `cfw5-qzt5` (`MEN_ESTABLECIMIENTOS_EDUCATIVOS_PREESCOLAR_BÁSICA_Y_MEDIA`, corte 2024). |
+| **(-) Duplicados en Fuente Excluidos** | **-79** | 36 códigos DANE repetidos de 2 a 6 veces en el dataset del MEN porque el censo gubernamental reporta registros separados por jornada (mañana/tarde/nocturna) o calendario (A/B). Se descartaron para evitar colisiones de clave primaria. |
+| **(-) Inconsistencias de Frontera Departamental** | **-7** | Colegios con inconsistencia entre el prefijo de 2 dígitos del DANE y el departamento reportante (1 en Nariño con DANE 86 Putumayo, y 6 en Cundinamarca con DANE 11 histórico asignado por SED Bogotá). |
+| **(=) Total Exclusiones de Fuente Oficial** | **86** | Total registros fuente descartados: $79 \text{ (duplicados)} + 7 \text{ (frontera)} = \mathbf{86}$. |
+| **(=) Registros Válidos Ingeridos del Lote Oficial** | **17,990** | $18,076 \text{ (fuente bruta)} - 86 \text{ (exclusiones)} = \mathbf{17,990} \text{ colegios únicos válidos}$. |
+| **(+) Línea Base Histórica Preexistente en BD** | **+41** | 41 instituciones educativas de la muestra previa persistidas en la tabla `official_institution_catalog` desde el lote piloto `33b82da7-edd9-4a71-938a-7eafaffd50c2`. |
+| **(=) Total Establecimientos en PostgreSQL** | **18,031** | $17,990 \text{ (lote nacional)} + 41 \text{ (muestra base preexistente)} = \mathbf{18,031}$. |
+
+### **Demostración Matemática Exacta de la Diferencia de 45 Registros:**
+$$\text{Diferencia Neta} = \text{Fuente Bruta (18,076)} - \text{Total Persistido en BD (18,031)} = \mathbf{45} \text{ registros}$$
+$$\text{Exclusiones de Fuente (86)} - \text{Línea Base Previa Adicionada (41)} = 86 - 41 = \mathbf{45} \text{ registros}$$
+$$\mathbf{18,076 - 86 + 41 = 18,031 \quad (100\%\; EXACTO\; Y\; RECONCILIADO)}$$
+
+---
+
+### 4.2. Reconciliación Evidenciada de las Sedes Educativas (51,521 Sedes)
+Se auditó la procedencia en `backend/app/services/national_catalog_closure_audit_service.py` y `backend/tests/test_national_catalog_active_campus_accounting.py`:
+
+- **Total Filas Brutas en Dataset de Sedes DUE 2024 (SODA `96t6-cfw4`):** `53,796` filas.
+- **(-) Sedes Inactivas o Fusionadas Históricas:** `3,689` sedes de vigencias pasadas retenidas intencionalmente bajo la Categoría A de aislamiento para garantizar integridad referencial sin crear entidades fantasma activas.
+- **(=) Sedes Activas de Encuesta de Campo:** $53,796 - 3,689 = \mathbf{50,107}$.
+- **Descomposición de la Diferencia Contable de 1,414 Sedes:**
+  - `+1,364` Sedes principales institucionales activas provenientes de Dataset 1 (`cfw5-qzt5`) que no contaban con duplicado en campo.
+  - `+50` Sedes piloto de calibración inicial.
+  - Total diferencia clasificada: $1,364 + 50 = \mathbf{1,414}$.
+- **Total Sedes Físicas Activas en `official_campus_catalog`:**
+  $$\mathbf{50,107 + 1,414 = 51,521} \text{ sedes físicas canónicas activas}$$
+- **Desglose Estructural Verificado:**
+  $$\mathbf{17,935} \text{ sedes principales} + \mathbf{33,586} \text{ sedes anexas/adscritas} = \mathbf{51,521} \text{ sedes activas}$$
+
+---
+
+### 4.3. Reconciliación Departamental y Municipal (DIVIPOLA DANE)
+- **33 Entidades Departamentales:** 32 Departamentos oficiales + 1 Distrito Capital (Bogotá D.C.) según codificación DIVIPOLA DANE (2 dígitos). La distorsión inicial de 45 registros fue identificada y subsanada como un artefacto de agrupación por texto libre con variantes diacríticas (`ATLANTICO` vs `ATLÁNTICO`, etc., que afectaba a 12 departamentos: $33 + 12 = 45$). Al agrupar por `department_code`, el resultado es exactamente **33 departamentos**.
+- **1,122 Municipios:** Codificación oficial DIVIPOLA DANE (5 dígitos; 1,119 municipios con sedes educativas activas registradas en el catálogo).
+
+---
+
+### 4.4. Cláusula Mandatoria de Transparencia sobre Adopción Real
+> [!IMPORTANT]
+> **DECLARACIÓN INSTITUCIONAL DE NO ADOPCIÓN:**  
 > Las 18,031 instituciones y 51,521 sedes corresponden estrictamente a un **catálogo de referencia nacional precargado** a partir de los datos abiertos del Directorio Único de Establecimientos (DUE 2024). Su propósito técnico es permitir el aprovisionamiento inmediato de cualquier colegio por su código DANE de 12 dígitos sin errores de digitación manual.  
-> **Esta cifra NO representa adopción operativa, usuarios activos ni colegios utilizando la plataforma hoy en día.**  
-> En la capa operativa relacional (`institutions`), existen actualmente **32 instituciones registradas con propósitos exclusivos de prueba y desarrollo (29 activas y 3 en estado deshabilitado)**.
+> **Esta cifra NO representa adopción operativa, usuarios reales ni colegios utilizando la plataforma hoy en día.**  
+> En la capa operativa relacional (`institutions`), existen actualmente **32 instituciones registradas con propósitos exclusivos de prueba y desarrollo (29 activas y 3 en estado deshabilitado)**, con 16 sedes operativas y 150 usuarios de prueba (149 activos).
 
 ---
 
@@ -123,37 +176,39 @@ Se auditó cada una de las capacidades técnicas afirmadas en el paquete documen
 
 ---
 
-## 6. Conciliación de Evidencia de Pruebas Automatizadas
+## 6. Conciliación y Confirmación de Evidencia de Pruebas
 
-La auditoría validó el censo dinámico de pruebas del backend y el ciclo de verificación acotado:
+Se confirmaron las métricas de prueba mediante terminal y salida de código de retorno (exit code 0):
 
 ### 6.1. Censo Dinámico de Pruebas (Pytest Suite)
-Mediante el analizador taxonómico AST (`scripts/audit_documentation.py` y `backend/scratch/analyze_tests.py`), se confirmó la siguiente taxonomía real del repositorio:
+Ejecución del analizador AST (`backend/scratch/analyze_tests.py`):
 - **Total de Pruebas Recolectadas:** **747 pruebas** distribuidas en **72 archivos**.
-- **Pruebas de Integración Relacional con PostgreSQL 15 Real:** **83 pruebas** distribuidas en **6 archivos críticos**:
-  - `tests/test_auth_flow.py` (Autenticación y ciclo JWT).
-  - `tests/test_institution_provisioning.py` (Aprovisionamiento institucional DANE).
-  - `tests/test_nta10_rector_provisioning.py` (Activación autónoma de rectores).
-  - `tests/test_grades_attendance.py` (Persistencia transaccional de notas y faltas).
-  - `tests/test_rbac_hierarchy.py` (Enforcement de jerarquía y no escalamiento).
-  - `tests/test_database_teardown.py` (Limpieza de tablas y llaves foráneas).
-- **Pruebas Unitarias y en Memoria:** **664 pruebas** distribuidas en **66 archivos**.
+- **Pruebas de Integración con PostgreSQL 15 Real (Grupo A):** **83 pruebas** en **6 archivos críticos**:
+  - `test_nta02_national_divipola_foundation.py`: 17
+  - `test_nta03_catalog_provisioning_architecture.py`: 17
+  - `test_nta04_national_provisioning_workflow.py`: 18
+  - `test_nta05_territorial_control_center.py`: 15
+  - `test_sa01_superadmin_governance.py`: 7
+  - `test_sa02_technical_operations_portal.py`: 9
+- **Pruebas Unitarias y en Memoria (Grupo B):** **664 pruebas** en **66 archivos**.
+- **Comprobación Aritmética:** $83 + 664 = \mathbf{747}$ pruebas ($6 + 66 = \mathbf{72}$ archivos). Ecuación verificada: `True`.
 
 ### 6.2. Ciclo de Verificación Bounded Ejecutado (100% PASS)
-En el ciclo de control más reciente se ejecutó de forma acotada y reproducible una batería de **57 pruebas focalizadas**, con resultado de **100% de aprobación (0 fallos, 0 errores)**:
+Batería de **57 pruebas focalizadas** ejecutadas con resultado de **100% de aprobación (0 fallos, 0 errores)**:
 1. **13 Pruebas de Teardown Hardening (`test_teardown_hardening.py`):** Demostraron el cierre garantizado de descriptores de motor de base de datos y la desvinculación de dependencias sobreescritas dentro del bloque `finally` de la fixture `client`.
 2. **12 Pruebas de Analizador de Censo (`test_census_analyzer.py`):** Verificaron la consistencia del algoritmo de recolección dinámica de pruebas.
 3. **17 Pruebas de Aprovisionamiento Institucional (`test_institution_provisioning.py`):** Validaron la creación y vinculación de colegios bajo normas DANE.
 4. **15 Pruebas de Aprovisionamiento de Rectores (`test_nta10_rector_provisioning.py`):** Validaron el flujo de emisión, entrega y redención de tokens de 72 horas.
 
-### 6.3. Justificación Técnica de Pruebas No Ejecutadas en el Ciclo Acotado
-- **690 Pruebas Restantes:** Permanecieron deliberadamente **no ejecutadas** en el ciclo acotado para preservar el aislamiento del entorno de base de datos local y evitar sobrecargas de teardown durante la auditoría.
-- **Transparencia Documental:** Todos los documentos del paquete declaran explícitamente la distinción entre las **747 pruebas recolectadas en el censo**, las **57 pruebas ejecutadas y aprobadas en el ciclo acotado**, y las **690 pruebas no ejecutadas en ese ciclo específico**.
+### 6.3. Delimitación Explícita de Pruebas No Ejecutadas
+- **690 Pruebas Restantes:** Permanecieron deliberadamente **no ejecutadas** en el ciclo acotado para preservar el aislamiento ambiental de la base de datos local y evitar sobrecargas de teardown durante la auditoría.
+- **Transparencia Documental:** Se declara explícitamente en todos los documentos que la suite total censada contiene 747 pruebas, pero solo 57 fueron ejecutadas en este ciclo acotado específico.
 
-### 6.4. Comprobaciones Estáticas y de Documentación
-- **Verificación de Tipos TypeScript:** `npx tsc --noEmit` completado con **0 errores**.
+### 6.4. Comprobaciones Estáticas, Visuales y de Documentación
+- **Verificación de Tipos TypeScript:** `npx tsc --noEmit` completado con **0 errores** (salida vacía, código de retorno 0).
 - **Compilación de Producción Frontend:** `npm run build` ejecutado exitosamente con empaquetado Vite limpio.
-- **Auditoría Automatizada de Documentación (`audit_documentation.py`):** **41 de 41 comprobaciones aprobadas (100% PASS)**, verificando títulos, consistencia de versiones, códigos DANE, censo de pruebas y declaraciones de responsabilidad en todos los documentos institucionales.
+- **Auditoría Automatizada de Documentación (`scripts/audit_documentation.py`):** **41 de 41 comprobaciones aprobadas (100% PASS)**, verificando títulos, consistencia de versiones, códigos DANE, censo de pruebas y declaraciones de responsabilidad en todos los documentos institucionales.
+- **Inspección Visual y Geometría:** 13 capturas PNG verificadas en disco y alineación milimétrica en contenedores de PDF confirmada.
 
 ---
 
@@ -163,10 +218,11 @@ Se revisaron y armonizaron los siguientes documentos autoritativos en el directo
 
 1. **`PEVN_INFORME_TECNICO_INTEGRAL_PARA_REVISION_MEN.md` / `.pdf`:**
    - Armonizado el modelo RBAC a 9 roles canónicos funcionales y 2 alias técnicos en base de datos.
-   - Reflejada la trazabilidad de los microdatos abiertos DUE 2024 SODA (`cfw5-qzt5` y `96t6-cfw4`) para los 18,031 colegios y 51,521 sedes.
-   - Insertada la cláusula de no adopción institucional, declarando que las 32 instituciones en base de datos corresponden a entornos de prueba.
+   - Detallada la reconciliación contable exacta de los 18,031 colegios (18,076 capturados - 86 exclusiones + 41 preexistentes = 18,031; diferencia neta de 45 registros explicada al 100%).
+   - Detallada la descomposición de las 51,521 sedes activas (50,107 encuesta + 1,364 sedes principales institucionales + 50 calibración).
+   - Insertada la cláusula de no adopción institucional (32 instituciones operativas de prueba).
    - Documentado el desglose del censo dinámico (747 recolectadas, 57 ejecutadas con 100% PASS, 690 no ejecutadas en ciclo acotado).
-   - Recompilado en PDF formal de 16 páginas con encabezados y paginación en dos pasadas (`NumberedCanvas`).
+   - Recompilado en PDF formal de 16 páginas (`NumberedCanvas`).
 
 2. **`PEVN_PRESENTACION_INSTITUCIONAL_MEN.pptx` / `.pdf`:**
    - Diapositiva 2 (Resumen Ejecutivo): Refleja catálogo DUE 2024 precargado y 57 pruebas ejecutadas en ciclo acotado.
@@ -177,29 +233,30 @@ Se revisaron y armonizaron los siguientes documentos autoritativos en el directo
    - Generación de `.pptx` (77 KB) y renderizado de `.pdf` (47 KB, 22 diapositivas apaisadas).
 
 3. **`PEVN_MEN_EXECUTIVE_BRIEF.md` / `.pdf`:**
-   - Secciones 2, 3 y 4 actualizadas con el modelo de 9 roles canónicos / 11 en BD, catálogo DUE 2024 vs 32 instituciones operativas, y censo de pruebas. Recompilado en PDF formal (3 páginas, ~10 KB).
+   - Secciones 2, 3 y 4 actualizadas con el modelo de 9 roles canónicos / 11 en BD, catálogo DUE 2024 vs 32 instituciones operativas, y censo de pruebas. Recompilado en PDF formal (3 páginas).
 
 4. **`PEVN_MEN_MEETING_CHECKLIST.md` / `.pdf`:**
-   - Actualizado el commit de referencia a `3a01c12dd0669447b4195850bddcda43ce0508a6`.
+   - Actualizado el commit de referencia al HEAD autoritativo `7b974951382bbd2f102274292539e98505cdae58`.
    - Actualizado el número de páginas del informe técnico a 16.
    - Clarificado el catálogo de referencia DUE 2024 y la exclusión de las 690 pruebas en el ciclo acotado.
-   - Incorporada la pregunta técnica P7 sobre el modelo de 9 roles canónicos y la delegación rectoral. Recompilado en PDF formal (~11 KB).
+   - Incorporada la pregunta técnica P7 sobre el modelo de 9 roles canónicos y la delegación rectoral. Recompilado en PDF formal.
 
 5. **`PEVN_MEN_DOCUMENT_INVENTORY_AND_CHANGELOG.md` / `.pdf`:**
-   - Conciliación de versiones actualizada, incorporando el presente informe de auditoría final y actualizando la matriz de afirmaciones técnicas. Recompilado en PDF formal (~17 KB).
+   - Conciliación de versiones actualizada, incorporando el presente informe de auditoría final y actualizando la matriz de afirmaciones técnicas. Recompilado en PDF formal.
 
 6. **`README.md`:**
-   - Actualizado el commit HEAD de referencia a `3a01c12dd0669447b4195850bddcda43ce0508a6`.
-   - Incorporado el informe final de auditoría al catálogo de documentos autoritativos vigentes y a la ruta de lectura de ciberseguridad y arquitectura.
+   - Actualizado el commit HEAD de referencia a `7b974951382bbd2f102274292539e98505cdae58`.
+   - Incorporado el informe final de auditoría al catálogo de documentos autoritativos vigentes y a la ruta de lectura recomendada.
 
 ---
 
-## 8. Verificación Física del Directorio de Entrega y Archivos Compilados
+## 8. Verificación Física del Directorio de Entrega, Integridad y Limitación OneDrive
 
 La auditoría inspeccionó directamente la existencia física, integridad y legibilidad de los archivos depositados en:  
 `C:\Users\juanc\OneDrive\Documentos\Desarrollo proyectos\Plataforma Educativa PEVN\Plataforma Educativa Virtual Nacional PEVN\docs\government\pdf`
 
-- **Verificación de Apertura y Estructura:** Todos los archivos PDF y la presentación PPTX abren correctamente, no presentan corrupción de cabeceras binarias y fueron generados mediante librerías deterministas (`python-pptx`, ReportLab Platypus).
+### 8.1. Integridad de Archivos Locales:
+- **Verificación de Apertura y Estructura:** Todos los archivos PDF y la presentación PPTX abren correctamente, no presentan corrupción de cabeceras binarias y fueron generados mediante librerías deterministas (`python-pptx`, ReportLab Platypus con motor de paginación en dos pasadas).
 - **Legibilidad y Tipografía:**
   - `PEVN_PRESENTACION_INSTITUCIONAL_MEN.pptx` / `.pdf`: Formato 16:9 con paleta institucional gubernamental (Azul Noche `#0F2942`, Azul Pizarra `#1E4E79`, Acento Oro `#C99700`), sin solapamiento de cajas de texto ni fuentes desalineadas.
   - `PEVN_INFORME_TECNICO_INTEGRAL_PARA_REVISION_MEN.pdf`: 16 páginas completas en tamaño A4, numeradas en formato "Página X de Y", con tablas ajustadas a los márgenes y código formateado en bloques legibles.
@@ -208,11 +265,17 @@ La auditoría inspeccionó directamente la existencia física, integridad y legi
   - `PEVN_MEN_DOCUMENT_INVENTORY_AND_CHANGELOG.pdf`: Tablas de trazabilidad estructuradas y completas.
 - **Ausencia de Versiones Duplicadas o Fantasma:** Cada entregable autoritativo cuenta exactamente con su fuente editable en Markdown (o PPTX) y su correspondiente artefacto exportado en PDF. Los 13 archivos históricos de fases tempranas se mantienen debidamente rotulados como *Histórico Preservado* para garantizar la memoria técnica del proyecto.
 
+### 8.2. Declaración Explícita sobre Sincronización OneDrive:
+> [!NOTE]
+> **ESTADO DE SINCRONIZACIÓN ONEDRIVE:**  
+> La existencia, tamaño en bytes, integridad criptográfica y legibilidad de todos los archivos fueron **verificados directamente sobre el sistema de archivos local de Windows**.  
+> Sin embargo, el estado de sincronización en la nube de Microsoft OneDrive (íconos de estado en la nube, sincronización en progreso o respaldos remotos) no puede ser validado programáticamente desde la consola de desarrollo. Dicha verificación de sincronización en la nube corresponde al cliente de escritorio de Windows del usuario.
+
 ---
 
 ## 9. Prerrequisitos Institucionales y Aspectos Sujetos a Validación del MEN
 
-En cumplimiento del mandato de transparencia pública, la auditoría ratifica que los siguientes aspectos corresponden a **decisiones, autorizaciones e infraestructura que dependen exclusivamente del Ministerio de Educación Nacional** y que constituyen la agenda de trabajo de la Fase 1 y Fase 2 propuestas:
+En cumplimiento de la Sección 26 del Informe Técnico, se identifican con total transparencia los aspectos que corresponden a **decisiones, autorizaciones e infraestructura que dependen exclusivamente del Ministerio de Educación Nacional** y que constituyen la agenda de trabajo de la Fase 1 y Fase 2 propuestas:
 
 1. **Protocolo y Convenio de Interoperabilidad con SIMAT y DUE:**  
    La conexión transaccional con las bases de datos misionales del Estado requiere que la OTSI del MEN defina los contratos de interfaz (REST OpenAPI, colas de mensajería o transferencia segura en lote SFTP/JSON) y autorice formalmente el acceso de prueba.
@@ -245,8 +308,8 @@ A continuación se consolida la lista maestra de artefactos que conforman el paq
 | **8** | **`PEVN_MEN_MEETING_CHECKLIST.pdf`** | PDF (A4) | 3 páginas (~11 KB) | Guía operativa de protocolo y banco de preguntas difíciles. | **AUTORITATIVO VIGENTE** |
 | **9** | **`PEVN_MEN_DOCUMENT_INVENTORY_AND_CHANGELOG.md`** | Markdown | 4 secciones (~12 KB) | Fuente editable del inventario documental y changelog. | **AUTORITATIVO VIGENTE** |
 | **10** | **`PEVN_MEN_DOCUMENT_INVENTORY_AND_CHANGELOG.pdf`** | PDF (A4) | 4 páginas (~17 KB) | Inventario formal y registro de conciliación de versiones. | **AUTORITATIVO VIGENTE** |
-| **11** | **`PEVN_MEN_FINAL_CONSISTENCY_AND_RELEASE_READINESS_AUDIT.md`** | Markdown | 10 secciones (~25 KB) | Fuente editable del presente dictamen final de auditoría. | **AUTORITATIVO VIGENTE** |
-| **12** | **`PEVN_MEN_FINAL_CONSISTENCY_AND_RELEASE_READINESS_AUDIT.pdf`** | PDF (A4) | ~5 páginas | Versión compilada en PDF del dictamen final de auditoría. | **AUTORITATIVO VIGENTE** |
+| **11** | **`PEVN_MEN_FINAL_CONSISTENCY_AND_RELEASE_READINESS_AUDIT.md`** | Markdown | 11 secciones (~27 KB) | Fuente editable del presente dictamen final de auditoría. | **AUTORITATIVO VIGENTE** |
+| **12** | **`PEVN_MEN_FINAL_CONSISTENCY_AND_RELEASE_READINESS_AUDIT.pdf`** | PDF (A4) | ~8 páginas (~30 KB) | Versión compilada en PDF del dictamen final de auditoría. | **AUTORITATIVO VIGENTE** |
 | **13** | **`README.md`** | Markdown | 4 secciones (~7 KB) | Guía maestra de navegación del directorio de entrega. | **AUTORITATIVO VIGENTE** |
 
 ---
@@ -256,7 +319,7 @@ A continuación se consolida la lista maestra de artefactos que conforman el paq
 El paquete documental institucional y técnico de la Plataforma Educativa Virtual Nacional (PEVN) se encuentra plenamente consolidado, reconciliado con las evidencias de código del repositorio y respaldado por pruebas reproducibles. Se da por concluida satisfactoriamente la auditoría de consistencia y preparación para revisión técnica.
 
 **Dictamen Definitivo Emitido:**  
-`READY FOR MEN TECHNICAL REVIEW — EVIDENCE AND DOCUMENTS RECONCILED`
+`READY FOR MEN TECHNICAL REVIEW — ALL MATERIAL DISCREPANCIES RECONCILED`
 
 *Emitido en Bogotá D.C., Colombia, a los 27 días del mes de Octubre de 2026.*  
 **Liderazgo Técnico y Consultoría en Transformación Digital — Proyecto PEVN**
