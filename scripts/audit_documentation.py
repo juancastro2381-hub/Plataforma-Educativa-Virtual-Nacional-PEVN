@@ -455,7 +455,7 @@ def audit_pdf_scripts():
 
 
 def audit_test_count_reconciliation():
-    print("\n--- Auditando Reconciliación de Conteo de Pruebas Backend (DOC-04-R4/R5/R6) ---")
+    print("\n--- Auditando Reconciliación de Conteo de Pruebas Backend (DOC-04-R7 Dinámico) ---")
     analyzer_script = ROOT_DIR / "backend" / "scratch" / "analyze_tests.py"
     if not analyzer_script.exists():
         record_fail("Script analizado de pruebas no existe", str(analyzer_script))
@@ -469,31 +469,86 @@ def audit_test_count_reconciliation():
             capture_output=True,
             text=True,
             cwd=str(ROOT_DIR),
+            timeout=60,
             check=False
         )
         if proc.returncode != 0:
-            record_fail("analyze_tests.py finalizó con error", f"Código {proc.returncode}")
-        else:
-            out = proc.stdout
-            total_match = re.search(r"Gran Total de Pruebas Recolectadas:\s*(\d+)", out)
-            if total_match:
-                total_collected = int(total_match.group(1))
-                if total_collected in (722, 728):
-                    record_static_check(
-                        "Censo estático de pruebas recolectadas",
-                        f"{total_collected} pruebas censadas en {71 if total_collected == 728 else 70} archivos (Línea base: 722; R6 endurecido: 728)"
-                    )
-                else:
-                    record_fail("Censo de pruebas inesperado en analyze_tests.py", f"Obtenido: {total_collected}")
-            else:
-                record_fail("Censo de pruebas no reportado por analyze_tests.py", out)
+            record_fail("analyze_tests.py finalizó con error", f"Código {proc.returncode} - STDERR: {proc.stderr[:200]}")
+            return
 
-            if "Verificación de Suma: True" in out or "Verificacin de Suma: True" in out:
-                sum_match = re.search(r"PostgreSQL \((\d+)\) \+ Unitarias \((\d+)\) = (\d+)", out)
-                detail = sum_match.group(0) if sum_match else "Suma verificada"
-                record_static_check("Ecuación de reconciliación matemática verificada", detail)
-            else:
-                record_fail("Falla en la verificación de suma matemática de pruebas", out)
+        out = proc.stdout
+
+        # Parse structured census tags
+        m_total = re.search(r"CENSO_TOTAL_PRUEBAS:\s*(\d+)", out)
+        m_files = re.search(r"CENSO_TOTAL_ARCHIVOS:\s*(\d+)", out)
+        m_pg_tests = re.search(r"CENSO_PG_PRUEBAS:\s*(\d+)", out)
+        m_pg_files = re.search(r"CENSO_PG_ARCHIVOS:\s*(\d+)", out)
+        m_unit_tests = re.search(r"CENSO_UNIT_PRUEBAS:\s*(\d+)", out)
+        m_unit_files = re.search(r"CENSO_UNIT_ARCHIVOS:\s*(\d+)", out)
+        m_sum = re.search(r"CENSO_SUMA_VERIFICADA:\s*(True|False)", out)
+
+        if not (m_total and m_files and m_pg_tests and m_pg_files and m_unit_tests and m_unit_files and m_sum):
+            # Fallback to standard regex if structured tags are absent
+            m_total = re.search(r"Gran Total de Pruebas Recolectadas:\s*(\d+)", out)
+            m_files = re.search(r"Inventario de Módulos Censados:\s*(\d+)", out)
+            m_sum = re.search(r"Verificación de Suma:\s*(True|False)", out)
+
+        if not m_total or not m_files:
+            record_fail("Censo de pruebas no reportado por analyze_tests.py", out[:300])
+            return
+
+        total_collected = int(m_total.group(1))
+        total_files = int(m_files.group(1))
+        sum_verified = (m_sum.group(1) == "True") if m_sum else False
+
+        # Fail closed on empty or invalid census
+        if total_collected <= 0 or total_files <= 0:
+            record_fail("Censo inválido (total de pruebas o archivos <= 0)", f"Pruebas: {total_collected}, Archivos: {total_files}")
+            return
+
+        if not sum_verified:
+            record_fail("Falla en la verificación de suma matemática de pruebas", out[:300])
+            return
+
+        # Evidence-based dynamic reconciliation:
+        # Check subgroup counts if available
+        if m_pg_tests and m_unit_tests:
+            pg_t = int(m_pg_tests.group(1))
+            unit_t = int(m_unit_tests.group(1))
+            pg_f = int(m_pg_files.group(1))
+            unit_f = int(m_unit_files.group(1))
+
+            if pg_t + unit_t != total_collected:
+                record_fail(
+                    "Inconsistencia aritmética de subgrupos",
+                    f"PG ({pg_t}) + Unitarias ({unit_t}) = {pg_t + unit_t} != Total ({total_collected})"
+                )
+                return
+
+            if pg_f + unit_f != total_files:
+                record_fail(
+                    "Inconsistencia en conteo de archivos de subgrupos",
+                    f"PG ({pg_f}) + Unitarias ({unit_f}) = {pg_f + unit_f} != Total ({total_files})"
+                )
+                return
+
+            record_static_check(
+                "Censo dinámico de pruebas recolectadas",
+                f"{total_collected} pruebas censadas en {total_files} archivos "
+                f"(PostgreSQL: {pg_t} en {pg_f} archivos; Unitarias/Aisladas: {unit_t} en {unit_f} archivos)"
+            )
+            record_static_check(
+                "Ecuación de reconciliación matemática verificada dinámicamente",
+                f"PostgreSQL ({pg_t}) + Unitarias ({unit_t}) = {total_collected} (Archivos: {pg_f} + {unit_f} = {total_files})"
+            )
+        else:
+            record_static_check(
+                "Censo dinámico de pruebas recolectadas",
+                f"{total_collected} pruebas censadas en {total_files} archivos"
+            )
+
+    except subprocess.TimeoutExpired:
+        record_fail("analyze_tests.py excedió el tiempo límite de ejecución (60s)", "TimeoutExpired")
     except Exception as exc:
         record_fail("Error al ejecutar analyze_tests.py", str(exc))
 

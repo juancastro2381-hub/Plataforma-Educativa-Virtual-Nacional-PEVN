@@ -7,6 +7,7 @@ Provides fixtures for async HTTP client and isolated in-memory test database ses
 from __future__ import annotations
 
 import os
+import re
 from collections.abc import AsyncGenerator
 
 import pytest
@@ -116,11 +117,51 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
             await session.commit()
             yield session
     finally:
+        drop_err: Exception | None = None
         try:
             async with engine.begin() as conn:
                 await conn.run_sync(Base.metadata.drop_all)
+        except Exception as exc:
+            drop_err = exc
         finally:
-            await engine.dispose()
+            try:
+                await engine.dispose()
+            except Exception as disp_exc:
+                if drop_err is not None:
+                    sanitized_drop = sanitize_error_message(str(drop_err))
+                    sanitized_disp = sanitize_error_message(str(disp_exc))
+                    chained = RuntimeError(
+                        f"Database teardown failed during drop_all ({type(drop_err).__name__}: {sanitized_drop}) "
+                        f"and dispose ({type(disp_exc).__name__}: {sanitized_disp})"
+                    )
+                    chained.__cause__ = drop_err
+                    raise chained from drop_err
+                sanitized_disp = sanitize_error_message(str(disp_exc))
+                raise RuntimeError(
+                    f"Database engine dispose failed: {type(disp_exc).__name__}: {sanitized_disp}"
+                ) from disp_exc
+
+        if drop_err is not None:
+            sanitized_drop = sanitize_error_message(str(drop_err))
+            err = RuntimeError(
+                f"Database metadata drop_all failed: {type(drop_err).__name__}: {sanitized_drop}"
+            )
+            err.__cause__ = drop_err
+            raise err from drop_err
+
+
+def sanitize_error_message(msg: str) -> str:
+    """
+    Sanitize exception details that might contain database connection URLs,
+    usernames, passwords, tokens, or other sensitive secrets.
+    """
+    # 1. Mask URI credentials: scheme://user:password@host -> scheme://user:***@host
+    cleaned = re.sub(r"(://[^:\s/@]+):([^@\s/]+)@", r"\1:***@", str(msg))
+    # 2. Mask Authorization Bearer tokens
+    cleaned = re.sub(r"(?i)\bbearer\s+[A-Za-z0-9_\-\.=]+", "Bearer ***", cleaned)
+    # 3. Mask key=value or key: value secrets (avoiding re-masking ***)
+    cleaned = re.sub(r"(?i)\b(password|passwd|secret|token|api_key)\s*[:=]\s*(?!\*\*)([^\s,;'\"]+)", r"\1=***", cleaned)
+    return cleaned
 
 
 async def cleanup_test_singletons() -> None:
@@ -132,9 +173,10 @@ async def cleanup_test_singletons() -> None:
       - Always attempts cleanup of both rate_limiter and close_engine.
       - Safe when Redis or engine was never initialized (both check internally for None).
       - Surfaces genuine cleanup failures instead of silently swallowing them.
+      - Sanitizes credentials, passwords, and tokens from exception reporting.
     """
     from app.core.security.rate_limiter import rate_limiter
-    from app.db.session import close_engine
+    from app.db.session import _state, close_engine
 
     errors: list[Exception] = []
 
@@ -142,17 +184,30 @@ async def cleanup_test_singletons() -> None:
         await rate_limiter.close()
     except Exception as exc:
         errors.append(exc)
+    finally:
+        rate_limiter._redis = None
 
     try:
         await close_engine()
     except Exception as exc:
         errors.append(exc)
+    finally:
+        _state.engine = None
+        _state.session_factory = None
 
     if errors:
         if len(errors) == 1:
-            raise RuntimeError(f"Client teardown cleanup failed: {errors[0]}") from errors[0]
-        messages = "; ".join(f"{type(e).__name__}: {e}" for e in errors)
-        raise RuntimeError(f"Multiple client teardown cleanup failures: {messages}")
+            sanitized = sanitize_error_message(str(errors[0]))
+            err = RuntimeError(
+                f"Client teardown cleanup failed: {type(errors[0]).__name__}: {sanitized}"
+            )
+            err.__cause__ = errors[0]
+            raise err from errors[0]
+
+        messages = "; ".join(f"{type(e).__name__}: {sanitize_error_message(str(e))}" for e in errors)
+        err = RuntimeError(f"Multiple client teardown cleanup failures: {messages}")
+        err.__cause__ = errors[0]
+        raise err
 
 
 @pytest.fixture(scope="function")

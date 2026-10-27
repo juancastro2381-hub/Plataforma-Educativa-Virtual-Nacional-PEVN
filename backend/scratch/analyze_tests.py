@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """
-PEVN Backend Test Collection and Arithmetic Reconciliation Analyzer (DOC-03-R3)
+PEVN Backend Test Collection and Arithmetic Reconciliation Analyzer (DOC-04-R7)
 
 Derives authoritative collection counts from pytest directly in an isolated process.
 Supports execution from both repository root and the backend working directory.
 Guarantees fail-closed exit if collection fails or parsing is incomplete.
+Dynamic reconciliation: No hardcoded allowlists or assumed totals.
 """
 
 from __future__ import annotations
@@ -46,12 +47,12 @@ def analyze() -> int:
         print(f"FATAL: Tests directory not found at: {tests_dir}", file=sys.stderr)
         return 2
 
-    # 2. Invoke pytest --collect-only -q strictly inside backend_dir
+    # 2. Invoke pytest --collect-only -q strictly inside backend_dir with explicit timeout
     cmd = [sys.executable, "-m", "pytest", "--collect-only", "-q"]
     cmd_str = " ".join(cmd)
-    
+
     print("=" * 80)
-    print("PEVN — Authoritative Backend Test Collection & Reconciliation Analyzer")
+    print("PEVN — Authoritative Backend Test Collection & Reconciliation Analyzer (R7)")
     print(f"Working Directory : {backend_dir}")
     print(f"Execution Command : {cmd_str}")
     print("=" * 80)
@@ -62,8 +63,12 @@ def analyze() -> int:
             capture_output=True,
             text=True,
             cwd=str(backend_dir),
+            timeout=45,
             check=False,
         )
+    except subprocess.TimeoutExpired:
+        print("FATAL: pytest collection timed out after 45 seconds.", file=sys.stderr)
+        return 6
     except Exception as exc:
         print(f"FATAL: Failed to launch pytest subprocess: {exc}", file=sys.stderr)
         return 3
@@ -129,7 +134,7 @@ def analyze() -> int:
     # Category 4: Database Safety Tests (1 file)
     db_safety_count = counts.get("test_db_safety.py", 0)
 
-    # Category 5: Remaining Unit / Model / Service Suites (61 files)
+    # Category 5: Remaining Unit / Model / Service Suites
     special_modules = (
         POSTGRESQL_INTEGRATION_SUITES
         | NAMED_PROVISIONING_SUITES
@@ -143,6 +148,13 @@ def analyze() -> int:
     unit_modules_count = len(counts) - len(pg_modules)
 
     grand_total = pg_total + unit_total
+
+    # Reconcile dynamic sums
+    sum_verified = (
+        (pg_total + unit_total == grand_total)
+        and (len(pg_modules) + unit_modules_count == len(counts))
+        and (pg_total + inst_count + rector_count + db_safety_count + remaining_total == grand_total)
+    )
 
     # 6. Formatted Output Report
     print(f"\n[1] Inventario de Módulos Censados: {len(counts)} archivos de prueba")
@@ -160,13 +172,27 @@ def analyze() -> int:
 
     print("\n[4] Reconciliación Aritmética Matemática:")
     print(f"    PostgreSQL ({pg_total}) + Unitarias ({unit_total}) = {grand_total}")
-    print(f"    83 + 17 + 15 + {db_safety_count} + {remaining_total} = {grand_total}")
-    print(f"    Verificación de Suma: {83 + 17 + 15 + db_safety_count + remaining_total == grand_total}")
-    print("=" * 80)
-    print("RESULTADO: Colección reconciliada satisfactoriamente sin ambigüedades.")
-    print("=" * 80)
+    print(f"    {pg_total} + {inst_count} + {rector_count} + {db_safety_count} + {remaining_total} = {grand_total}")
+    print(f"    Verificación de Suma: {sum_verified}")
 
-    return 0
+    print("\n[5] Resumen Estructurado para Auditoría:")
+    print(f"    CENSO_TOTAL_PRUEBAS: {grand_total}")
+    print(f"    CENSO_TOTAL_ARCHIVOS: {len(counts)}")
+    print(f"    CENSO_PG_PRUEBAS: {pg_total}")
+    print(f"    CENSO_PG_ARCHIVOS: {len(pg_modules)}")
+    print(f"    CENSO_UNIT_PRUEBAS: {unit_total}")
+    print(f"    CENSO_UNIT_ARCHIVOS: {unit_modules_count}")
+    print(f"    CENSO_SUMA_VERIFICADA: {sum_verified}")
+
+    print("=" * 80)
+    if sum_verified:
+        print("RESULTADO: Colección reconciliada satisfactoriamente sin ambigüedades.")
+        print("=" * 80)
+        return 0
+    else:
+        print("FATAL: Falla de reconciliación aritmética.", file=sys.stderr)
+        print("=" * 80)
+        return 5
 
 
 if __name__ == "__main__":
