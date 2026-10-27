@@ -10,7 +10,7 @@
 **Versión del Documento:** 1.0-FINAL-MEN  
 **Clasificación de Seguridad:** Uso Institucional / Confidencial Técnico — No contiene secretos, credenciales ni datos personales reales  
 **Repositorio Principal de Referencia:** `https://github.com/juancastro2381-hub/Plataforma-Educativa-Virtual-Nacional-PEVN.git`  
-**Commit de Referencia Verificado:** `a7ecbed460283bdd55f1ab53f96b315012288876` (rama `main`)  
+**Commit de Referencia Verificado:** `1fd505c810120f9cd78c9ec57e61a8a405a35717` (rama `main`, commit base previo: `7b974951382bbd2f102274292539e98505cdae58`)  
 
 ---
 
@@ -21,7 +21,7 @@
 | **0.1-BASE** | Julio 2026 | Arquitectura Inicial | Definición de modelos de datos, esquemas de base de datos relacionales y diseño de API en FastAPI. |
 | **0.5-RBAC** | Agosto 2026 | Seguridad y Roles | Implementación formal del modelo RBAC de 11 roles y aislamiento territorial. |
 | **0.9-DOC** | Septiembre 2026 | Documentación Técnica | Integración de catálogos territoriales DIVIPOLA/DANE y guías operativas. |
-| **1.0-FINAL** | Octubre 2026 | Entrega Institucional MEN | Consolidación exhaustiva para revisión por la Oficina de Tecnología y Sistemas de Información del MEN. Incorporación del censo dinámico de pruebas (747 pruebas recolectadas, 57 pruebas ejecutadas y aprobadas en ciclo acotado), hardening de ciclo de vida de conexiones, sanitización de credenciales y sección obligatoria de aspectos sujetos a validación institucional. |
+| **1.0-FINAL** | Octubre 2026 | Entrega Institucional MEN | Consolidación exhaustiva para revisión por la Oficina de Tecnología y Sistemas de Información del MEN. Incorporación del censo dinámico de pruebas (747 pruebas recolectadas, 57 pruebas ejecutadas y aprobadas en ciclo acotado), hardening de ciclo de vida de conexiones, sanitización de credenciales y sección obligatoria de aspectos sujetos a validación institucional (Commit HEAD autoritativo: `1fd505c810120f9cd78c9ec57e61a8a405a35717`). |
 
 > [!IMPORTANT]
 > **Declaración de Integridad Institucional y Límites de Alcance:**  

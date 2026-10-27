@@ -36,11 +36,11 @@ La auditoría verificó de forma no destructiva el estado del árbol de trabajo,
 
 ### 2.1. Comprobaciones de Estado Git Ejecutadas:
 - `git rev-parse HEAD`:  
-  `7b974951382bbd2f102274292539e98505cdae58`
+  `1fd505c810120f9cd78c9ec57e61a8a405a35717`
 - `git branch --show-current`:  
   `main`
 - `git rev-parse origin/main`:  
-  `7b974951382bbd2f102274292539e98505cdae58`
+  `1fd505c810120f9cd78c9ec57e61a8a405a35717`
 - `git status --short`:  
   *(Salida vacía: `nothing to commit, working tree clean` al inicio de la verificación)*
 - `git diff --stat`:  
@@ -49,20 +49,23 @@ La auditoría verificó de forma no destructiva el estado del árbol de trabajo,
   *(Salida vacía: 0 cambios en el área de preparación)*
 
 ### 2.2. Distinción Rigurosa de Estados:
-1. **HEAD Local Actual:** `7b974951382bbd2f102274292539e98505cdae58`
-2. **HEAD Remoto Rastreado (`origin/main`):** `7b974951382bbd2f102274292539e98505cdae58` (Sincronizado de manera idéntica; la rama está al día con el remoto).
-3. **Cambios Confirmados (Committed):** 0 pendientes.
-4. **Cambios Rastreados No Confirmados:** 0 al inicio de la verificación.
-5. **Archivos No Rastreados (Untracked):** 0.
-6. **Política de Preservación Aplicada:** No se ejecutó ningún `git commit`, `git push`, `git reset`, `git clean`, `git rebase` ni descarte destructivo de cambios.
+1. **HEAD Local Actual:** `1fd505c810120f9cd78c9ec57e61a8a405a35717`
+2. **HEAD Remoto Rastreado (`origin/main`):** `1fd505c810120f9cd78c9ec57e61a8a405a35717` (Sincronizado de manera idéntica; la rama local y el repositorio remoto están en perfecta paridad).
+3. **Commit Padre Inmediato / Línea Base Previa:** `7b974951382bbd2f102274292539e98505cdae58` (*"Auditoría de Consistencia, Evidencia y Preparación para Revisión Técnica del MEN (PEVN)"*).
+4. **Cambios Confirmados (Committed):** 0 pendientes.
+5. **Cambios Rastreados No Confirmados:** 0 al inicio de la verificación.
+6. **Archivos No Rastreados (Untracked):** 0.
+7. **Política de Preservación Aplicada:** No se ejecutó ningún `git commit`, `git push`, `git reset`, `git clean`, `git rebase` ni descarte destructivo de cambios.
 
 ### 2.3. Reconciliación Factual de las Referencias de Commit Históricas:
-La presencia previa de dos hashes de commit distintos en borradores de auditoría se explica objetivamente mediante el historial lineal de Git (`git log -n 5 --oneline`):
+El historial lineal de Git (`git log -n 5 --oneline`) documenta con precisión la secuencia de auditorías y consolidaciones:
+- `a7ecbed460283bdd55f1ab53f96b315012288876`: Corresponde al commit del ciclo de auditoría independiente **DOC-04-R7** (*"DOC-04-R7: Resumen Ejecutivo de Auditoría Independiente"*).
 - `e618105b8396ad397782366fa6b076390a36a57c`: Corresponde al commit de cierre del ciclo de auditoría independiente **DOC-04-R8** (*"DOC-04-R8: Resumen Ejecutivo de Auditoría Independiente"*), donde se consolidó el censo dinámico de 747 pruebas y la taxonomía inicial.
 - `3a01c12dd0669447b4195850bddcda43ce0508a6`: Corresponde al commit de línea base en el que se generó y estructuró por primera vez el paquete documental y la presentación institucional ante el MEN (*"PAQUETE DOCUMENTAL TÉCNICO Y PRESENTACIÓN PEVN ANTE EL MEN"*).
-- `7b974951382bbd2f102274292539e98505cdae58`: Corresponde al **commit HEAD autoritativo vigente** que unificó y actualizó las evidencias en la rama `main` (*"Auditoría de Consistencia, Evidencia y Preparación para Revisión Técnica del MEN (PEVN)"*).
+- `7b974951382bbd2f102274292539e98505cdae58`: Corresponde al commit padre inmediato y línea base previa de auditoría (*"Auditoría de Consistencia, Evidencia y Preparación para Revisión Técnica del MEN (PEVN)"*).
+- `1fd505c810120f9cd78c9ec57e61a8a405a35717`: Corresponde al **commit HEAD autoritativo vigente** publicado tanto localmente como en el remoto `origin/main` (*"Reconciliación de Evidencias y Compuerta de Entrega Institucional al MEN (PEVN)"*).
 
-Por tanto, no existe contradicción técnica sin resolver: el commit autoritativo único del repositorio en este momento es `7b974951382bbd2f102274292539e98505cdae58`.
+Por tanto, no existe contradicción técnica sin resolver: el commit autoritativo único del repositorio es `1fd505c810120f9cd78c9ec57e61a8a405a35717`.
 
 ---
 
@@ -236,17 +239,17 @@ Se revisaron y armonizaron los siguientes documentos autoritativos en el directo
    - Secciones 2, 3 y 4 actualizadas con el modelo de 9 roles canónicos / 11 en BD, catálogo DUE 2024 vs 32 instituciones operativas, y censo de pruebas. Recompilado en PDF formal (3 páginas).
 
 4. **`PEVN_MEN_MEETING_CHECKLIST.md` / `.pdf`:**
-   - Actualizado el commit de referencia al HEAD autoritativo `7b974951382bbd2f102274292539e98505cdae58`.
+   - Actualizado el commit de referencia al HEAD autoritativo `1fd505c810120f9cd78c9ec57e61a8a405a35717` (commit base previo: `7b974951382bbd2f102274292539e98505cdae58`).
    - Actualizado el número de páginas del informe técnico a 16.
    - Clarificado el catálogo de referencia DUE 2024 y la exclusión de las 690 pruebas en el ciclo acotado.
    - Incorporada la pregunta técnica P7 sobre el modelo de 9 roles canónicos y la delegación rectoral. Recompilado en PDF formal.
 
 5. **`PEVN_MEN_DOCUMENT_INVENTORY_AND_CHANGELOG.md` / `.pdf`:**
-   - Conciliación de versiones actualizada, incorporando el presente informe de auditoría final y actualizando la matriz de afirmaciones técnicas. Recompilado en PDF formal.
+   - Conciliación de versiones actualizada, incorporando el presente informe de auditoría final y el informe final de verificación de entrega, actualizando la matriz de afirmaciones técnicas. Recompilado en PDF formal.
 
 6. **`README.md`:**
-   - Actualizado el commit HEAD de referencia a `7b974951382bbd2f102274292539e98505cdae58`.
-   - Incorporado el informe final de auditoría al catálogo de documentos autoritativos vigentes y a la ruta de lectura recomendada.
+   - Actualizado el commit HEAD de referencia a `1fd505c810120f9cd78c9ec57e61a8a405a35717` (commit base previo: `7b974951382bbd2f102274292539e98505cdae58`).
+   - Incorporado el informe final de verificación de entrega al catálogo de documentos autoritativos vigentes y a la ruta de lectura recomendada.
 
 ---
 

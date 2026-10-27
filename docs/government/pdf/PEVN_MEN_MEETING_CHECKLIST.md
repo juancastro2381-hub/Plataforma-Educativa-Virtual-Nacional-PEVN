@@ -26,7 +26,7 @@
 - [ ] **Informe Técnico Integral:** 3 copias encuadernadas de `PEVN_INFORME_TECNICO_INTEGRAL_PARA_REVISION_MEN.pdf` (16 páginas con las 27 secciones completas).
 - [ ] **Resumen Ejecutivo:** 5 copias impresas de `PEVN_MEN_EXECUTIVE_BRIEF.pdf` para entrega a directores y asesores.
 - [ ] **Presentación Institucional:** Copias impresas o visualizador listo de `PEVN_PRESENTACION_INSTITUCIONAL_MEN.pptx` y `.pdf` (22 diapositivas).
-- [ ] **Copia del Repositorio en Medio Digital Seguro:** Memoria USB cifrada con el snapshot íntegro del repositorio Git en el commit de referencia `7b974951382bbd2f102274292539e98505cdae58`.
+- [ ] **Copia del Repositorio en Medio Digital Seguro:** Memoria USB cifrada con el snapshot íntegro del repositorio Git en el commit de referencia autoritativo HEAD `1fd505c810120f9cd78c9ec57e61a8a405a35717` (commit base previo: `7b974951382bbd2f102274292539e98505cdae58`).
 
 ### B. Entorno de Demostración en Vivo (Demo Standalone)
 - [ ] **Equipo Portátil de Demostración:** Batería cargada al 100%, cargador, adaptador HDMI y configuración de pantalla duplicada lista.

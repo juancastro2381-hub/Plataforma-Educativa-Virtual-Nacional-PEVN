@@ -8,7 +8,7 @@
 **Destinatario Institucional:** Oficina de Tecnología y Sistemas de Información — Ministerio de Educación Nacional (MEN), República de Colombia  
 **Fecha de Entrega:** Octubre 2026 | **Versión del Paquete:** 1.0-FINAL-MEN  
 **Repositorio Principal:** `https://github.com/juancastro2381-hub/Plataforma-Educativa-Virtual-Nacional-PEVN.git`  
-**Commit de Referencia Verificado:** `7b974951382bbd2f102274292539e98505cdae58` (rama `main`)  
+**Commit de Referencia Verificado:** `1fd505c810120f9cd78c9ec57e61a8a405a35717` (rama `main`, commit base previo: `7b974951382bbd2f102274292539e98505cdae58`)  
 
 ---
 
@@ -30,8 +30,10 @@ Para evitar cualquier dispersión, los siguientes archivos constituyen los **doc
 | **`PEVN_MEN_MEETING_CHECKLIST.md`** | Markdown | Fuente editable de la lista de chequeo operativa. |
 | **`PEVN_MEN_DOCUMENT_INVENTORY_AND_CHANGELOG.pdf`** | PDF (A4) | **Inventario Formal y Registro de Cambios:** Tabla de conciliación de todos los archivos del directorio, mapeo de versiones y changelog formal. |
 | **`PEVN_MEN_DOCUMENT_INVENTORY_AND_CHANGELOG.md`** | Markdown | Fuente editable del inventario documental. |
-| **`PEVN_MEN_FINAL_CONSISTENCY_AND_RELEASE_READINESS_AUDIT.pdf`** | PDF (A4) | **Dictamen Final de Auditoría y Preparación de Lanzamiento:** Dictamen independiente de consistencia, evidencia empírica de código y catálogo, y preparación para revisión técnica del MEN. |
-| **`PEVN_MEN_FINAL_CONSISTENCY_AND_RELEASE_READINESS_AUDIT.md`** | Markdown | Fuente editable del dictamen de auditoría final. |
+| **`PEVN_MEN_FINAL_CONSISTENCY_AND_RELEASE_READINESS_AUDIT.pdf`** | PDF (A4) | **Dictamen de Auditoría de Consistencia y Preparación:** Dictamen independiente de consistencia, evidencia empírica de código y catálogo, y preparación para revisión técnica del MEN. |
+| **`PEVN_MEN_FINAL_CONSISTENCY_AND_RELEASE_READINESS_AUDIT.md`** | Markdown | Fuente editable del dictamen de auditoría de consistencia. |
+| **`PEVN_FINAL_MEN_DELIVERY_VERIFICATION_REPORT.pdf`** | PDF (A4) | **Informe Final de Verificación y Compuerta de Lanzamiento:** Reporte de verificación integral, resolución de hashes, auditoría de diapositivas y veredicto formal de entrega. |
+| **`PEVN_FINAL_MEN_DELIVERY_VERIFICATION_REPORT.md`** | Markdown | Fuente editable del informe final de verificación de entrega. |
 
 ---
 
@@ -75,7 +77,7 @@ Los siguientes 13 archivos corresponden a etapas previas de trabajo (Fase 0.1 te
 
 ## 4. Declaración de Integridad, Verificación y Estado OneDrive
 
-- Todos los archivos en este directorio han sido inspeccionados, verificados en su estructura y validados contra el código fuente del proyecto en el commit verificado `7b974951382bbd2f102274292539e98505cdae58`.
+- Todos los archivos en este directorio han sido inspeccionados, verificados en su estructura y validados contra el código fuente del proyecto en el commit autoritativo HEAD `1fd505c810120f9cd78c9ec57e61a8a405a35717` (commit base previo: `7b974951382bbd2f102274292539e98505cdae58`).
 - No se han realizado operaciones destructivas en el repositorio Git (`git reset`, `git clean` ni `git push`).
 - **Verificación Local vs. Sincronización OneDrive:** La integridad binaria, legibilidad y completitud de todos los archivos fueron verificadas directamente sobre el sistema de archivos local de Windows. El estado de sincronización remota del cliente de Microsoft OneDrive no puede ser determinado programáticamente desde la consola de desarrollo, por lo que su confirmación en la nube permanece como una validación operativa del usuario en Windows.
 
