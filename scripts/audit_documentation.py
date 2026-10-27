@@ -555,7 +555,7 @@ def audit_test_count_reconciliation():
 
 def main():
     print("=" * 80)
-    print("PEVN — Auditoría Estricta de Integridad Documental, Capturas y Pruebas (DOC-04-R6)")
+    print("PEVN — Auditoría Estricta de Integridad Documental, Capturas y Pruebas (DOC-04-R8)")
     print("=" * 80)
 
     audit_html_file(INST_HTML)
@@ -573,7 +573,7 @@ def main():
     record_visual_note("Inspección Estática de Estilos y Márgenes", "Reglas CSS .figure-card (100%) y .figure-img (object-fit: contain) validadas contra márgenes de documento")
 
     print("\n" + "=" * 80)
-    print("RESUMEN GENERAL CATEGORIZADO DE AUDITORÍA DOC-04-R6")
+    print("RESUMEN GENERAL CATEGORIZADO DE AUDITORÍA DOC-04-R8")
     print("=" * 80)
     print(f"Total Chequeos Automatizados (PASS)  : {len(AUTOMATED_PASS_LIST)}")
     print(f"Total Chequeos Estáticos de Código   : {len(STATIC_CHECK_LIST)}")

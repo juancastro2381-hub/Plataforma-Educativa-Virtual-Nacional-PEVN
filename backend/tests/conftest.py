@@ -128,26 +128,26 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
                 await engine.dispose()
             except Exception as disp_exc:
                 if drop_err is not None:
-                    sanitized_drop = sanitize_error_message(str(drop_err))
-                    sanitized_disp = sanitize_error_message(str(disp_exc))
+                    sanitized_drop = sanitize_exception(drop_err)
+                    sanitized_disp = sanitize_exception(disp_exc)
                     chained = RuntimeError(
                         f"Database teardown failed during drop_all ({type(drop_err).__name__}: {sanitized_drop}) "
                         f"and dispose ({type(disp_exc).__name__}: {sanitized_disp})"
                     )
-                    chained.__cause__ = drop_err
-                    raise chained from drop_err
-                sanitized_disp = sanitize_error_message(str(disp_exc))
+                    chained.__cause__ = sanitized_drop
+                    raise chained from sanitized_drop
+                sanitized_disp = sanitize_exception(disp_exc)
                 raise RuntimeError(
                     f"Database engine dispose failed: {type(disp_exc).__name__}: {sanitized_disp}"
-                ) from disp_exc
+                ) from sanitized_disp
 
         if drop_err is not None:
-            sanitized_drop = sanitize_error_message(str(drop_err))
+            sanitized_drop = sanitize_exception(drop_err)
             err = RuntimeError(
                 f"Database metadata drop_all failed: {type(drop_err).__name__}: {sanitized_drop}"
             )
-            err.__cause__ = drop_err
-            raise err from drop_err
+            err.__cause__ = sanitized_drop
+            raise err from sanitized_drop
 
 
 def sanitize_error_message(msg: str) -> str:
@@ -155,13 +155,36 @@ def sanitize_error_message(msg: str) -> str:
     Sanitize exception details that might contain database connection URLs,
     usernames, passwords, tokens, or other sensitive secrets.
     """
-    # 1. Mask URI credentials: scheme://user:password@host -> scheme://user:***@host
-    cleaned = re.sub(r"(://[^:\s/@]+):([^@\s/]+)@", r"\1:***@", str(msg))
+    cleaned = str(msg)
+    # 1. Mask URI credentials (handles user:pass and :pass like redis)
+    cleaned = re.sub(r"(://[^:\s/@]*):([^@\s/]+)@", r"\1:***@", cleaned)
     # 2. Mask Authorization Bearer tokens
     cleaned = re.sub(r"(?i)\bbearer\s+[A-Za-z0-9_\-\.=]+", "Bearer ***", cleaned)
-    # 3. Mask key=value or key: value secrets (avoiding re-masking ***)
-    cleaned = re.sub(r"(?i)\b(password|passwd|secret|token|api_key)\s*[:=]\s*(?!\*\*)([^\s,;'\"]+)", r"\1=***", cleaned)
+    # 3. Mask sensitive keys with optional quotes and punctuation, preserving separator and whitespace
+    cleaned = re.sub(
+        r'(?i)(["\']?)\b(password|passwd|secret|token|api[_-]?key|access[_-]?token|refresh[_-]?token|client[_-]?secret|auth[_-]?token)\b\1\s*([:=])(\s*)(["\']?)(?!\*\*)([^\s,;\'"}\]]+)\5',
+        r'\1\2\1\3\4\5***\5',
+        cleaned,
+    )
     return cleaned
+
+
+def sanitize_exception(exc: Exception) -> Exception:
+    """
+    Return a sanitized clone of the exception so sensitive credentials
+    cannot escape through __cause__, __context__, or traceback formatting.
+    """
+    msg = sanitize_error_message(str(exc))
+    try:
+        new_exc = type(exc)(msg)
+    except Exception:
+        new_exc = RuntimeError(f"{type(exc).__name__}: {msg}")
+
+    if exc.__cause__ is not None and exc.__cause__ is not exc:
+        new_exc.__cause__ = sanitize_exception(exc.__cause__)
+    if exc.__context__ is not None and exc.__context__ is not exc:
+        new_exc.__context__ = sanitize_exception(exc.__context__)
+    return new_exc
 
 
 async def cleanup_test_singletons() -> None:
@@ -173,7 +196,7 @@ async def cleanup_test_singletons() -> None:
       - Always attempts cleanup of both rate_limiter and close_engine.
       - Safe when Redis or engine was never initialized (both check internally for None).
       - Surfaces genuine cleanup failures instead of silently swallowing them.
-      - Sanitizes credentials, passwords, and tokens from exception reporting.
+      - Sanitizes credentials, passwords, and tokens from exception reporting and causes.
     """
     from app.core.security.rate_limiter import rate_limiter
     from app.db.session import _state, close_engine
@@ -196,18 +219,19 @@ async def cleanup_test_singletons() -> None:
         _state.session_factory = None
 
     if errors:
-        if len(errors) == 1:
-            sanitized = sanitize_error_message(str(errors[0]))
+        sanitized_errors = [sanitize_exception(e) for e in errors]
+        if len(sanitized_errors) == 1:
+            first_sanitized = sanitized_errors[0]
             err = RuntimeError(
-                f"Client teardown cleanup failed: {type(errors[0]).__name__}: {sanitized}"
+                f"Client teardown cleanup failed: {type(first_sanitized).__name__}: {first_sanitized}"
             )
-            err.__cause__ = errors[0]
-            raise err from errors[0]
+            err.__cause__ = first_sanitized
+            raise err from first_sanitized
 
-        messages = "; ".join(f"{type(e).__name__}: {sanitize_error_message(str(e))}" for e in errors)
+        messages = "; ".join(f"{type(e).__name__}: {e}" for e in sanitized_errors)
         err = RuntimeError(f"Multiple client teardown cleanup failures: {messages}")
-        err.__cause__ = errors[0]
-        raise err
+        err.__cause__ = sanitized_errors[0]
+        raise err from sanitized_errors[0]
 
 
 @pytest.fixture(scope="function")
