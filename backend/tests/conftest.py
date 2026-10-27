@@ -82,43 +82,77 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
         expire_on_commit=False,
     )
 
-    async with session_maker() as session:
-        # Seed canonical roles, permissions, and role_permissions via RbacBootstrapService
-        from app.services.rbac_bootstrap_service import RbacBootstrapService
-        bootstrap = RbacBootstrapService(session=session)
-        await bootstrap.seed_canonical_rbac_if_needed()
+    try:
+        async with session_maker() as session:
+            # Seed canonical roles, permissions, and role_permissions via RbacBootstrapService
+            from app.services.rbac_bootstrap_service import RbacBootstrapService
+            bootstrap = RbacBootstrapService(session=session)
+            await bootstrap.seed_canonical_rbac_if_needed()
 
-        # Seed standard national grades
-        grades_data = [
-            ("TRANSICION", "Transición", EducationalLevel.PREESCOLAR, 0),
-            ("G01", "Primero", EducationalLevel.PRIMARIA, 1),
-            ("G02", "Segundo", EducationalLevel.PRIMARIA, 2),
-            ("G03", "Tercero", EducationalLevel.PRIMARIA, 3),
-            ("G04", "Cuarto", EducationalLevel.PRIMARIA, 4),
-            ("G05", "Quinto", EducationalLevel.PRIMARIA, 5),
-            ("G06", "Sexto", EducationalLevel.SECUNDARIA, 6),
-            ("G07", "Séptimo", EducationalLevel.SECUNDARIA, 7),
-            ("G08", "Octavo", EducationalLevel.SECUNDARIA, 8),
-            ("G09", "Noveno", EducationalLevel.SECUNDARIA, 9),
-            ("G10", "Décimo", EducationalLevel.MEDIA, 10),
-            ("G11", "Undécimo", EducationalLevel.MEDIA, 11),
-        ]
-        for code, gname, ed_level, order in grades_data:
-            grade = Grade(
-                code=code,
-                name=gname,
-                level=ed_level,
-                ordinal_order=order,
-            )
-            session.add(grade)
+            # Seed standard national grades
+            grades_data = [
+                ("TRANSICION", "Transición", EducationalLevel.PREESCOLAR, 0),
+                ("G01", "Primero", EducationalLevel.PRIMARIA, 1),
+                ("G02", "Segundo", EducationalLevel.PRIMARIA, 2),
+                ("G03", "Tercero", EducationalLevel.PRIMARIA, 3),
+                ("G04", "Cuarto", EducationalLevel.PRIMARIA, 4),
+                ("G05", "Quinto", EducationalLevel.PRIMARIA, 5),
+                ("G06", "Sexto", EducationalLevel.SECUNDARIA, 6),
+                ("G07", "Séptimo", EducationalLevel.SECUNDARIA, 7),
+                ("G08", "Octavo", EducationalLevel.SECUNDARIA, 8),
+                ("G09", "Noveno", EducationalLevel.SECUNDARIA, 9),
+                ("G10", "Décimo", EducationalLevel.MEDIA, 10),
+                ("G11", "Undécimo", EducationalLevel.MEDIA, 11),
+            ]
+            for code, gname, ed_level, order in grades_data:
+                grade = Grade(
+                    code=code,
+                    name=gname,
+                    level=ed_level,
+                    ordinal_order=order,
+                )
+                session.add(grade)
 
-        await session.commit()
-        yield session
+            await session.commit()
+            yield session
+    finally:
+        try:
+            async with engine.begin() as conn:
+                await conn.run_sync(Base.metadata.drop_all)
+        finally:
+            await engine.dispose()
 
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
 
-    await engine.dispose()
+async def cleanup_test_singletons() -> None:
+    """
+    Safely and strictly release singleton connection pools and background
+    engines initialized during ASGI test client requests.
+
+    Guarantees:
+      - Always attempts cleanup of both rate_limiter and close_engine.
+      - Safe when Redis or engine was never initialized (both check internally for None).
+      - Surfaces genuine cleanup failures instead of silently swallowing them.
+    """
+    from app.core.security.rate_limiter import rate_limiter
+    from app.db.session import close_engine
+
+    errors: list[Exception] = []
+
+    try:
+        await rate_limiter.close()
+    except Exception as exc:
+        errors.append(exc)
+
+    try:
+        await close_engine()
+    except Exception as exc:
+        errors.append(exc)
+
+    if errors:
+        if len(errors) == 1:
+            raise RuntimeError(f"Client teardown cleanup failed: {errors[0]}") from errors[0]
+        messages = "; ".join(f"{type(e).__name__}: {e}" for e in errors)
+        raise RuntimeError(f"Multiple client teardown cleanup failures: {messages}")
 
 
 @pytest.fixture(scope="function")
@@ -127,6 +161,7 @@ async def client(
 ) -> AsyncGenerator[AsyncClient, None]:
     """
     Provide an async HTTP test client with database session override.
+    Guarantees structured teardown and singleton resource disposal.
     """
     get_settings.cache_clear()
 
@@ -138,24 +173,13 @@ async def client(
 
     test_app.dependency_overrides[get_async_session] = _override_get_async_session
 
-    async with AsyncClient(
-        transport=ASGITransport(app=test_app),  # type: ignore[arg-type]
-        base_url="http://testserver",
-        headers={"Host": "localhost"},
-    ) as test_client:
-        yield test_client
-
-    get_settings.cache_clear()
-
-    # Clean up singletons and connection pools initialized during test requests
-    from app.core.security.rate_limiter import rate_limiter
-    from app.db.session import close_engine
-
     try:
-        await rate_limiter.close()
-    except Exception:
-        pass
-    try:
-        await close_engine()
-    except Exception:
-        pass
+        async with AsyncClient(
+            transport=ASGITransport(app=test_app),  # type: ignore[arg-type]
+            base_url="http://testserver",
+            headers={"Host": "localhost"},
+        ) as test_client:
+            yield test_client
+    finally:
+        get_settings.cache_clear()
+        await cleanup_test_singletons()

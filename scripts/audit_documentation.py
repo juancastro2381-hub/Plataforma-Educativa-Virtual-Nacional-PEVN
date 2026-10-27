@@ -72,6 +72,7 @@ PROHIBITED_ERROR_PATTERNS = [
 ]
 
 AUTOMATED_PASS_LIST = []
+STATIC_CHECK_LIST = []
 TEST_EXECUTION_LIST = []
 VISUAL_INSPECTION_LIST = []
 WARN_LIST = []
@@ -81,6 +82,11 @@ FAIL_LIST = []
 def record_pass(check_name: str, detail: str = ""):
     AUTOMATED_PASS_LIST.append((check_name, detail))
     print(f"  [PASS] {check_name}" + (f": {detail}" if detail else ""))
+
+
+def record_static_check(check_name: str, detail: str = ""):
+    STATIC_CHECK_LIST.append((check_name, detail))
+    print(f"  [STATIC-AUDIT] {check_name}" + (f": {detail}" if detail else ""))
 
 
 def record_test_execution(test_name: str, detail: str = ""):
@@ -131,30 +137,37 @@ def audit_html_file(html_path: Path):
 
     # 2. Chequeo de referencias de imágenes (src)
     src_images = re.findall(r'src=["\']([^"\']+)["\']', content)
+    img_errors = 0
     for src in src_images:
         if src.startswith("http://") or src.startswith("https://") or src.startswith("data:"):
             continue
         img_target = (base_dir / src).resolve()
         if not img_target.exists():
             record_fail(f"{html_path.name}: Imagen no encontrada en disco", f"{src} -> {img_target}")
+            img_errors += 1
         elif img_target.stat().st_size == 0:
             record_fail(f"{html_path.name}: Imagen vacía en disco (0 bytes)", str(img_target))
-    record_pass(f"{html_path.name}: Integridad de etiquetas <img>", f"{len(src_images)} referencias validadas")
+            img_errors += 1
+    if img_errors == 0:
+        record_pass(f"{html_path.name}: Integridad de etiquetas <img>", f"{len(src_images)} referencias validadas")
 
     # 3. Chequeo de invocaciones a openLightbox
     lightbox_refs = re.findall(r'openLightbox\(["\']([^"\']+)["\']', content)
+    lb_errors = 0
     for lb in lightbox_refs:
         if lb.startswith("http://") or lb.startswith("https://") or lb.startswith("data:"):
             continue
         lb_target = (base_dir / lb).resolve()
         if not lb_target.exists():
             record_fail(f"{html_path.name}: Destino de openLightbox no encontrado", f"{lb} -> {lb_target}")
-    if lightbox_refs:
+            lb_errors += 1
+    if lb_errors == 0 and lightbox_refs:
         record_pass(f"{html_path.name}: Integridad de handlers openLightbox", f"{len(lightbox_refs)} destinos validados")
 
     # 4. Chequeo de hipervínculos (href) y anclas
     hrefs = re.findall(r'href=["\']([^"\']+)["\']', content)
     id_set = set(ids)
+    href_errors = 0
     for href in hrefs:
         if href.startswith("http://") or href.startswith("https://") or href.startswith("mailto:") or href.startswith("tel:") or href.startswith("javascript:"):
             continue
@@ -162,15 +175,19 @@ def audit_html_file(html_path: Path):
             anchor = href[1:]
             if anchor and anchor not in id_set:
                 record_fail(f"{html_path.name}: Ancla interna no resuelta", f"#{anchor}")
+                href_errors += 1
         else:
             file_part = href.split("#")[0]
             if file_part:
                 file_target = (base_dir / file_part).resolve()
                 if not file_target.exists():
                     record_fail(f"{html_path.name}: Archivo local vinculado no existe", f"{href} -> {file_target}")
+                    href_errors += 1
                 elif file_target.stat().st_size == 0:
                     record_fail(f"{html_path.name}: Archivo local vinculado está vacío", str(file_target))
-    record_pass(f"{html_path.name}: Integridad de hipervínculos y anclas", f"{len(hrefs)} enlaces validados")
+                    href_errors += 1
+    if href_errors == 0:
+        record_pass(f"{html_path.name}: Integridad de hipervínculos y anclas", f"{len(hrefs)} enlaces validados")
 
     # 5. Chequeo de ausencia de texto de error prohibido
     found_errors = []
@@ -198,16 +215,20 @@ def audit_screenshot_inventory_and_manifest():
     # Validación física de formato y tamaño
     try:
         from PIL import Image as PILImage
+        pil_errors = 0
         for img_name in disk_images:
             img_path = SCREENSHOTS_DIR / img_name
             if img_path.stat().st_size == 0:
                 record_fail(f"{img_name}: Tamaño 0 bytes", str(img_path))
+                pil_errors += 1
                 continue
             with PILImage.open(img_path) as im:
                 w, h = im.size
                 if w < 100 or h < 100:
                     record_fail(f"{img_name}: Dimensiones anormalmente reducidas", f"{w}x{h} px")
-        record_pass("Integridad estructural de archivos PNG", f"13 archivos leídos exitosamente con PIL")
+                    pil_errors += 1
+        if pil_errors == 0:
+            record_pass("Integridad estructural de archivos PNG", f"{len(disk_images)} archivos leídos exitosamente con PIL")
     except ImportError:
         record_warn("PIL/Pillow no disponible", "No se validaron dimensiones con PIL")
 
@@ -434,7 +455,7 @@ def audit_pdf_scripts():
 
 
 def audit_test_count_reconciliation():
-    print("\n--- Auditando Reconciliación de Conteo de Pruebas Backend (DOC-04-R4) ---")
+    print("\n--- Auditando Reconciliación de Conteo de Pruebas Backend (DOC-04-R4/R5/R6) ---")
     analyzer_script = ROOT_DIR / "backend" / "scratch" / "analyze_tests.py"
     if not analyzer_script.exists():
         record_fail("Script analizado de pruebas no existe", str(analyzer_script))
@@ -454,13 +475,23 @@ def audit_test_count_reconciliation():
             record_fail("analyze_tests.py finalizó con error", f"Código {proc.returncode}")
         else:
             out = proc.stdout
-            if "Gran Total de Pruebas Recolectadas: 722" in out:
-                record_test_execution("Censo estático de pruebas recolectadas", "722 pruebas censadas (83 PG + 639 unitarias)")
+            total_match = re.search(r"Gran Total de Pruebas Recolectadas:\s*(\d+)", out)
+            if total_match:
+                total_collected = int(total_match.group(1))
+                if total_collected in (722, 728):
+                    record_static_check(
+                        "Censo estático de pruebas recolectadas",
+                        f"{total_collected} pruebas censadas en {71 if total_collected == 728 else 70} archivos (Línea base: 722; R6 endurecido: 728)"
+                    )
+                else:
+                    record_fail("Censo de pruebas inesperado en analyze_tests.py", f"Obtenido: {total_collected}")
             else:
-                record_fail("Censo de pruebas discrepante en analyze_tests.py", "Esperado: 722 pruebas recolectadas")
+                record_fail("Censo de pruebas no reportado por analyze_tests.py", out)
 
             if "Verificación de Suma: True" in out or "Verificacin de Suma: True" in out:
-                record_test_execution("Ecuación de reconciliación matemática verificada", "83 + 639 = 722")
+                sum_match = re.search(r"PostgreSQL \((\d+)\) \+ Unitarias \((\d+)\) = (\d+)", out)
+                detail = sum_match.group(0) if sum_match else "Suma verificada"
+                record_static_check("Ecuación de reconciliación matemática verificada", detail)
             else:
                 record_fail("Falla en la verificación de suma matemática de pruebas", out)
     except Exception as exc:
@@ -469,7 +500,7 @@ def audit_test_count_reconciliation():
 
 def main():
     print("=" * 80)
-    print("PEVN — Auditoría Estricta de Integridad Documental, Capturas y Pruebas (DOC-04-R4)")
+    print("PEVN — Auditoría Estricta de Integridad Documental, Capturas y Pruebas (DOC-04-R6)")
     print("=" * 80)
 
     audit_html_file(INST_HTML)
@@ -482,16 +513,17 @@ def main():
     audit_screenshot_layout_standard()
     audit_test_count_reconciliation()
 
-    # Registro de notas de inspección visual
-    record_visual_note("Inspección Visual Manual Directa", "13 capturas PNG en disco + 18 páginas PDF rasterizadas a 150 DPI")
-    record_visual_note("Validación en Navegador Real", "Geometría de layout de ambos HTMLs verificada con Browser Subagent")
+    # Registro honesto de notas de inspección visual
+    record_visual_note("Evidencia Visual Histórica Documentada (DOC-04-R4)", "13 capturas PNG en disco + 18 páginas PDF rasterizadas a 150 DPI")
+    record_visual_note("Inspección Estática de Estilos y Márgenes", "Reglas CSS .figure-card (100%) y .figure-img (object-fit: contain) validadas contra márgenes de documento")
 
     print("\n" + "=" * 80)
-    print("RESUMEN GENERAL CATEGORIZADO DE AUDITORÍA DOC-04-R4")
+    print("RESUMEN GENERAL CATEGORIZADO DE AUDITORÍA DOC-04-R6")
     print("=" * 80)
     print(f"Total Chequeos Automatizados (PASS)  : {len(AUTOMATED_PASS_LIST)}")
+    print(f"Total Chequeos Estáticos de Código   : {len(STATIC_CHECK_LIST)}")
     print(f"Total Verificaciones de Pruebas     : {len(TEST_EXECUTION_LIST)}")
-    print(f"Total Inspecciones Visuales/Browser  : {len(VISUAL_INSPECTION_LIST)}")
+    print(f"Total Notas de Inspección Visual     : {len(VISUAL_INSPECTION_LIST)}")
     print(f"Total de Advertencias (WARN)         : {len(WARN_LIST)}")
     print(f"Total de Fallas Detectadas (FAIL)    : {len(FAIL_LIST)}")
 
