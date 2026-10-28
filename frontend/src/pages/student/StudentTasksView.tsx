@@ -139,7 +139,7 @@ export const StudentTasksView: React.FC<StudentTasksViewProps> = ({
                 style={{
                   fontSize: '0.75rem',
                   fontWeight: 700,
-                  backgroundColor: isSelected ? '#1D4ED8' : tab.color || '#94A3B8',
+                  backgroundColor: isSelected ? '#1D4ED8' : tab.color || '#475569',
                   color: '#FFFFFF',
                   borderRadius: '9999px',
                   padding: '0.1rem 0.45rem',
@@ -185,7 +185,7 @@ export const StudentTasksView: React.FC<StudentTasksViewProps> = ({
               boxSizing: 'border-box',
             }}
           />
-          <span style={{ position: 'absolute', left: '0.75rem', top: '0.65rem', color: '#94A3B8' }}>
+          <span style={{ position: 'absolute', left: '0.75rem', top: '0.65rem', color: '#64748B' }}>
             🔍
           </span>
         </div>

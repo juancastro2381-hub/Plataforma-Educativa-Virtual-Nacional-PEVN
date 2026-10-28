@@ -473,7 +473,7 @@ export const DirectiveEvaluationManagementView: React.FC = () => {
                             🔓 Reabrir Período
                           </Button>
                         ) : (
-                          <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>Sellado</span>
+                          <span style={{ fontSize: '0.75rem', color: '#475569', fontWeight: 600 }}>Sellado</span>
                         )
                       ) : (
                         canClosePeriod ? (
@@ -484,7 +484,7 @@ export const DirectiveEvaluationManagementView: React.FC = () => {
                             🔒 Cerrar y Sellar
                           </Button>
                         ) : (
-                          <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>En curso</span>
+                          <span style={{ fontSize: '0.75rem', color: '#475569', fontWeight: 600 }}>En curso</span>
                         )
                       )}
                     </td>

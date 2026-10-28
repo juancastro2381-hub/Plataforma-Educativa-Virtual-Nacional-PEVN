@@ -14,7 +14,6 @@
 **Etiqueta de Liberación Propuesta:** `v1.0.0-men-review` (Para fijación formal sobre el snapshot aprobado)  
 **Clasificación de Seguridad:** Confidencial Técnico / Uso Institucional Oficial  
 **Directorio Mandatorio de Entrega:** `docs/government/pdf/`  
-**Repositorio Principal:** `https://github.com/juancastro2381-hub/Plataforma-Educativa-Virtual-Nacional-PEVN.git`  
 **Veredicto Final de Entrega (Release Gate):** `READY FOR MEN TECHNICAL REVIEW`  
 
 ---

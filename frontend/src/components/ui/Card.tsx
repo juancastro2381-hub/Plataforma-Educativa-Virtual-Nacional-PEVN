@@ -5,6 +5,7 @@
  */
 
 import React from 'react'
+import { cn } from '@utils/index'
 
 export interface CardProps {
   children: React.ReactNode
@@ -21,9 +22,11 @@ export const Card: React.FC<CardProps> = ({
   subtitle,
   action,
   style,
+  className,
 }) => {
   return (
     <div
+      className={cn('card', className)}
       style={{
         backgroundColor: '#FFFFFF',
         borderRadius: '12px',
@@ -62,7 +65,7 @@ export const Card: React.FC<CardProps> = ({
                 style={{
                   margin: '0.25rem 0 0 0',
                   fontSize: '0.8125rem',
-                  color: '#64748B',
+                  color: '#475569',
                 }}
               >
                 {subtitle}

@@ -1224,7 +1224,7 @@ export const InstitutionsView: React.FC = () => {
               ? 'Supervisión de Instituciones Educativas'
               : 'Aprovisionamiento de Instituciones'}
           </h1>
-          <p style={{ color: '#94A3B8', fontSize: '0.9375rem', margin: 0, maxWidth: '650px' }}>
+          <p style={{ color: '#CBD5E1', fontSize: '0.9375rem', margin: 0, maxWidth: '650px' }}>
             {isMunicipalityAdmin
               ? 'Inspección y supervisión de colegios oficiales y sedes educativas del municipio asignado.'
               : isDepartmentAdmin

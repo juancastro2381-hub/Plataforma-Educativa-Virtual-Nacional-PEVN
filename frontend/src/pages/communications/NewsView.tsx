@@ -108,7 +108,7 @@ export const NewsView: React.FC = () => {
           <h1 style={{ fontSize: '1.875rem', fontWeight: 800, margin: '0.25rem 0', color: '#FFFFFF' }}>
             Noticias y Vida Escolar
           </h1>
-          <p style={{ color: '#94A3B8', fontSize: '0.9375rem', margin: 0, maxWidth: '650px' }}>
+          <p style={{ color: '#CBD5E1', fontSize: '0.9375rem', margin: 0, maxWidth: '650px' }}>
             Novedades pedagógicas, logros estudiantiles y actividades de la comunidad educativa.
           </p>
         </div>
@@ -226,7 +226,7 @@ export const NewsView: React.FC = () => {
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
                   <Badge variant="primary">{formatCategory(item.category)}</Badge>
-                  <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>
+                  <span style={{ fontSize: '0.75rem', color: '#475569' }}>
                     {item.published_at ? new Date(item.published_at).toLocaleDateString('es-CO') : ''}
                   </span>
                 </div>

@@ -61,6 +61,27 @@ export default {
         },
         'pevn-white': '#FCFBFA',
         'pevn-deep-red': '#950418',
+
+        // ---- Accessible Semantic Tokens ------------------------------------
+        surface: {
+          DEFAULT: 'var(--color-surface-bg)',
+          page: 'var(--color-page-bg)',
+          muted: 'var(--color-surface-muted)',
+          border: 'var(--color-surface-border)',
+        },
+        'pevn-text': {
+          DEFAULT: 'var(--color-text-primary)',
+          primary: 'var(--color-text-primary)',
+          secondary: 'var(--color-text-secondary)',
+          muted: 'var(--color-text-muted)',
+          subtle: 'var(--color-text-subtle)',
+          inverse: 'var(--color-text-inverse)',
+        },
+        'pevn-heading': {
+          DEFAULT: 'var(--color-heading-primary)',
+          primary: 'var(--color-heading-primary)',
+          secondary: 'var(--color-heading-secondary)',
+        },
       },
 
       // ---- Typography ---------------------------------------------------

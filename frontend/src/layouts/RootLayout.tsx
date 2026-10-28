@@ -9,6 +9,7 @@
 import { Suspense } from 'react'
 import { Link, Outlet } from 'react-router-dom'
 import { PageLoader } from '@components/ui/LoadingSpinner'
+import { PevnBrandText } from '@components/ui/PevnLogo'
 import { useAuth } from '@/hooks/useAuth'
 import config from '@config/index'
 
@@ -45,12 +46,7 @@ export function RootLayout() {
       hasRole('national_admin')
     )
 
-  const canAccessAcademic =
-    !isSuperAdmin && (
-      isInstitutionalDirective ||
-      hasRole(['national_admin', 'department_admin', 'municipality_admin']) ||
-      hasPermission('academic_years:read')
-    )
+  const canAccessAcademic = !isSuperAdmin && isInstitutionalDirective
 
   const canAccessVirtualClassrooms =
     !isSuperAdmin && hasPermission('virtual_classrooms:read')
@@ -127,13 +123,17 @@ export function RootLayout() {
                 fontSize: '1.25rem',
                 fontWeight: 800,
                 letterSpacing: '0.05em',
-                backgroundColor: 'rgba(255,255,255,0.1)',
-                padding: '0.25rem 0.5rem',
-                borderRadius: '6px',
+                backgroundColor: 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                padding: '0.25rem 0.6rem',
+                borderRadius: '8px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.25)',
               }}
               aria-label="PEVN"
             >
-              PEVN
+              <PevnBrandText variant="dark" />
             </span>
             <span
               style={{

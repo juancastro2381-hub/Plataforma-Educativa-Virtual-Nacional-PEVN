@@ -9,7 +9,6 @@
 **Fecha de Emisión:** Octubre 2026  
 **Versión del Documento:** 1.0-FINAL-MEN (Revisión Final de Cierre Controlado)  
 **Clasificación de Seguridad:** Uso Institucional / Confidencial Técnico — No contiene secretos, credenciales ni datos personales reales  
-**Repositorio Principal de Referencia:** `https://github.com/juancastro2381-hub/Plataforma-Educativa-Virtual-Nacional-PEVN.git`  
 **Línea Base de Código y Pruebas Auditada:** `1fd505c810120f9cd78c9ec57e61a8a405a35717` (Línea base inmutable de código fuente, esquemas relacionales y pruebas acotadas)  
 **Etiqueta de Liberación Propuesta:** `v1.0.0-men-review` (Identificador formal recomendado para el snapshot de entrega)  
 

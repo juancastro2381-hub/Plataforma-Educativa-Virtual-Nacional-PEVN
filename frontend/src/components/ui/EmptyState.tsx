@@ -55,7 +55,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         style={{
           margin: '0 0 1.25rem 0',
           fontSize: '0.875rem',
-          color: '#64748B',
+          color: '#475569',
           maxWidth: '420px',
           marginLeft: 'auto',
           marginRight: 'auto',

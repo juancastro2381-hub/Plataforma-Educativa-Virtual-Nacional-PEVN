@@ -543,7 +543,7 @@ export const StudentGradesView: React.FC<StudentGradesViewProps> = ({
                                 "{g.feedback}"
                               </div>
                             ) : (
-                              <span style={{ color: '#94A3B8' }}>Sin retroalimentación adicional.</span>
+                              <span style={{ color: '#475569' }}>Sin retroalimentación adicional.</span>
                             )}
                           </td>
                         </tr>

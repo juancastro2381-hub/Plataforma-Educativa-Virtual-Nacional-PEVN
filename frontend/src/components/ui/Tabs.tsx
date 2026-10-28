@@ -49,8 +49,8 @@ export const Tabs: React.FC<TabsProps> = ({ tabs, activeTab, onChange }) => {
               background: 'none',
               cursor: 'pointer',
               fontSize: '0.875rem',
-              fontWeight: isActive ? 700 : 500,
-              color: isActive ? '#1E40AF' : '#64748B',
+              fontWeight: isActive ? 700 : 600,
+              color: isActive ? '#1E40AF' : '#475569',
               borderBottom: isActive ? '3px solid #1E40AF' : '3px solid transparent',
               marginBottom: '-0.35rem',
               display: 'flex',
@@ -69,7 +69,7 @@ export const Tabs: React.FC<TabsProps> = ({ tabs, activeTab, onChange }) => {
                   padding: '0.1rem 0.4rem',
                   borderRadius: '9999px',
                   backgroundColor: isActive ? '#DBEAFE' : '#F1F5F9',
-                  color: isActive ? '#1E40AF' : '#64748B',
+                  color: isActive ? '#1E40AF' : '#334155',
                   fontWeight: 600,
                 }}
               >

@@ -288,7 +288,7 @@ export const StudentNewsView: React.FC<Props> = ({ onBackToDashboard: _onBackToD
                       {catInfo.icon} {catInfo.label}
                     </span>
 
-                    <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>
+                    <span style={{ fontSize: '0.75rem', color: '#475569' }}>
                       {article.published_at ? new Date(article.published_at).toLocaleDateString('es-CO') : ''}
                     </span>
                   </div>

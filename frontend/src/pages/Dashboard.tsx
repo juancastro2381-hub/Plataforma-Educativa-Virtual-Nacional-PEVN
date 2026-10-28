@@ -622,7 +622,7 @@ export const Dashboard: React.FC = () => {
               <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#FFFFFF', margin: '0 0 0.25rem 0' }}>
                 Consola de Observabilidad, Soporte y Gobernanza de Plataforma
               </h2>
-              <p style={{ fontSize: '0.875rem', color: '#94A3B8', margin: 0, maxWidth: '750px' }}>
+              <p style={{ fontSize: '0.875rem', color: '#CBD5E1', margin: 0, maxWidth: '750px' }}>
                 Supervisión técnica de salud del sistema, latencia de base de datos, incidentes operacionales, auditoría de seguridad y diagnósticos de inquilinato.
               </p>
             </div>
@@ -868,7 +868,7 @@ export const Dashboard: React.FC = () => {
                 </Link>
               </div>
               {opsAuditFeed.length === 0 ? (
-                <p style={{ fontSize: '0.8125rem', color: '#94A3B8', margin: 0 }}>No hay eventos de seguridad recientes registrados.</p>
+                <p style={{ fontSize: '0.8125rem', color: '#CBD5E1', margin: 0 }}>No hay eventos de seguridad recientes registrados.</p>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   {opsAuditFeed.map((item) => (
@@ -922,7 +922,7 @@ export const Dashboard: React.FC = () => {
                 </Link>
               </div>
               {opsIncidents.length === 0 ? (
-                <p style={{ fontSize: '0.8125rem', color: '#94A3B8', margin: 0 }}>No hay tickets ni incidentes técnicos abiertos.</p>
+                <p style={{ fontSize: '0.8125rem', color: '#CBD5E1', margin: 0 }}>No hay tickets ni incidentes técnicos abiertos.</p>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   {opsIncidents.map((inc) => (
@@ -1028,7 +1028,7 @@ export const Dashboard: React.FC = () => {
                   ? 'Catálogo de Instituciones de la Jurisdicción'
                   : 'Aprovisionamiento Institucional y Rectores'}
               </h2>
-              <p style={{ fontSize: '0.875rem', color: '#94A3B8', margin: 0 }}>
+              <p style={{ fontSize: '0.875rem', color: '#CBD5E1', margin: 0 }}>
                 {hasRole('municipality_admin')
                   ? 'Inspección de colegios oficiales y sedes educativas del municipio asignado.'
                   : hasRole('department_admin')
@@ -1085,7 +1085,7 @@ export const Dashboard: React.FC = () => {
               <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#FFFFFF', margin: '0 0 0.25rem 0' }}>
                 Directorio General de Usuarios
               </h2>
-              <p style={{ fontSize: '0.875rem', color: '#94A3B8', margin: 0 }}>
+              <p style={{ fontSize: '0.875rem', color: '#CBD5E1', margin: 0 }}>
                 Consulta de usuarios registrados, roles asignados y estados de cuenta en la jurisdicción.
               </p>
             </div>
@@ -1290,7 +1290,7 @@ export const Dashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Academic Management Module Access Card (Institutional Directive Roles Only or Platform Admin with Active Context) */}
+      {/* Academic Management Module Access Card (Institutional Directive Roles Only) */}
       {(() => {
         const isInstitutionalDirective = hasRole([
           'rector',
@@ -1298,11 +1298,8 @@ export const Dashboard: React.FC = () => {
           'coordinator',
           'academic_coordinator',
         ])
-        const isPlatformAdminWithContext =
-          hasRole(['national_admin', 'department_admin']) && Boolean(activeInstitutionId)
-        const isDirective = isInstitutionalDirective || isPlatformAdminWithContext
 
-        if (!isDirective) {
+        if (!isInstitutionalDirective) {
           return null
         }
 
@@ -1549,7 +1546,7 @@ export const Dashboard: React.FC = () => {
               <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#FFFFFF', margin: '0 0 0.25rem 0' }}>
                 Portal Docente y Gestión Pedagógica
               </h2>
-              <p style={{ fontSize: '0.875rem', color: '#94A3B8', margin: 0 }}>
+              <p style={{ fontSize: '0.875rem', color: '#CBD5E1', margin: 0 }}>
                 Carga académica asignada, control de salones, actividades, calificaciones, asistencia y planeación curricular.
               </p>
             </div>
@@ -1595,7 +1592,7 @@ export const Dashboard: React.FC = () => {
                 >
                   <div style={{ fontSize: '1.25rem', marginBottom: '0.2rem' }}>{sc.icon}</div>
                   <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#FFFFFF' }}>{sc.title}</div>
-                  <div style={{ fontSize: '0.75rem', color: '#94A3B8', marginTop: '0.15rem' }}>{sc.desc}</div>
+                  <div style={{ fontSize: '0.75rem', color: '#CBD5E1', marginTop: '0.15rem' }}>{sc.desc}</div>
                 </div>
               </Link>
             ))}
@@ -1725,7 +1722,7 @@ export const Dashboard: React.FC = () => {
               <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#FFFFFF', margin: '0 0 0.25rem 0' }}>
                 Portal de Acudientes y Familias
               </h2>
-              <p style={{ fontSize: '0.875rem', color: '#94A3B8', margin: 0 }}>
+              <p style={{ fontSize: '0.875rem', color: '#CBD5E1', margin: 0 }}>
                 Monitoreo de deberes, calificaciones oficiales, control de asistencia y agenda de clases virtuales de sus hijos.
               </p>
             </div>
@@ -1771,7 +1768,7 @@ export const Dashboard: React.FC = () => {
                 >
                   <div style={{ fontSize: '1.25rem', marginBottom: '0.2rem' }}>{gc.icon}</div>
                   <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#FFFFFF' }}>{gc.title}</div>
-                  <div style={{ fontSize: '0.75rem', color: '#94A3B8', marginTop: '0.15rem' }}>{gc.desc}</div>
+                  <div style={{ fontSize: '0.75rem', color: '#CBD5E1', marginTop: '0.15rem' }}>{gc.desc}</div>
                 </div>
               </Link>
             ))}

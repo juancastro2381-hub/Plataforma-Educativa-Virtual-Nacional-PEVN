@@ -108,12 +108,12 @@ export const InstitutionSettingsView: React.FC = () => {
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
           <Badge variant="info">Rectoría • Parámetros de Tenant</Badge>
-          <span style={{ fontSize: '0.8rem', color: '#94A3B8' }}>DANE: {institution.dane_code}</span>
+          <span style={{ fontSize: '0.8rem', color: '#CBD5E1' }}>DANE: {institution.dane_code}</span>
         </div>
         <h1 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0.25rem 0', color: '#FFFFFF' }}>
           Configuración Institucional — {institution.name}
         </h1>
-        <p style={{ fontSize: '0.875rem', color: '#94A3B8', margin: 0 }}>
+        <p style={{ fontSize: '0.875rem', color: '#CBD5E1', margin: 0 }}>
           Gobernanza directiva, delegación de facultades operativas y políticas de seguridad del establecimiento.
         </p>
       </div>
@@ -218,7 +218,7 @@ export const InstitutionSettingsView: React.FC = () => {
                   )}
                 </div>
               ) : (
-                <span style={{ fontSize: '0.75rem', color: '#94A3B8', fontStyle: 'italic' }}>
+                <span style={{ fontSize: '0.75rem', color: '#475569', fontStyle: 'italic', fontWeight: 500 }}>
                   Solo lectura (Requiere rol Rector)
                 </span>
               )}

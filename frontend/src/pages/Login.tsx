@@ -10,6 +10,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { PevnLogoBadge } from '@/components/ui/PevnLogo'
 import { AppApiError } from '@/services/api/client'
 
 export const Login: React.FC = () => {
@@ -101,24 +102,16 @@ export const Login: React.FC = () => {
         <div style={{ padding: '2.5rem 2rem' }}>
           {/* Institution Header */}
           <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-            <div
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '56px',
-                height: '56px',
-                borderRadius: '14px',
-                backgroundColor: '#0F172A',
-                color: '#FFFFFF',
-                fontWeight: 800,
-                fontSize: '1.25rem',
-                marginBottom: '1rem',
-                letterSpacing: '0.05em',
-              }}
-            >
-              PEVN
-            </div>
+            <PevnLogoBadge
+              size={56}
+              borderRadius="14px"
+              backgroundColor="#0F172A"
+              border="1px solid rgba(255, 255, 255, 0.12)"
+              boxShadow="0 8px 16px -4px rgba(15, 23, 42, 0.3)"
+              fontSize="1.25rem"
+              variant="dark"
+              style={{ marginBottom: '1rem' }}
+            />
             <h1
               style={{
                 fontSize: '1.5rem',

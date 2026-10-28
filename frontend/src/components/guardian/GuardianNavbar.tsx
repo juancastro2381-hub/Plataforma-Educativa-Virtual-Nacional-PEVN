@@ -109,7 +109,7 @@ export const GuardianNavbar: React.FC<Props> = ({
                   textTransform: 'uppercase',
                   letterSpacing: '0.04em',
                   backgroundColor: isActive ? 'rgba(255,255,255,0.2)' : '#F1F5F9',
-                  color: isActive ? '#F8FAFC' : '#94A3B8',
+                  color: isActive ? '#F8FAFC' : '#475569',
                   padding: '0.15rem 0.4rem',
                   borderRadius: '4px',
                 }}

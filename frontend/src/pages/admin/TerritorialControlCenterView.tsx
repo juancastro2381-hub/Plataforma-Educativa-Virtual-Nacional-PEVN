@@ -175,7 +175,7 @@ export const TerritorialControlCenterView: React.FC = () => {
               border: '1px solid #CBD5E1',
             }}
           >
-            <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#94A3B8' }} />
+            <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#64748B' }} />
             VACANTE
           </span>
         )
@@ -251,7 +251,7 @@ export const TerritorialControlCenterView: React.FC = () => {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>
+          <span style={{ fontSize: '0.75rem', color: '#475569' }}>
             Calculado: {new Date(data.computed_at).toLocaleTimeString('es-CO')}
           </span>
           <Button variant="secondary" size="sm" onClick={loadControlCenter}>
@@ -309,13 +309,13 @@ export const TerritorialControlCenterView: React.FC = () => {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid #F1F5F9' }}>
             <div>
-              <span style={{ fontSize: '0.7rem', color: '#94A3B8', display: 'block' }}>Sedes Educativas</span>
+              <span style={{ fontSize: '0.7rem', color: '#475569', display: 'block' }}>Sedes Educativas</span>
               <span style={{ fontSize: '0.95rem', fontWeight: 700, color: '#1E293B' }}>
                 {(tier1_catalog?.total_campuses ?? 0).toLocaleString('es-CO')}
               </span>
             </div>
             <div>
-              <span style={{ fontSize: '0.7rem', color: '#94A3B8', display: 'block' }}>
+              <span style={{ fontSize: '0.7rem', color: '#475569', display: 'block' }}>
                 {data.scope_level === 'NATIONAL' ? 'Departamentos' : 'Municipios'}
               </span>
               <span style={{ fontSize: '0.95rem', fontWeight: 700, color: '#1E293B' }}>
@@ -582,7 +582,7 @@ export const TerritorialControlCenterView: React.FC = () => {
             <tbody>
               {filteredDepartments.length === 0 ? (
                 <tr>
-                  <td colSpan={9} style={{ padding: '3rem 1rem', textAlign: 'center', color: '#94A3B8' }}>
+                  <td colSpan={9} style={{ padding: '3rem 1rem', textAlign: 'center', color: '#475569' }}>
                     No se encontraron departamentos que coincidan con los filtros aplicados.
                   </td>
                 </tr>
@@ -621,7 +621,7 @@ export const TerritorialControlCenterView: React.FC = () => {
                           borderRadius: '4px',
                           fontWeight: 700,
                           backgroundColor: dept.active_institutions > 0 ? '#ECFDF5' : '#F1F5F9',
-                          color: dept.active_institutions > 0 ? '#059669' : '#94A3B8',
+                          color: dept.active_institutions > 0 ? '#059669' : '#475569',
                         }}
                       >
                         {dept.active_institutions} {dept.active_institutions === 1 ? 'colegio' : 'colegios'}
@@ -635,7 +635,7 @@ export const TerritorialControlCenterView: React.FC = () => {
                           borderRadius: '4px',
                           fontWeight: 700,
                           backgroundColor: dept.pipeline_in_progress > 0 ? '#EEF2FF' : '#F8FAFC',
-                          color: dept.pipeline_in_progress > 0 ? '#4F46E5' : '#94A3B8',
+                          color: dept.pipeline_in_progress > 0 ? '#4F46E5' : '#475569',
                         }}
                       >
                         {dept.pipeline_in_progress} en trámite
@@ -655,7 +655,7 @@ export const TerritorialControlCenterView: React.FC = () => {
                           </span>
                         </div>
                       ) : (
-                        <span style={{ color: '#94A3B8', fontStyle: 'italic', fontSize: '0.8rem' }}>
+                        <span style={{ color: '#475569', fontStyle: 'italic', fontSize: '0.8rem' }}>
                           Sin Administrador
                         </span>
                       )}
@@ -832,12 +832,12 @@ export const TerritorialControlCenterView: React.FC = () => {
                             {(muni.total_establishments ?? 0)} est. / {(muni.total_campuses ?? 0)} sedes
                           </td>
                           <td style={{ padding: '0.5rem 0.75rem' }}>
-                            <span style={{ fontWeight: 700, color: muni.active_institutions > 0 ? '#059669' : '#94A3B8' }}>
+                            <span style={{ fontWeight: 700, color: muni.active_institutions > 0 ? '#059669' : '#475569' }}>
                               {muni.active_institutions ?? 0}
                             </span>
                           </td>
                           <td style={{ padding: '0.5rem 0.75rem' }}>
-                            <span style={{ fontWeight: 700, color: muni.pipeline_in_progress > 0 ? '#4F46E5' : '#94A3B8' }}>
+                            <span style={{ fontWeight: 700, color: muni.pipeline_in_progress > 0 ? '#4F46E5' : '#475569' }}>
                               {muni.pipeline_in_progress ?? 0}
                             </span>
                           </td>

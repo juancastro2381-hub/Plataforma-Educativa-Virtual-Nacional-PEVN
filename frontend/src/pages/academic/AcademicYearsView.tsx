@@ -283,7 +283,7 @@ export const AcademicYearsView: React.FC = () => {
                           </Button>
                         )}
                         {y.status === 'CLOSED' && (
-                          <span style={{ fontSize: '0.8125rem', color: '#94A3B8', fontStyle: 'italic' }}>
+                          <span style={{ fontSize: '0.8125rem', color: '#475569', fontStyle: 'italic', fontWeight: 500 }}>
                             Concluido
                           </span>
                         )}

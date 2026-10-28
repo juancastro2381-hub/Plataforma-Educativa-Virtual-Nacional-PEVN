@@ -82,7 +82,7 @@ export const GuardianHeader: React.FC<Props> = ({ profile, loading, onRefresh })
         <div
           style={{
             fontSize: '0.875rem',
-            color: '#94A3B8',
+            color: '#CBD5E1',
             display: 'flex',
             flexWrap: 'wrap',
             alignItems: 'center',

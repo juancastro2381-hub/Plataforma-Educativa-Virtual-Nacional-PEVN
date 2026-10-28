@@ -20,7 +20,7 @@ import type { User } from '@/types'
 
 // Mock User Factory
 function createTerritorialUser(
-  role: 'department_admin' | 'municipality_admin' | 'student' | 'superadmin',
+  role: 'department_admin' | 'municipality_admin' | 'student' | 'superadmin' | 'rector',
   deptId: string | null = 'DEP-99',
   muniId: string | null = 'MUN-99001'
 ): User {
@@ -33,7 +33,7 @@ function createTerritorialUser(
     full_name: `${role} test`,
     document_type: 'CC',
     document_number: '987654321',
-    institution_id: null,
+    institution_id: role === 'rector' ? 'inst-ptocarreno-01' : null,
     is_active: true,
     is_verified: true,
     must_change_password: false,
@@ -64,12 +64,12 @@ function createTerritorialUser(
       country_code: 'CO',
       department_id: deptId,
       municipality_id: muniId,
-      institution_id: null,
+      institution_id: role === 'rector' ? 'inst-ptocarreno-01' : null,
       campus_id: null,
       is_national: false,
       is_department: Boolean(deptId && !muniId),
       is_municipality: Boolean(muniId),
-      is_institution: false,
+      is_institution: role === 'rector',
     },
   }
 }
@@ -163,7 +163,7 @@ describe('RBAC-AUDIT-02: Cross-Role Navigation & Context Protection Suites', () 
     vi.clearAllMocks()
   })
 
-  it('1. MUNICIPALITY_ADMIN navigating to /academic without context is redirected to /admin/institutions?contextRequired=true&returnTo=%2Facademic', async () => {
+  it('1. MUNICIPALITY_ADMIN navigating to /academic is denied and redirected to /dashboard', async () => {
     setActiveMockUser(createTerritorialUser('municipality_admin'))
 
     render(
@@ -174,27 +174,22 @@ describe('RBAC-AUDIT-02: Cross-Role Navigation & Context Protection Suites', () 
               path="/academic"
               element={
                 <RequireAuth
-                  roles={['rector', 'department_admin', 'municipality_admin']}
+                  roles={['rector', 'institution_admin', 'coordinator', 'academic_coordinator']}
                   requireInstitutionContext
                 >
                   <div>Vista Académica Protegida</div>
                 </RequireAuth>
               }
             />
-            <Route
-              path="/admin/institutions"
-              element={<InstitutionsView />}
-            />
-            <Route path="/dashboard" element={<div>Dashboard</div>} />
+            <Route path="/dashboard" element={<div>Dashboard Redirección Exitosa</div>} />
           </Routes>
         </AuthProvider>
       </MemoryRouter>
     )
 
     await waitFor(() => {
-      // Must show the context required prompt
-      expect(screen.getByText(/Selección de Contexto Requerida/i)).toBeInTheDocument()
-      expect(screen.getByText(/\/academic/i)).toBeInTheDocument()
+      expect(screen.getByText('Dashboard Redirección Exitosa')).toBeInTheDocument()
+      expect(screen.queryByText('Vista Académica Protegida')).not.toBeInTheDocument()
     })
   })
 
@@ -228,8 +223,8 @@ describe('RBAC-AUDIT-02: Cross-Role Navigation & Context Protection Suites', () 
     })
   })
 
-  it('3. MUNICIPALITY_ADMIN with active context in localStorage successfully renders AcademicHub', async () => {
-    setActiveMockUser(createTerritorialUser('municipality_admin'))
+  it('3. DEPARTMENT_ADMIN navigating to /academic is denied and redirected to /dashboard even with active context', async () => {
+    setActiveMockUser(createTerritorialUser('department_admin'))
     localStorage.setItem('pevn_active_institution_id', 'inst-ptocarreno-01')
     localStorage.setItem('pevn_active_institution_name', 'Colegio Eduardo Carranza')
 
@@ -241,25 +236,27 @@ describe('RBAC-AUDIT-02: Cross-Role Navigation & Context Protection Suites', () 
               path="/academic"
               element={
                 <RequireAuth
-                  roles={['rector', 'department_admin', 'municipality_admin']}
+                  roles={['rector', 'institution_admin', 'coordinator', 'academic_coordinator']}
                   requireInstitutionContext
                 >
                   <AcademicHub />
                 </RequireAuth>
               }
             />
+            <Route path="/dashboard" element={<div>Dashboard Redirección Exitosa</div>} />
           </Routes>
         </AuthProvider>
       </MemoryRouter>
     )
 
     await waitFor(() => {
-      expect(screen.getByText(/Gestión Académica e Institucional/i)).toBeInTheDocument()
+      expect(screen.getByText('Dashboard Redirección Exitosa')).toBeInTheDocument()
+      expect(screen.queryByText(/Gestión Académica e Institucional/i)).not.toBeInTheDocument()
     })
   })
 
-  it('4. DEPARTMENT_ADMIN with active context in localStorage successfully renders AcademicHub', async () => {
-    setActiveMockUser(createTerritorialUser('department_admin'))
+  it('4. RECTOR with active context in localStorage successfully renders AcademicHub', async () => {
+    setActiveMockUser(createTerritorialUser('rector', null, null))
     localStorage.setItem('pevn_active_institution_id', 'inst-ptocarreno-01')
 
     render(
@@ -270,7 +267,7 @@ describe('RBAC-AUDIT-02: Cross-Role Navigation & Context Protection Suites', () 
               path="/academic"
               element={
                 <RequireAuth
-                  roles={['rector', 'department_admin', 'municipality_admin']}
+                  roles={['rector', 'institution_admin', 'coordinator', 'academic_coordinator']}
                   requireInstitutionContext
                 >
                   <AcademicHub />

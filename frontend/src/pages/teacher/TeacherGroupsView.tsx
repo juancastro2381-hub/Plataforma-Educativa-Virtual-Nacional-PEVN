@@ -362,7 +362,7 @@ export const TeacherGroupsView: React.FC<Props> = ({ groups, teacherName, loadin
                 <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: '#FFFFFF' }}>
                   Grupo {selectedGroup.group_name} — {selectedGroup.grade_name || 'Grado'}
                 </h3>
-                <div style={{ marginTop: '0.35rem', fontSize: '0.8125rem', color: '#94A3B8', display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
+                <div style={{ marginTop: '0.35rem', fontSize: '0.8125rem', color: '#CBD5E1', display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
                   <span>👨‍🏫 <strong>Docente:</strong> {teacherName || 'Docente Titular'}</span>
                   <span>📖 <strong>Materias:</strong> {selectedGroup.subjects_taught?.join(', ') || 'Carga Institucional'}</span>
                   <span>🏫 <strong>Sede:</strong> {selectedGroup.campus_name || 'Principal'}</span>
@@ -376,7 +376,7 @@ export const TeacherGroupsView: React.FC<Props> = ({ groups, teacherName, loadin
                   border: 'none',
                   fontSize: '1.5rem',
                   cursor: 'pointer',
-                  color: '#94A3B8',
+                  color: '#CBD5E1',
                   lineHeight: 1,
                   padding: '0.25rem',
                 }}
@@ -453,7 +453,7 @@ export const TeacherGroupsView: React.FC<Props> = ({ groups, teacherName, loadin
                         <tbody>
                           {rosterData.students.map((st, idx) => (
                             <tr key={st.student_id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                              <td style={{ padding: '0.75rem', color: '#94A3B8', fontWeight: 700 }}>
+                              <td style={{ padding: '0.75rem', color: '#475569', fontWeight: 700 }}>
                                 {idx + 1}
                               </td>
                               <td style={{ padding: '0.75rem', fontWeight: 700, color: '#0F172A' }}>

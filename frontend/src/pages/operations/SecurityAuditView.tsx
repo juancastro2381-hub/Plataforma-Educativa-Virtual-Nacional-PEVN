@@ -92,7 +92,7 @@ export const SecurityAuditView: React.FC = () => {
           <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: '0 0 0.5rem 0', color: '#FFFFFF' }}>
             Transmisión de Eventos y Auditoría de Seguridad
           </h1>
-          <p style={{ color: '#94A3B8', fontSize: '0.875rem', margin: 0, maxWidth: '750px' }}>
+          <p style={{ color: '#CBD5E1', fontSize: '0.875rem', margin: 0, maxWidth: '750px' }}>
             Inspección forense de intentos de acceso, violaciones de control de acceso RBAC, bloqueos de cuentas y trazas inmutables de operadores técnicos.
           </p>
         </div>
@@ -115,8 +115,8 @@ export const SecurityAuditView: React.FC = () => {
               variant="secondary"
               style={{
                 backgroundColor: 'transparent',
-                color: '#94A3B8',
-                border: '1px solid #334155',
+                color: '#CBD5E1',
+                border: '1px solid #475569',
               }}
             >
               ← Volver
@@ -141,7 +141,7 @@ export const SecurityAuditView: React.FC = () => {
             <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0F172A', marginTop: '0.25rem' }}>
               {feedData.summary.total_queried}
             </div>
-            <div style={{ fontSize: '0.75rem', color: '#94A3B8', marginTop: '0.25rem' }}>
+            <div style={{ fontSize: '0.75rem', color: '#475569', marginTop: '0.25rem' }}>
               Últimos registros en audit_logs
             </div>
           </div>
@@ -153,7 +153,7 @@ export const SecurityAuditView: React.FC = () => {
             <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#D97706', marginTop: '0.25rem' }}>
               {feedData.summary.failed_logins}
             </div>
-            <div style={{ fontSize: '0.75rem', color: '#94A3B8', marginTop: '0.25rem' }}>
+            <div style={{ fontSize: '0.75rem', color: '#475569', marginTop: '0.25rem' }}>
               Contraseñas o credenciales erróneas
             </div>
           </div>
@@ -165,7 +165,7 @@ export const SecurityAuditView: React.FC = () => {
             <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#DC2626', marginTop: '0.25rem' }}>
               {feedData.summary.permission_denied}
             </div>
-            <div style={{ fontSize: '0.75rem', color: '#94A3B8', marginTop: '0.25rem' }}>
+            <div style={{ fontSize: '0.75rem', color: '#475569', marginTop: '0.25rem' }}>
               Intentos de escalación / fuera de rol
             </div>
           </div>
@@ -177,7 +177,7 @@ export const SecurityAuditView: React.FC = () => {
             <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#7C3AED', marginTop: '0.25rem' }}>
               {feedData.summary.suspicious_events}
             </div>
-            <div style={{ fontSize: '0.75rem', color: '#94A3B8', marginTop: '0.25rem' }}>
+            <div style={{ fontSize: '0.75rem', color: '#475569', marginTop: '0.25rem' }}>
               Comportamiento anómalo detectado
             </div>
           </div>
@@ -295,7 +295,7 @@ export const SecurityAuditView: React.FC = () => {
                       <div style={{ color: '#0F172A', fontWeight: 600, fontSize: '0.8125rem' }}>
                         {item.actor_ip || 'IP Interna'}
                       </div>
-                      <div style={{ color: '#94A3B8', fontSize: '0.7rem', fontFamily: 'monospace' }}>
+                      <div style={{ color: '#475569', fontSize: '0.7rem', fontFamily: 'monospace' }}>
                         {item.actor_id ? `ID: ${item.actor_id.substring(0, 12)}...` : 'Anónimo / Sistema'}
                       </div>
                     </td>

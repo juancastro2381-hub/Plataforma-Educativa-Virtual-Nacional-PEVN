@@ -95,7 +95,7 @@ export const PlatformHealthView: React.FC = () => {
           <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: '0 0 0.5rem 0', color: '#FFFFFF' }}>
             Salud e Infraestructura de la Plataforma
           </h1>
-          <p style={{ color: '#94A3B8', fontSize: '0.875rem', margin: 0, maxWidth: '750px' }}>
+          <p style={{ color: '#CBD5E1', fontSize: '0.875rem', margin: 0, maxWidth: '750px' }}>
             Monitoreo en tiempo real de conectividad a bases de datos, latencia de procesamiento, estado de clusters Redis y adaptadores de datos abiertos del Estado.
           </p>
         </div>
@@ -138,7 +138,7 @@ export const PlatformHealthView: React.FC = () => {
             <div style={{ fontSize: '0.8125rem', color: '#475569', marginTop: '0.5rem' }}>
               Latencia de consulta: <strong>{overview.database.latency_ms} ms</strong>
             </div>
-            <div style={{ fontSize: '0.75rem', color: '#94A3B8', marginTop: '0.25rem' }}>
+            <div style={{ fontSize: '0.75rem', color: '#475569', marginTop: '0.25rem' }}>
               Pool: {overview.database.pool_size} conexiones reservadas
             </div>
           </div>
@@ -153,7 +153,7 @@ export const PlatformHealthView: React.FC = () => {
             <div style={{ fontSize: '0.8125rem', color: '#475569', marginTop: '0.5rem' }}>
               Modo de operación: <strong>{overview.redis.mode}</strong>
             </div>
-            <div style={{ fontSize: '0.75rem', color: '#94A3B8', marginTop: '0.25rem' }}>
+            <div style={{ fontSize: '0.75rem', color: '#475569', marginTop: '0.25rem' }}>
               Aislamiento de sesiones y rate limit activo
             </div>
           </div>
@@ -168,7 +168,7 @@ export const PlatformHealthView: React.FC = () => {
             <div style={{ fontSize: '0.8125rem', color: '#475569', marginTop: '0.5rem' }}>
               Incidentes abiertos: <strong>{overview.metrics.active_incidents}</strong>
             </div>
-            <div style={{ fontSize: '0.75rem', color: '#94A3B8', marginTop: '0.25rem' }}>
+            <div style={{ fontSize: '0.75rem', color: '#475569', marginTop: '0.25rem' }}>
               Registro inmutable en audit_logs activo
             </div>
           </div>
@@ -183,7 +183,7 @@ export const PlatformHealthView: React.FC = () => {
             <div style={{ fontSize: '0.8125rem', color: '#475569', marginTop: '0.5rem' }}>
               Última lectura: <strong>{lastUpdated || 'En curso'}</strong>
             </div>
-            <div style={{ fontSize: '0.75rem', color: '#94A3B8', marginTop: '0.25rem' }}>
+            <div style={{ fontSize: '0.75rem', color: '#475569', marginTop: '0.25rem' }}>
               Versión plataforma: v{overview.version}
             </div>
           </div>

@@ -297,7 +297,7 @@ export const StudentIncidentsView: React.FC<Props> = ({ onBackToDashboard: _onBa
                     display: 'flex',
                     justifyContent: 'space-between',
                     fontSize: '0.75rem',
-                    color: '#94A3B8',
+                    color: '#475569',
                   }}
                 >
                   <span>Docente / Directivo: {incident.reporter_name}</span>

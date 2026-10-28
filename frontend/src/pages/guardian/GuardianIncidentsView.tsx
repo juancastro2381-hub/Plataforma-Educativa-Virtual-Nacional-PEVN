@@ -335,7 +335,7 @@ export const GuardianIncidentsView: React.FC<Props> = ({
                     display: 'flex',
                     justifyContent: 'space-between',
                     fontSize: '0.75rem',
-                    color: '#94A3B8',
+                    color: '#475569',
                   }}
                 >
                   <span>Registrado por: {incident.reporter_name}</span>

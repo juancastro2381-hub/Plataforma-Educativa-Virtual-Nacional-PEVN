@@ -411,7 +411,7 @@ export const DepartmentAdminsView: React.FC = () => {
           <div style={{ fontSize: '1.875rem', fontWeight: 800, color: '#0F172A', marginTop: '0.25rem' }}>
             {kpis.total}
           </div>
-          <div style={{ color: '#94A3B8', fontSize: '0.75rem', marginTop: '0.25rem' }}>
+          <div style={{ color: '#475569', fontSize: '0.75rem', marginTop: '0.25rem' }}>
             Registrados a nivel nacional
           </div>
         </Card>
@@ -423,7 +423,7 @@ export const DepartmentAdminsView: React.FC = () => {
           <div style={{ fontSize: '1.875rem', fontWeight: 800, color: '#0F172A', marginTop: '0.25rem' }}>
             {kpis.departments_covered} de {kpis.total_canonical_departments || 33}
           </div>
-          <div style={{ color: '#94A3B8', fontSize: '0.75rem', marginTop: '0.25rem' }}>
+          <div style={{ color: '#475569', fontSize: '0.75rem', marginTop: '0.25rem' }}>
             Entidades territoriales canónicas
           </div>
         </Card>
@@ -435,7 +435,7 @@ export const DepartmentAdminsView: React.FC = () => {
           <div style={{ fontSize: '1.875rem', fontWeight: 800, color: '#059669', marginTop: '0.25rem' }}>
             {kpis.active}
           </div>
-          <div style={{ color: '#94A3B8', fontSize: '0.75rem', marginTop: '0.25rem' }}>
+          <div style={{ color: '#475569', fontSize: '0.75rem', marginTop: '0.25rem' }}>
             Con acceso operacional habilitado
           </div>
         </Card>
@@ -447,7 +447,7 @@ export const DepartmentAdminsView: React.FC = () => {
           <div style={{ fontSize: '1.875rem', fontWeight: 800, color: '#DC2626', marginTop: '0.25rem' }}>
             {kpis.inactive}
           </div>
-          <div style={{ color: '#94A3B8', fontSize: '0.75rem', marginTop: '0.25rem' }}>
+          <div style={{ color: '#475569', fontSize: '0.75rem', marginTop: '0.25rem' }}>
             Sesión y accesos bloqueados
           </div>
         </Card>
@@ -618,7 +618,7 @@ export const DepartmentAdminsView: React.FC = () => {
                   >
                     <td style={{ padding: '1rem', fontWeight: 600, color: '#0F172A' }}>
                       {adm.full_name}
-                      <div style={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 400 }}>
+                      <div style={{ fontSize: '0.75rem', color: '#475569', fontWeight: 500 }}>
                         ID: {adm.id.slice(0, 8)}...
                       </div>
                     </td>

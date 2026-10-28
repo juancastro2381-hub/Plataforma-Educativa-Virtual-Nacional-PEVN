@@ -142,7 +142,7 @@ export const CommunicationsView: React.FC = () => {
           <h1 style={{ fontSize: '1.875rem', fontWeight: 800, margin: '0.25rem 0', color: '#FFFFFF' }}>
             Comunicaciones y Circulares
           </h1>
-          <p style={{ color: '#94A3B8', fontSize: '0.9375rem', margin: 0, maxWidth: '650px' }}>
+          <p style={{ color: '#CBD5E1', fontSize: '0.9375rem', margin: 0, maxWidth: '650px' }}>
             Supervisión y consulta de comunicados oficiales, directivas y convocatorias emitidas a la comunidad.
           </p>
         </div>

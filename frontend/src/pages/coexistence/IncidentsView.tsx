@@ -140,7 +140,7 @@ export const IncidentsView: React.FC = () => {
           <h1 style={{ fontSize: '1.875rem', fontWeight: 800, margin: '0.25rem 0', color: '#FFFFFF' }}>
             Observador y Convivencia Escolar
           </h1>
-          <p style={{ color: '#94A3B8', fontSize: '0.9375rem', margin: 0, maxWidth: '650px' }}>
+          <p style={{ color: '#CBD5E1', fontSize: '0.9375rem', margin: 0, maxWidth: '650px' }}>
             Registro e inspección de situaciones de convivencia, rutas formativas y compromisos pedagógicos restaurativos.
           </p>
         </div>

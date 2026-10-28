@@ -143,7 +143,7 @@ export const UsersView: React.FC = () => {
           <h1 style={{ fontSize: '1.875rem', fontWeight: 800, margin: '0.25rem 0', color: '#FFFFFF' }}>
             Directorio de Usuarios
           </h1>
-          <p style={{ color: '#94A3B8', fontSize: '0.9375rem', margin: 0, maxWidth: '650px' }}>
+          <p style={{ color: '#CBD5E1', fontSize: '0.9375rem', margin: 0, maxWidth: '650px' }}>
             Consulta e inspección de identidades, credenciales institucionales y roles activos en su jurisdicción.
           </p>
         </div>

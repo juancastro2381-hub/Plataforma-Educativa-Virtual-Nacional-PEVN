@@ -45,14 +45,14 @@ const BASE_STYLES =
 
 const VARIANT_STYLES: Record<ButtonVariant, string> = {
   primary:
-    'bg-pevn-blue text-white hover:bg-pevn-blue-800 active:bg-pevn-blue-900 focus:ring-pevn-blue disabled:bg-pevn-blue-200',
+    'bg-pevn-blue text-white hover:bg-pevn-blue-800 active:bg-pevn-blue-900 focus:ring-pevn-blue disabled:bg-slate-200 disabled:text-slate-700 disabled:border-slate-300',
   secondary:
-    'border-2 border-pevn-blue text-pevn-blue bg-transparent hover:bg-pevn-blue-50 active:bg-pevn-blue-100 focus:ring-pevn-blue disabled:border-gray-300 disabled:text-gray-400',
+    'border-2 border-pevn-blue text-pevn-blue bg-transparent hover:bg-pevn-blue-50 active:bg-pevn-blue-100 focus:ring-pevn-blue disabled:border-slate-400 disabled:text-slate-600',
   danger:
-    'bg-pevn-red text-white hover:bg-pevn-red-700 active:bg-pevn-red-800 focus:ring-pevn-red disabled:bg-pevn-red-200',
+    'bg-pevn-red text-white hover:bg-pevn-red-700 active:bg-pevn-red-800 focus:ring-pevn-red disabled:bg-red-100 disabled:text-red-900 disabled:border-red-200',
   ghost:
-    'text-pevn-blue bg-transparent hover:bg-pevn-blue-50 active:bg-pevn-blue-100 focus:ring-pevn-blue disabled:text-gray-400',
-  link: 'text-pevn-blue underline underline-offset-2 hover:text-pevn-blue-800 focus:ring-pevn-blue disabled:text-gray-400 min-h-0 min-w-0 p-0',
+    'text-pevn-blue bg-transparent hover:bg-pevn-blue-50 active:bg-pevn-blue-100 focus:ring-pevn-blue disabled:text-slate-600',
+  link: 'text-pevn-blue underline underline-offset-2 hover:text-pevn-blue-800 focus:ring-pevn-blue disabled:text-slate-600 min-h-0 min-w-0 p-0',
 }
 
 const SIZE_STYLES: Record<ButtonSize, string> = {
@@ -90,7 +90,7 @@ export function Button({
         VARIANT_STYLES[variant],
         variant !== 'link' ? SIZE_STYLES[size] : undefined,
         fullWidth ? 'w-full' : undefined,
-        isDisabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer',
+        isDisabled ? 'cursor-not-allowed opacity-80 shadow-none' : 'cursor-pointer',
         className
       )}
     >

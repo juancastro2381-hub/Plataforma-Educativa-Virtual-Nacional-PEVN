@@ -125,7 +125,7 @@ export const StudentVirtualClassesView: React.FC<StudentVirtualClassesViewProps>
             style={{
               fontSize: '0.75rem',
               fontWeight: 700,
-              backgroundColor: filter === 'ACTIVE' ? '#1D4ED8' : '#94A3B8',
+              backgroundColor: filter === 'ACTIVE' ? '#1D4ED8' : '#475569',
               color: '#FFFFFF',
               borderRadius: '9999px',
               padding: '0.1rem 0.45rem',
@@ -156,7 +156,7 @@ export const StudentVirtualClassesView: React.FC<StudentVirtualClassesViewProps>
             style={{
               fontSize: '0.75rem',
               fontWeight: 700,
-              backgroundColor: filter === 'RECORDINGS' ? '#1D4ED8' : '#94A3B8',
+              backgroundColor: filter === 'RECORDINGS' ? '#1D4ED8' : '#475569',
               color: '#FFFFFF',
               borderRadius: '9999px',
               padding: '0.1rem 0.45rem',

@@ -887,7 +887,7 @@ export const TeacherSieeEvaluationView: React.FC<Props> = ({
                         }}
                       >
                         {/* Index */}
-                        <td style={{ padding: '0.625rem 1rem', color: '#94A3B8', fontWeight: 600 }}>
+                        <td style={{ padding: '0.625rem 1rem', color: '#475569', fontWeight: 600 }}>
                           {idx + 1}
                         </td>
 

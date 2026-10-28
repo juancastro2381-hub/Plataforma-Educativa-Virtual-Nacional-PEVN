@@ -35,14 +35,9 @@ export const AcademicHub: React.FC = () => {
       user?.roles.some((r) =>
         [
           'rector',
-          'superadmin',
-          'super_admin',
-          'national_admin',
           'coordinator',
           'academic_coordinator',
           'institution_admin',
-          'department_admin',
-          'municipality_admin',
         ].includes(r)
       ) ?? false
     )
@@ -61,7 +56,7 @@ export const AcademicHub: React.FC = () => {
       label: 'Coordinadores Académicos',
       icon: '👔',
       permission: 'coordinators:read',
-      roles: ['rector', 'institution_admin', 'superadmin', 'super_admin'],
+      roles: ['rector', 'institution_admin'],
     },
     { id: 'guardians', label: 'Acudientes', icon: '👪', permission: 'guardians:read' },
     { id: 'enrollments', label: 'Libro de Matrículas', icon: '📑', permission: 'enrollments:read' },
@@ -73,7 +68,7 @@ export const AcademicHub: React.FC = () => {
       label: 'Configuración Institucional',
       icon: '⚙️',
       permission: 'institutions:read',
-      roles: ['rector', 'institution_admin', 'superadmin', 'super_admin'],
+      roles: ['rector', 'institution_admin'],
     },
   ]
 

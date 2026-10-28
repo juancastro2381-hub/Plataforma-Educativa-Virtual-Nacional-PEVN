@@ -7,7 +7,6 @@
 **Iniciativa:** Plataforma Educativa Virtual Nacional (PEVN)  
 **Destinatario Institucional:** Oficina de Tecnología y Sistemas de Información — Ministerio de Educación Nacional (MEN), República de Colombia  
 **Fecha de Entrega:** Octubre 2026 | **Versión del Paquete:** 1.0-FINAL-MEN (Revisión Final de Cierre Controlado)  
-**Repositorio Principal:** `https://github.com/juancastro2381-hub/Plataforma-Educativa-Virtual-Nacional-PEVN.git`  
 **Línea Base de Código y Pruebas Auditada:** `1fd505c810120f9cd78c9ec57e61a8a405a35717` (Código fuente, modelos relacionales y suite de pruebas)  
 **Compromiso de Empaquetado Documental:** `89626bcbb07c3e800fa55d68d2cffada6d70483c`  
 **Etiqueta de Liberación Propuesta:** `v1.0.0-men-review` (Para fijación formal sobre el snapshot aprobado)  

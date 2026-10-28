@@ -109,7 +109,7 @@ export const GuardianVirtualClassModal: React.FC<Props> = ({ classroom, onClose 
               border: 'none',
               fontSize: '1.5rem',
               cursor: 'pointer',
-              color: '#94A3B8',
+              color: '#CBD5E1',
               lineHeight: 1,
               padding: '0.25rem',
             }}

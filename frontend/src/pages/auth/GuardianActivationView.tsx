@@ -154,17 +154,17 @@ export const GuardianActivationView: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-[80vh] flex flex-col justify-center py-8 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
         <div className="flex justify-center mb-3">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 text-white font-bold text-xl">
+          <div className="w-14 h-14 rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-center shadow-sm text-2xl">
             👪
           </div>
         </div>
-        <h2 className="text-2xl font-bold tracking-tight text-white">
+        <h2 className="text-2xl font-black tracking-tight text-slate-900">
           Plataforma Educativa Virtual Nacional
         </h2>
-        <p className="mt-1 text-sm text-slate-400">
+        <p className="mt-1 text-sm text-slate-600">
           Activación y Configuración de Cuenta para Acudientes
         </p>
       </div>
@@ -172,14 +172,14 @@ export const GuardianActivationView: React.FC = () => {
       <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-lg">
         {/* Navigation Tabs */}
         {!isSuccess && (
-          <div className="flex bg-slate-800/80 p-1 rounded-t-xl border-t border-x border-slate-700/60 max-w-lg mx-auto">
+          <div className="flex bg-slate-100 p-1 rounded-t-xl border border-slate-200 border-b-0 max-w-lg mx-auto">
             <button
               type="button"
               onClick={() => setActiveTab('redeem')}
-              className={`flex-1 py-2.5 text-xs font-semibold rounded-lg transition-all ${
+              className={`flex-1 py-2.5 text-xs font-bold rounded-lg transition-all ${
                 activeTab === 'redeem'
-                  ? 'bg-cyan-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               🔑 Canjear Token / Enlace
@@ -187,10 +187,10 @@ export const GuardianActivationView: React.FC = () => {
             <button
               type="button"
               onClick={() => setActiveTab('request')}
-              className={`flex-1 py-2.5 text-xs font-semibold rounded-lg transition-all ${
+              className={`flex-1 py-2.5 text-xs font-bold rounded-lg transition-all ${
                 activeTab === 'request'
-                  ? 'bg-cyan-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               🛡️ Solicitar Activación
@@ -198,17 +198,17 @@ export const GuardianActivationView: React.FC = () => {
           </div>
         )}
 
-        <Card className="bg-slate-800/90 border-slate-700/80 shadow-2xl p-6 sm:p-8 rounded-b-xl rounded-t-none">
+        <Card className="bg-white border border-slate-200 shadow-md p-6 sm:p-8 rounded-b-xl rounded-t-none">
           {/* SUCCESS SCREEN */}
           {isSuccess ? (
             <div className="text-center py-4 space-y-4">
-              <div className="w-16 h-16 bg-emerald-500/10 border border-emerald-500/30 rounded-full flex items-center justify-center mx-auto text-emerald-400 text-2xl font-bold">
+              <div className="w-16 h-16 bg-emerald-50 border border-emerald-200 rounded-full flex items-center justify-center mx-auto text-emerald-700 text-2xl font-bold">
                 ✓
               </div>
-              <h3 className="text-xl font-semibold text-white">
+              <h3 className="text-xl font-bold text-slate-900">
                 ¡Cuenta de Acudiente Activada!
               </h3>
-              <p className="text-sm text-slate-300 leading-relaxed">
+              <p className="text-sm text-slate-700 leading-relaxed">
                 Su contraseña ha sido definida con seguridad <strong>Argon2id</strong>. Ahora puede
                 iniciar sesión en el portal institucional de acudientes y supervisar a sus hijos o acudidos.
               </p>
@@ -216,7 +216,7 @@ export const GuardianActivationView: React.FC = () => {
                 <Button
                   type="button"
                   variant="primary"
-                  className="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-medium py-2.5"
+                  className="w-full py-2.5 font-semibold"
                   onClick={() => navigate('/login')}
                 >
                   Iniciar Sesión como Acudiente
@@ -230,10 +230,10 @@ export const GuardianActivationView: React.FC = () => {
               {!tokenData ? (
                 <form onSubmit={handleManualVerify} className="space-y-4">
                   <div className="text-center pb-2">
-                    <h3 className="text-base font-semibold text-slate-200">
+                    <h3 className="text-base font-bold text-slate-900">
                       Ingrese su Token de Activación
                     </h3>
-                    <p className="text-xs text-slate-400 mt-1">
+                    <p className="text-xs text-slate-600 mt-1">
                       Si recibió un enlace o token por parte de la institución o por correo, ingréselo a continuación.
                     </p>
                   </div>
@@ -245,7 +245,7 @@ export const GuardianActivationView: React.FC = () => {
                   )}
 
                   <div>
-                    <label className="block text-xs font-medium text-slate-300 mb-1">
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
                       Token Criptográfico de Activación
                     </label>
                     <input
@@ -254,14 +254,14 @@ export const GuardianActivationView: React.FC = () => {
                       value={tokenInput}
                       onChange={(e) => setTokenInput(e.target.value)}
                       placeholder="pevn_act_..."
-                      className="w-full px-3.5 py-2.5 bg-slate-900/90 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 font-mono"
+                      className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-pevn-blue font-mono"
                     />
                   </div>
 
                   <Button
                     type="submit"
                     variant="primary"
-                    className="w-full bg-cyan-600 hover:bg-cyan-500 text-white py-2.5 text-sm"
+                    className="w-full py-2.5 text-sm font-semibold"
                     disabled={isVerifying || !tokenInput.trim()}
                   >
                     {isVerifying ? (
@@ -276,22 +276,22 @@ export const GuardianActivationView: React.FC = () => {
               ) : (
                 /* Step B: Token Verified -> Password Setup Form */
                 <form onSubmit={handlePasswordSubmit} className="space-y-5">
-                  <div className="bg-slate-900/80 border border-cyan-500/30 rounded-xl p-4 space-y-2">
-                    <div className="flex items-center gap-2 text-cyan-400 text-xs font-semibold uppercase tracking-wider">
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2">
+                    <div className="flex items-center gap-2 text-blue-800 text-xs font-bold uppercase tracking-wider">
                       🛡️ Activación Verificada
                     </div>
-                    <div className="text-sm text-slate-200 font-medium">
+                    <div className="text-sm text-slate-900 font-bold">
                       {tokenData.guardian_name}
                     </div>
-                    <div className="text-xs text-slate-400">
+                    <div className="text-xs text-slate-600">
                       Estudiante:{' '}
-                      <span className="text-slate-300 font-medium">
+                      <span className="text-slate-900 font-semibold">
                         {tokenData.student_name}
                       </span>
                     </div>
-                    <div className="text-xs text-slate-400">
+                    <div className="text-xs text-slate-600">
                       Institución:{' '}
-                      <span className="text-slate-300 font-medium">
+                      <span className="text-slate-900 font-semibold">
                         {tokenData.institution_name}
                       </span>
                     </div>
@@ -304,7 +304,7 @@ export const GuardianActivationView: React.FC = () => {
                   )}
 
                   <div>
-                    <label className="block text-xs font-medium text-slate-300 mb-1">
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
                       Nueva Contraseña
                     </label>
                     <div className="relative">
@@ -315,12 +315,12 @@ export const GuardianActivationView: React.FC = () => {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="Mínimo 8 caracteres"
-                        className="w-full px-3.5 py-2.5 bg-slate-900/90 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 pr-10"
+                        className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-pevn-blue pr-16"
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-2.5 text-xs text-slate-400 hover:text-slate-200"
+                        className="absolute right-3 top-2.5 text-xs font-semibold text-slate-600 hover:text-slate-900"
                       >
                         {showPassword ? 'Ocultar' : 'Ver'}
                       </button>
@@ -328,7 +328,7 @@ export const GuardianActivationView: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-slate-300 mb-1">
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
                       Confirmar Contraseña
                     </label>
                     <input
@@ -338,7 +338,7 @@ export const GuardianActivationView: React.FC = () => {
                       value={passwordConfirmation}
                       onChange={(e) => setPasswordConfirmation(e.target.value)}
                       placeholder="Repita su contraseña"
-                      className="w-full px-3.5 py-2.5 bg-slate-900/90 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                      className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-pevn-blue"
                     />
                   </div>
 
@@ -346,7 +346,7 @@ export const GuardianActivationView: React.FC = () => {
                     <Button
                       type="submit"
                       variant="primary"
-                      className="w-full bg-cyan-600 hover:bg-cyan-500 text-white py-2.5 text-sm font-medium"
+                      className="w-full py-2.5 text-sm font-semibold"
                       disabled={isSubmitting || !password || !passwordConfirmation}
                     >
                       {isSubmitting ? (
@@ -365,10 +365,10 @@ export const GuardianActivationView: React.FC = () => {
             /* TAB 2: REQUEST ACTIVATION */
             <form onSubmit={handleRequestSubmit} className="space-y-4">
               <div className="text-center pb-2">
-                <h3 className="text-base font-semibold text-slate-200">
+                <h3 className="text-base font-bold text-slate-900">
                   Solicitud de Activación para Acudiente
                 </h3>
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="text-xs text-slate-600 mt-1">
                   Ingrese el código SIMAT de su hijo(a) y su documento de identidad registrado para solicitar su enlace de acceso.
                 </p>
               </div>
@@ -386,7 +386,7 @@ export const GuardianActivationView: React.FC = () => {
               )}
 
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Código SIMAT del Estudiante *
                 </label>
                 <input
@@ -395,19 +395,19 @@ export const GuardianActivationView: React.FC = () => {
                   value={reqSimat}
                   onChange={(e) => setReqSimat(e.target.value)}
                   placeholder="Ej: SIMAT-2026-001"
-                  className="w-full px-3 py-2 bg-slate-900/90 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-pevn-blue"
                 />
               </div>
 
               <div className="grid grid-cols-3 gap-3">
                 <div className="col-span-1">
-                  <label className="block text-xs font-medium text-slate-300 mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Tipo Doc. *
                   </label>
                   <select
                     value={reqDocType}
                     onChange={(e) => setReqDocType(e.target.value as DocumentType)}
-                    className="w-full px-3 py-2 bg-slate-900/90 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-pevn-blue"
                   >
                     <option value="CC">CC</option>
                     <option value="TI">TI</option>
@@ -418,7 +418,7 @@ export const GuardianActivationView: React.FC = () => {
                   </select>
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-xs font-medium text-slate-300 mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Número de Documento del Acudiente *
                   </label>
                   <input
@@ -427,13 +427,13 @@ export const GuardianActivationView: React.FC = () => {
                     value={reqDocNumber}
                     onChange={(e) => setReqDocNumber(e.target.value)}
                     placeholder="Ej: 1020304050"
-                    className="w-full px-3 py-2 bg-slate-900/90 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-pevn-blue"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Correo Electrónico de Contacto *
                 </label>
                 <input
@@ -442,7 +442,7 @@ export const GuardianActivationView: React.FC = () => {
                   value={reqEmail}
                   onChange={(e) => setReqEmail(e.target.value)}
                   placeholder="acudiente@ejemplo.com"
-                  className="w-full px-3 py-2 bg-slate-900/90 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-pevn-blue"
                 />
               </div>
 
@@ -450,7 +450,7 @@ export const GuardianActivationView: React.FC = () => {
                 <Button
                   type="submit"
                   variant="primary"
-                  className="w-full bg-cyan-600 hover:bg-cyan-500 text-white py-2.5 text-sm font-medium"
+                  className="w-full py-2.5 text-sm font-semibold"
                   disabled={isRequesting || !reqSimat.trim() || !reqDocNumber.trim() || !reqEmail.trim()}
                 >
                   {isRequesting ? (
@@ -465,10 +465,10 @@ export const GuardianActivationView: React.FC = () => {
             </form>
           )}
 
-          <div className="mt-6 text-center border-t border-slate-700/60 pt-4">
+          <div className="mt-6 text-center border-t border-slate-200 pt-4">
             <Link
               to="/login"
-              className="text-xs text-slate-400 hover:text-cyan-400 transition-colors"
+              className="text-xs text-slate-600 hover:text-pevn-blue font-semibold transition-colors"
             >
               ¿Ya tiene una cuenta activa? Inicie sesión aquí
             </Link>

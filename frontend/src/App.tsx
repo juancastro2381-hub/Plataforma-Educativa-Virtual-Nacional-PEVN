@@ -169,7 +169,7 @@ const router = createBrowserRouter([
         path: 'academic',
         element: (
           <RequireAuth
-            roles={['rector', 'institution_admin', 'coordinator', 'academic_coordinator', 'superadmin', 'super_admin', 'national_admin', 'department_admin', 'municipality_admin']}
+            roles={['rector', 'institution_admin', 'coordinator', 'academic_coordinator']}
             requireInstitutionContext
           >
             <AcademicHub />

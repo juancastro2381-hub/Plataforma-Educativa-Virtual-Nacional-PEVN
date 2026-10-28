@@ -195,7 +195,6 @@ def build_presentation(output_path):
     mtf.word_wrap = True
     mp = mtf.paragraphs[0]
     mp.text = "Autor / Iniciativa Técnica: Juan Carlos Castro Narváez | Versión: 1.0-FINAL-MEN | Octubre 2026\n" \
-              "Repositorio: github.com/juancastro2381-hub/Plataforma-Educativa-Virtual-Nacional-PEVN\n" \
               "Nota: Iniciativa técnica independiente. No constituye aprobación, contrato ni certificación previa del MEN."
     mp.font.size = Pt(9.5)
     mp.font.color.rgb = RGBColor(160, 185, 210)
@@ -919,8 +918,6 @@ def build_presentation(output_path):
     p_close_3.text = "Liderazgo Técnico y Contacto Institucional:\n" \
                      "Juan Carlos Castro Narváez\n" \
                      "Desarrollador Principal y Consultor de Transformación Digital Educativa\n\n" \
-                     "Repositorio Oficial del Proyecto:\n" \
-                     "https://github.com/juancastro2381-hub/Plataforma-Educativa-Virtual-Nacional-PEVN.git\n\n" \
                      "Octubre 2026 — Bogotá D.C., Colombia"
     p_close_3.font.size = Pt(12.5)
     p_close_3.font.color.rgb = WHITE

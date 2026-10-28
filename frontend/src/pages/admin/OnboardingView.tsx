@@ -346,21 +346,21 @@ export const OnboardingView: React.FC = () => {
     switch (status) {
       case 'PROVISIONED':
         return (
-          <Badge variant="info" className="bg-blue-900/60 text-blue-200 border-blue-600">
+          <Badge variant="info">
             OPERACIONAL EN PEVN
           </Badge>
         )
       case 'EN_TRAMITE':
         return (
-          <Badge variant="warning" className="bg-amber-900/60 text-amber-200 border-amber-600">
+          <Badge variant="warning">
             EN TRÁMITE {item.active_request_number ? `(${item.active_request_number})` : ''}
           </Badge>
         )
       case 'AVAILABLE':
       default:
         return (
-          <Badge variant="success" className="bg-emerald-900/60 text-emerald-200 border-emerald-600">
-            AVAILABLE / INCORPORABLE
+          <Badge variant="success">
+            INCORPORABLE
           </Badge>
         )
     }
@@ -373,60 +373,108 @@ export const OnboardingView: React.FC = () => {
       case 'SUBMITTED':
         return <Badge variant="warning">RADICADA</Badge>
       case 'UNDER_REVIEW':
-        return <Badge variant="info">EN REVISIÓN</Badge>
+        return <Badge variant="primary">EN REVISIÓN</Badge>
       case 'APPROVED':
         return <Badge variant="success">APROBADA</Badge>
       case 'PROVISIONED':
-        return <Badge variant="info" className="bg-blue-600 text-white">APROVISIONADA</Badge>
+        return <Badge variant="info">APROVISIONADA</Badge>
       case 'REJECTED':
         return <Badge variant="danger">RECHAZADA</Badge>
       case 'CANCELLED':
-        return <Badge variant="neutral" className="line-through">CANCELADA</Badge>
+        return <Badge variant="neutral">CANCELADA</Badge>
       default:
         return <Badge variant="neutral">{status}</Badge>
     }
   }
 
   return (
-    <div className="space-y-6 p-6 max-w-7xl mx-auto">
-      {/* Header Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-800 pb-5">
+    <div className="space-y-6 p-4 sm:p-6 max-w-7xl mx-auto">
+      {/* Top Banner (Institutional Header with WCAG 2.2 AAA Contrast) */}
+      <div
+        style={{
+          backgroundColor: '#0F172A',
+          color: '#FFFFFF',
+          borderRadius: '16px',
+          padding: '2rem',
+          boxShadow: '0 10px 15px -3px rgba(15, 23, 42, 0.15)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '1.5rem',
+        }}
+      >
         <div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs uppercase tracking-widest font-bold text-emerald-400 bg-emerald-950/60 px-2.5 py-0.5 rounded border border-emerald-800">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
+            <span
+              style={{
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                color: '#34D399',
+                border: '1px solid rgba(16, 185, 129, 0.4)',
+                padding: '0.25rem 0.75rem',
+                borderRadius: '9999px',
+              }}
+            >
               NTA-04 Flujo Nacional
             </span>
-            <span className="text-xs text-gray-400">
-              {isDepartmentAdmin ? `Jurisdicción: ${user?.scope?.jurisdiction_name || 'Departamental'}` : 'Alcance Nacional (33 Departamentos)'}
+            <span style={{ fontSize: '0.8125rem', color: '#CBD5E1' }}>
+              {isDepartmentAdmin
+                ? `Jurisdicción: ${user?.scope?.jurisdiction_name || 'Departamental'}`
+                : 'Alcance Nacional (33 Departamentos)'}
             </span>
           </div>
-          <h1 className="text-2xl font-black tracking-tight text-white mt-1">
+          <h1 style={{ fontSize: '1.875rem', fontWeight: 800, margin: '0.25rem 0', color: '#FFFFFF' }}>
             Incorporación y Aprovisionamiento de Colegios
           </h1>
-          <p className="text-sm text-gray-400 mt-0.5">
+          <p style={{ color: '#CBD5E1', fontSize: '0.9375rem', margin: 0, maxWidth: '680px' }}>
             Transformación gobernada del catálogo oficial MEN/DANE en colegios operacionales con sedes y rectoría.
           </p>
         </div>
 
         {/* Top-Level Navigation Tabs */}
-        <div className="flex bg-gray-900 border border-gray-800 rounded-lg p-1 self-start md:self-auto">
+        <div
+          style={{
+            display: 'flex',
+            backgroundColor: '#1E293B',
+            border: '1px solid #334155',
+            borderRadius: '10px',
+            padding: '4px',
+            gap: '4px',
+          }}
+        >
           <button
             onClick={() => setActiveTab('catalog')}
-            className={`px-4 py-2 rounded-md text-sm font-semibold transition-colors ${
-              activeTab === 'catalog'
-                ? 'bg-emerald-600 text-white shadow'
-                : 'text-gray-400 hover:text-white hover:bg-gray-800'
-            }`}
+            style={{
+              padding: '0.5rem 1rem',
+              borderRadius: '6px',
+              fontSize: '0.875rem',
+              fontWeight: 600,
+              border: 'none',
+              cursor: 'pointer',
+              transition: 'all 150ms ease-in-out',
+              backgroundColor: activeTab === 'catalog' ? '#059669' : 'transparent',
+              color: activeTab === 'catalog' ? '#FFFFFF' : '#CBD5E1',
+            }}
           >
             Explorador del Catálogo
           </button>
           <button
             onClick={() => setActiveTab('queue')}
-            className={`px-4 py-2 rounded-md text-sm font-semibold transition-colors ${
-              activeTab === 'queue'
-                ? 'bg-emerald-600 text-white shadow'
-                : 'text-gray-400 hover:text-white hover:bg-gray-800'
-            }`}
+            style={{
+              padding: '0.5rem 1rem',
+              borderRadius: '6px',
+              fontSize: '0.875rem',
+              fontWeight: 600,
+              border: 'none',
+              cursor: 'pointer',
+              transition: 'all 150ms ease-in-out',
+              backgroundColor: activeTab === 'queue' ? '#059669' : 'transparent',
+              color: activeTab === 'queue' ? '#FFFFFF' : '#CBD5E1',
+            }}
           >
             Bandeja de Aprobación
           </button>
@@ -451,26 +499,26 @@ export const OnboardingView: React.FC = () => {
       {activeTab === 'catalog' && (
         <div className="space-y-4">
           {/* Filter Bar */}
-          <Card className="p-4 bg-gray-900/60 border-gray-800">
+          <Card className="p-4 bg-white border border-slate-200 shadow-sm">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
               <div>
-                <label className="block text-xs font-medium text-gray-400 mb-1">Buscar por Nombre o DANE</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Buscar por Nombre o DANE</label>
                 <input
                   type="text"
                   placeholder="Ej. Institución Educativa..."
                   value={catalogSearch}
                   onChange={(e) => setCatalogSearch(e.target.value)}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-pevn-blue focus:border-pevn-blue"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-400 mb-1">Departamento</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Departamento</label>
                 <select
                   disabled={isDepartmentAdmin}
                   value={selectedDeptFilter}
                   onChange={(e) => setSelectedDeptFilter(e.target.value)}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50"
+                  className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-pevn-blue focus:border-pevn-blue disabled:bg-slate-100 disabled:text-slate-500"
                 >
                   {!isDepartmentAdmin && <option value="">Todos los departamentos (33)</option>}
                   {departments.map((d) => (
@@ -482,11 +530,11 @@ export const OnboardingView: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-400 mb-1">Estado en PEVN</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Estado en PEVN</label>
                 <select
                   value={catalogStatusFilter}
                   onChange={(e) => setCatalogStatusFilter(e.target.value)}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-pevn-blue focus:border-pevn-blue"
                 >
                   <option value="">Todos los estados</option>
                   <option value="AVAILABLE">AVAILABLE / INCORPORABLE</option>
@@ -498,7 +546,7 @@ export const OnboardingView: React.FC = () => {
               <div>
                 <Button
                   variant="primary"
-                  className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold"
+                  className="w-full font-semibold"
                   onClick={() => {
                     setCatalogPage(1)
                     fetchCatalog()
@@ -511,11 +559,11 @@ export const OnboardingView: React.FC = () => {
           </Card>
 
           {/* Results Table */}
-          <Card className="overflow-hidden border-gray-800 bg-gray-900/40">
+          <Card className="overflow-hidden border border-slate-200 bg-white shadow-sm p-0">
             {catalogLoading ? (
               <div className="py-20 flex flex-col items-center justify-center">
                 <LoadingSpinner size="lg" />
-                <p className="text-sm text-gray-400 mt-3">Consultando catálogo oficial nacional...</p>
+                <p className="text-sm text-slate-600 mt-3 font-medium">Consultando catálogo oficial nacional...</p>
               </div>
             ) : catalogItems.length === 0 ? (
               <EmptyState
@@ -524,33 +572,37 @@ export const OnboardingView: React.FC = () => {
               />
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm text-gray-300">
-                  <thead className="bg-gray-800/80 text-xs uppercase tracking-wider text-gray-400 border-b border-gray-700">
+                <table className="w-full text-left text-sm text-slate-900 border-collapse">
+                  <thead className="bg-slate-50 text-xs uppercase tracking-wider text-slate-700 border-b border-slate-200">
                     <tr>
-                      <th className="py-3 px-4">Establecimiento Oficial</th>
-                      <th className="py-3 px-4">Código DANE</th>
-                      <th className="py-3 px-4">Jurisdicción</th>
-                      <th className="py-3 px-4">Sedes</th>
-                      <th className="py-3 px-4">Estado en PEVN</th>
-                      <th className="py-3 px-4 text-right">Acción</th>
+                      <th className="py-3 px-4 font-bold">Establecimiento Oficial</th>
+                      <th className="py-3 px-4 font-bold">Código DANE</th>
+                      <th className="py-3 px-4 font-bold">Jurisdicción</th>
+                      <th className="py-3 px-4 font-bold">Sedes</th>
+                      <th className="py-3 px-4 font-bold">Estado en PEVN</th>
+                      <th className="py-3 px-4 text-right font-bold">Acción</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-800">
+                  <tbody className="divide-y divide-slate-100">
                     {catalogItems.map((item) => (
-                      <tr key={item.id} className="hover:bg-gray-800/40 transition-colors">
-                        <td className="py-3.5 px-4 font-semibold text-white">
+                      <tr key={item.id} className="hover:bg-slate-50/70 transition-colors">
+                        <td className="py-3.5 px-4 font-semibold text-slate-900">
                           <div>{item.name}</div>
-                          <div className="text-xs text-gray-400 font-normal truncate max-w-xs">
+                          <div className="text-xs text-slate-600 font-normal truncate max-w-xs mt-0.5">
                             {item.official_address || 'Sin dirección registrada'} • {item.sector || 'OFICIAL'}
                           </div>
                         </td>
-                        <td className="py-3.5 px-4 font-mono text-emerald-400">{item.dane_code}</td>
                         <td className="py-3.5 px-4">
-                          <div className="text-gray-200">{item.municipality_name}</div>
-                          <div className="text-xs text-gray-400">{item.department_name}</div>
+                          <span className="font-mono text-xs font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                            {item.dane_code}
+                          </span>
                         </td>
                         <td className="py-3.5 px-4">
-                          <span className="text-xs font-medium text-gray-300">
+                          <div className="text-slate-900 font-medium">{item.municipality_name}</div>
+                          <div className="text-xs text-slate-600">{item.department_name}</div>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <span className="text-xs font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
                             {item.campus_count} {item.campus_count === 1 ? 'sede' : 'sedes'}
                           </span>
                         </td>
@@ -559,7 +611,8 @@ export const OnboardingView: React.FC = () => {
                           {item.onboarding_status === 'AVAILABLE' ? (
                             <Button
                               size="sm"
-                              className="bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs px-3 py-1.5"
+                              variant="primary"
+                              className="text-xs px-3 py-1.5"
                               onClick={() => openFilingModal(item)}
                             >
                               Iniciar Incorporación
@@ -577,7 +630,9 @@ export const OnboardingView: React.FC = () => {
                               Ver Trámite
                             </Button>
                           ) : (
-                            <span className="text-xs text-gray-400 italic">Tenant Activo</span>
+                            <span className="text-xs text-slate-600 font-semibold inline-flex items-center gap-1">
+                              ✓ Tenant Activo
+                            </span>
                           )}
                         </td>
                       </tr>
@@ -588,11 +643,11 @@ export const OnboardingView: React.FC = () => {
             )}
 
             {/* Pagination */}
-            <div className="p-3 bg-gray-900 border-t border-gray-800 flex items-center justify-between text-xs text-gray-400">
+            <div className="p-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-700">
               <div>
-                Total: <span className="text-white font-semibold">{catalogTotal}</span> colegios en el catálogo
+                Total: <span className="text-slate-900 font-bold">{catalogTotal}</span> colegios en el catálogo
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 items-center">
                 <Button
                   size="sm"
                   variant="secondary"
@@ -601,7 +656,7 @@ export const OnboardingView: React.FC = () => {
                 >
                   Anterior
                 </Button>
-                <span className="px-2 py-1 text-gray-300">Página {catalogPage}</span>
+                <span className="px-2 py-1 text-slate-700 font-medium">Página {catalogPage}</span>
                 <Button
                   size="sm"
                   variant="secondary"
@@ -622,7 +677,7 @@ export const OnboardingView: React.FC = () => {
       {activeTab === 'queue' && (
         <div className="space-y-4">
           {/* Sub-tabs by status */}
-          <div className="flex flex-wrap gap-2 border-b border-gray-800 pb-3">
+          <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-3">
             {[
               { id: 'ALL', label: 'Todas las Solicitudes' },
               { id: 'SUBMITTED', label: 'Pendientes de Revisión' },
@@ -639,8 +694,8 @@ export const OnboardingView: React.FC = () => {
                 }}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
                   queueStatusTab === tab.id
-                    ? 'bg-gray-800 text-white border border-gray-700'
-                    : 'text-gray-400 hover:text-white hover:bg-gray-800/40'
+                    ? 'bg-slate-900 text-white border border-slate-800 shadow-sm'
+                    : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100 hover:text-slate-900'
                 }`}
               >
                 {tab.label}
@@ -649,11 +704,11 @@ export const OnboardingView: React.FC = () => {
           </div>
 
           {/* Queue List Table */}
-          <Card className="overflow-hidden border-gray-800 bg-gray-900/40">
+          <Card className="overflow-hidden border border-slate-200 bg-white shadow-sm p-0">
             {queueLoading ? (
               <div className="py-20 flex flex-col items-center justify-center">
                 <LoadingSpinner size="lg" />
-                <p className="text-sm text-gray-400 mt-3">Consultando bandeja de solicitudes...</p>
+                <p className="text-sm text-slate-600 mt-3 font-medium">Consultando bandeja de solicitudes...</p>
               </div>
             ) : queueItems.length === 0 ? (
               <EmptyState
@@ -662,34 +717,36 @@ export const OnboardingView: React.FC = () => {
               />
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm text-gray-300">
-                  <thead className="bg-gray-800/80 text-xs uppercase tracking-wider text-gray-400 border-b border-gray-700">
+                <table className="w-full text-left text-sm text-slate-900 border-collapse">
+                  <thead className="bg-slate-50 text-xs uppercase tracking-wider text-slate-700 border-b border-slate-200">
                     <tr>
-                      <th className="py-3 px-4">Radicado</th>
-                      <th className="py-3 px-4">Colegio Oficial</th>
-                      <th className="py-3 px-4">Territorio</th>
-                      <th className="py-3 px-4">Radicado Por</th>
-                      <th className="py-3 px-4">Estado</th>
-                      <th className="py-3 px-4 text-right">Acciones de Gobernanza</th>
+                      <th className="py-3 px-4 font-bold">Radicado</th>
+                      <th className="py-3 px-4 font-bold">Colegio Oficial</th>
+                      <th className="py-3 px-4 font-bold">Territorio</th>
+                      <th className="py-3 px-4 font-bold">Radicado Por</th>
+                      <th className="py-3 px-4 font-bold">Estado</th>
+                      <th className="py-3 px-4 text-right font-bold">Acciones de Gobernanza</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-800">
+                  <tbody className="divide-y divide-slate-100">
                     {queueItems.map((req) => (
-                      <tr key={req.id} className="hover:bg-gray-800/40 transition-colors">
-                        <td className="py-3.5 px-4 font-mono text-emerald-400 font-bold text-xs">
-                          {req.request_number}
+                      <tr key={req.id} className="hover:bg-slate-50/70 transition-colors">
+                        <td className="py-3.5 px-4 font-mono text-slate-900 font-bold text-xs">
+                          <span className="bg-slate-100 border border-slate-200 px-2 py-0.5 rounded">
+                            {req.request_number}
+                          </span>
                         </td>
                         <td className="py-3.5 px-4">
-                          <div className="font-semibold text-white">{req.institution_name}</div>
-                          <div className="text-xs text-gray-400">DANE: {req.dane_code} • {req.contact_email}</div>
+                          <div className="font-semibold text-slate-900">{req.institution_name}</div>
+                          <div className="text-xs text-slate-600 mt-0.5">DANE: {req.dane_code} • {req.contact_email}</div>
                         </td>
                         <td className="py-3.5 px-4">
-                          <div className="text-gray-200">{req.municipality_name}</div>
-                          <div className="text-xs text-gray-400">{req.department_name}</div>
+                          <div className="text-slate-900 font-medium">{req.municipality_name}</div>
+                          <div className="text-xs text-slate-600">{req.department_name}</div>
                         </td>
                         <td className="py-3.5 px-4">
-                          <div className="text-gray-200">{req.requester_name || req.requester_email}</div>
-                          <div className="text-xs text-gray-400">{req.requester_role}</div>
+                          <div className="text-slate-900 font-medium">{req.requester_name || req.requester_email}</div>
+                          <div className="text-xs text-slate-600">{req.requester_role}</div>
                         </td>
                         <td className="py-3.5 px-4">{renderQueueBadge(req.status)}</td>
                         <td className="py-3.5 px-4 text-right space-x-1.5">
@@ -706,7 +763,8 @@ export const OnboardingView: React.FC = () => {
                               </Button>
                               <Button
                                 size="sm"
-                                className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-2.5 py-1"
+                                variant="primary"
+                                className="text-xs px-2.5 py-1"
                                 disabled={isActionLoading}
                                 onClick={() => handleApprove(req)}
                               >
@@ -728,7 +786,8 @@ export const OnboardingView: React.FC = () => {
                             <>
                               <Button
                                 size="sm"
-                                className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-2.5 py-1"
+                                variant="primary"
+                                className="text-xs px-2.5 py-1"
                                 disabled={isActionLoading}
                                 onClick={() => handleApprove(req)}
                               >
@@ -749,7 +808,8 @@ export const OnboardingView: React.FC = () => {
                           {req.status === 'APPROVED' && (
                             <Button
                               size="sm"
-                              className="bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs px-3 py-1 shadow-lg shadow-blue-900/40"
+                              variant="primary"
+                              className="text-xs px-3 py-1 font-bold"
                               disabled={isActionLoading}
                               onClick={() => handleProvision(req)}
                             >
@@ -758,11 +818,13 @@ export const OnboardingView: React.FC = () => {
                           )}
 
                           {req.status === 'PROVISIONED' && (
-                            <span className="text-xs text-emerald-400 font-semibold">Tenant Activo</span>
+                            <span className="text-xs text-emerald-800 font-bold inline-flex items-center gap-1">
+                              ✓ Tenant Activo
+                            </span>
                           )}
 
                           {req.status === 'REJECTED' && (
-                            <span className="text-xs text-red-400 italic" title={req.rejection_reason || ''}>
+                            <span className="text-xs text-red-800 font-medium" title={req.rejection_reason || ''}>
                               Causal: {req.rejection_reason?.substring(0, 25)}...
                             </span>
                           )}
@@ -775,11 +837,11 @@ export const OnboardingView: React.FC = () => {
             )}
 
             {/* Pagination */}
-            <div className="p-3 bg-gray-900 border-t border-gray-800 flex items-center justify-between text-xs text-gray-400">
+            <div className="p-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-700">
               <div>
-                Total: <span className="text-white font-semibold">{queueTotal}</span> solicitudes en cola
+                Total: <span className="text-slate-900 font-bold">{queueTotal}</span> solicitudes en cola
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 items-center">
                 <Button
                   size="sm"
                   variant="secondary"
@@ -788,7 +850,7 @@ export const OnboardingView: React.FC = () => {
                 >
                   Anterior
                 </Button>
-                <span className="px-2 py-1 text-gray-300">Página {queuePage}</span>
+                <span className="px-2 py-1 text-slate-700 font-medium">Página {queuePage}</span>
                 <Button
                   size="sm"
                   variant="secondary"
@@ -817,42 +879,42 @@ export const OnboardingView: React.FC = () => {
             {filingError && <Alert variant="error">{filingError}</Alert>}
 
             {/* Catalog Info Card (Read-Only) */}
-            <div className="bg-gray-800/80 p-4 rounded-lg border border-gray-700 space-y-2">
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
               <div className="flex justify-between items-start">
                 <div>
-                  <span className="text-xs font-mono text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800">
+                  <span className="text-xs font-mono font-bold text-slate-800 bg-slate-200/80 px-2 py-0.5 rounded border border-slate-300">
                     DANE: {selectedCatalogItem.dane_code}
                   </span>
-                  <h3 className="text-base font-bold text-white mt-1">{selectedCatalogItem.name}</h3>
+                  <h3 className="text-base font-bold text-slate-900 mt-1">{selectedCatalogItem.name}</h3>
                 </div>
                 <Badge variant="info">{selectedCatalogItem.sector || 'OFICIAL'}</Badge>
               </div>
-              <div className="text-xs text-gray-300 grid grid-cols-2 gap-2 pt-1 border-t border-gray-700/60">
+              <div className="text-xs text-slate-700 grid grid-cols-2 gap-2 pt-2 border-t border-slate-200">
                 <div>
-                  <span className="text-gray-400">Departamento:</span> {selectedCatalogItem.department_name}
+                  <span className="text-slate-500 font-medium">Departamento:</span> <strong className="text-slate-900">{selectedCatalogItem.department_name}</strong>
                 </div>
                 <div>
-                  <span className="text-gray-400">Municipio:</span> {selectedCatalogItem.municipality_name}
+                  <span className="text-slate-500 font-medium">Municipio:</span> <strong className="text-slate-900">{selectedCatalogItem.municipality_name}</strong>
                 </div>
                 <div>
-                  <span className="text-gray-400">Dirección:</span> {selectedCatalogItem.official_address || 'N/A'}
+                  <span className="text-slate-500 font-medium">Dirección:</span> <strong className="text-slate-900">{selectedCatalogItem.official_address || 'N/A'}</strong>
                 </div>
                 <div>
-                  <span className="text-gray-400">Sedes Registradas:</span> {selectedCatalogItem.campus_count}
+                  <span className="text-slate-500 font-medium">Sedes Registradas:</span> <strong className="text-slate-900">{selectedCatalogItem.campus_count}</strong>
                 </div>
               </div>
             </div>
 
             {/* Operational Form */}
             <div className="space-y-3">
-              <h4 className="text-xs uppercase tracking-wider font-bold text-gray-400">
+              <h4 className="text-xs uppercase tracking-wider font-bold text-slate-700">
                 Datos Operacionales para PEVN
               </h4>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-gray-300 mb-1">
-                    Correo Institucional Oficial <span className="text-red-400">*</span>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Correo Institucional Oficial <span className="text-red-600 font-bold">*</span>
                   </label>
                   <input
                     type="email"
@@ -860,60 +922,60 @@ export const OnboardingView: React.FC = () => {
                     placeholder="rectoria@colegio.edu.co"
                     value={filingForm.contact_email}
                     onChange={(e) => setFilingForm({ ...filingForm, contact_email: e.target.value })}
-                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-pevn-blue focus:border-pevn-blue"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-300 mb-1">Teléfono Institucional</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Teléfono Institucional</label>
                   <input
                     type="tel"
                     placeholder="(601) 3456789"
                     value={filingForm.contact_phone || ''}
                     onChange={(e) => setFilingForm({ ...filingForm, contact_phone: e.target.value })}
-                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-pevn-blue focus:border-pevn-blue"
                   />
                 </div>
               </div>
 
               {/* Proposed Rector Section */}
-              <div className="border-t border-gray-800 pt-3 space-y-2">
+              <div className="border-t border-slate-200 pt-3 space-y-2">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-xs uppercase tracking-wider font-bold text-gray-400">
+                  <h4 className="text-xs uppercase tracking-wider font-bold text-slate-700">
                     Designación de Rector Inicial (Opcional)
                   </h4>
-                  <span className="text-xs text-gray-400">Emite invitación criptográfica al aprovisionar</span>
+                  <span className="text-xs text-slate-500 font-medium">Emite invitación criptográfica al aprovisionar</span>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-medium text-gray-300 mb-1">Nombre Completo del Rector</label>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Nombre Completo del Rector</label>
                     <input
                       type="text"
                       placeholder="Ej. Gabriel García Márquez"
                       value={filingForm.proposed_rector_name || ''}
                       onChange={(e) => setFilingForm({ ...filingForm, proposed_rector_name: e.target.value })}
-                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-pevn-blue focus:border-pevn-blue"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-gray-300 mb-1">Correo Electrónico del Rector</label>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Correo Electrónico del Rector</label>
                     <input
                       type="email"
                       placeholder="rector@gmail.com"
                       value={filingForm.proposed_rector_email || ''}
                       onChange={(e) => setFilingForm({ ...filingForm, proposed_rector_email: e.target.value })}
-                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-pevn-blue focus:border-pevn-blue"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-gray-300 mb-1">Tipo de Documento</label>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Tipo de Documento</label>
                     <select
                       value={filingForm.proposed_rector_doc_type || 'CC'}
                       onChange={(e) => setFilingForm({ ...filingForm, proposed_rector_doc_type: e.target.value })}
-                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-pevn-blue focus:border-pevn-blue"
                     >
                       <option value="CC">Cédula de Ciudadanía (CC)</option>
                       <option value="CE">Cédula de Extranjería (CE)</option>
@@ -922,32 +984,32 @@ export const OnboardingView: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-gray-300 mb-1">Número de Documento</label>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Número de Documento</label>
                     <input
                       type="text"
                       placeholder="12345678"
                       value={filingForm.proposed_rector_doc_num || ''}
                       onChange={(e) => setFilingForm({ ...filingForm, proposed_rector_doc_num: e.target.value })}
-                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-pevn-blue focus:border-pevn-blue"
                     />
                   </div>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-300 mb-1">Justificación Administrativa</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Justificación Administrativa</label>
                 <textarea
                   rows={2}
                   placeholder="Motivo del requerimiento de incorporación territorial..."
                   value={filingForm.justification || ''}
                   onChange={(e) => setFilingForm({ ...filingForm, justification: e.target.value })}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-pevn-blue focus:border-pevn-blue"
                 />
               </div>
             </div>
 
             {/* Modal Actions */}
-            <div className="flex justify-end gap-2 pt-4 border-t border-gray-800">
+            <div className="flex justify-end gap-2 pt-4 border-t border-slate-200">
               <Button
                 variant="secondary"
                 disabled={isSubmittingFiling}
@@ -964,7 +1026,6 @@ export const OnboardingView: React.FC = () => {
               </Button>
               <Button
                 variant="primary"
-                className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold"
                 disabled={isSubmittingFiling}
                 onClick={() => handleFilingSubmit(false)}
               >
@@ -986,16 +1047,18 @@ export const OnboardingView: React.FC = () => {
           maxWidth="md"
         >
           <div className="space-y-4">
-            <p className="text-sm text-gray-300">
+            <p className="text-sm text-slate-700">
               Indique la causal formal y fundamentada para el rechazo administrativo de la solicitud{' '}
-              <span className="font-mono text-emerald-400 font-bold">{rejectModal.request?.request_number}</span>:
+              <span className="font-mono text-slate-900 font-bold bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded">
+                {rejectModal.request?.request_number}
+              </span>:
             </p>
 
             {rejectModal.error && <Alert variant="error">{rejectModal.error}</Alert>}
 
             <div>
-              <label className="block text-xs font-medium text-gray-400 mb-1">
-                Motivo Formal de Rechazo (Mínimo 10 caracteres) <span className="text-red-400">*</span>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Motivo Formal de Rechazo (Mínimo 10 caracteres) <span className="text-red-600 font-bold">*</span>
               </label>
               <textarea
                 rows={3}
@@ -1003,11 +1066,11 @@ export const OnboardingView: React.FC = () => {
                 value={rejectModal.reason}
                 onChange={(e) => setRejectModal({ ...rejectModal, reason: e.target.value })}
                 placeholder="Explique el motivo del rechazo técnico o administrativo..."
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full bg-white border border-slate-300 rounded-lg p-3 text-sm text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-pevn-red focus:border-pevn-red"
               />
             </div>
 
-            <div className="flex justify-end gap-2 pt-2 border-t border-gray-800">
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-200">
               <Button
                 variant="secondary"
                 disabled={rejectModal.isSubmitting}
@@ -1038,24 +1101,24 @@ export const OnboardingView: React.FC = () => {
           maxWidth="md"
         >
           <div className="space-y-4">
-            <div className="bg-emerald-950/60 p-4 rounded-lg border border-emerald-800/80 text-center space-y-1">
-              <div className="text-xs font-mono uppercase tracking-wider text-emerald-400 font-bold">
+            <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-200 text-center space-y-1">
+              <div className="text-xs font-mono uppercase tracking-wider text-emerald-800 font-bold">
                 Operacional en PEVN
               </div>
-              <h3 className="text-lg font-black text-white">{provisionResultModal.result.institution_name}</h3>
-              <p className="text-xs text-gray-300 font-mono">DANE: {provisionResultModal.result.dane_code}</p>
-              <p className="text-xs text-emerald-300">
+              <h3 className="text-lg font-black text-slate-900">{provisionResultModal.result.institution_name}</h3>
+              <p className="text-xs text-slate-700 font-mono">DANE: {provisionResultModal.result.dane_code}</p>
+              <p className="text-xs text-emerald-800 font-semibold">
                 {provisionResultModal.result.campuses_created} sedes educativas materializadas
               </p>
             </div>
 
             {provisionResultModal.result.rector_invited ? (
-              <div className="bg-gray-800 p-4 rounded-lg border border-gray-700 space-y-2">
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs uppercase font-bold text-gray-400">Invitación de Rector Generada</span>
+                  <span className="text-xs uppercase font-bold text-slate-700">Invitación de Rector Generada</span>
                   <Badge variant="success">Token Seguro SHA-256</Badge>
                 </div>
-                <p className="text-xs text-gray-300">
+                <p className="text-xs text-slate-600">
                   Se ha generado un token criptográfico de un solo uso para que el Rector defina sus credenciales.
                 </p>
                 {provisionResultModal.result.raw_invitation_token && (
@@ -1064,7 +1127,7 @@ export const OnboardingView: React.FC = () => {
                       type="text"
                       readOnly
                       value={provisionResultModal.result.raw_invitation_token}
-                      className="bg-gray-900 border border-gray-700 rounded px-2.5 py-1 text-xs font-mono text-emerald-400 flex-1 truncate"
+                      className="bg-white border border-slate-300 rounded px-2.5 py-1 text-xs font-mono text-slate-900 font-bold flex-1 truncate"
                     />
                     <Button
                       size="sm"
@@ -1082,12 +1145,12 @@ export const OnboardingView: React.FC = () => {
                 )}
               </div>
             ) : (
-              <div className="bg-amber-950/40 p-3 rounded-lg border border-amber-800 text-xs text-amber-200">
-                <strong>Rectoría Pendiente:</strong> El colegio fue aprovisionado sin rector asignado. Puede invitar al rector posteriormente desde el módulo de instituciones.
+              <div className="bg-amber-50 p-3 rounded-lg border border-amber-200 text-xs text-amber-900">
+                <strong className="text-amber-950">Rectoría Pendiente:</strong> El colegio fue aprovisionado sin rector asignado. Puede invitar al rector posteriormente desde el módulo de instituciones.
               </div>
             )}
 
-            <div className="flex justify-end pt-2 border-t border-gray-800">
+            <div className="flex justify-end pt-2 border-t border-slate-200">
               <Button
                 variant="primary"
                 onClick={() => setProvisionResultModal({ isOpen: false, result: null, copiedToken: false })}

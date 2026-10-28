@@ -10,6 +10,7 @@
  */
 
 import { cn } from '@utils/index'
+import { PevnBrandText } from './PevnLogo'
 
 interface LoadingSpinnerProps {
   /** Size of the spinner */
@@ -88,8 +89,10 @@ export function PageLoader({ label = 'Cargando...' }: { label?: string }) {
       role="status"
     >
       <div className="flex flex-col items-center gap-4">
-        {/* PEVN Logo placeholder */}
-        <div className="text-4xl font-bold text-pevn-blue tracking-tight">PEVN</div>
+        {/* PEVN Logo with Colombian flag colors */}
+        <div className="text-4xl font-black tracking-tight">
+          <PevnBrandText variant="light" fontWeight={900} />
+        </div>
         <LoadingSpinner size="lg" label={label} color="blue" />
         <p className="text-sm text-gray-500 animate-pulse-soft">{label}</p>
       </div>

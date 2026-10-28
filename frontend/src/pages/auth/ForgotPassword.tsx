@@ -10,6 +10,7 @@ import { Link } from 'react-router-dom'
 import { authApi } from '@/services/auth'
 import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { PevnBrandText } from '@/components/ui/PevnLogo'
 import { AppApiError } from '@/services/api/client'
 
 export const ForgotPassword: React.FC = () => {
@@ -110,8 +111,8 @@ export const ForgotPassword: React.FC = () => {
             >
               Recuperación de Contraseña
             </h1>
-            <p style={{ fontSize: '0.875rem', color: '#64748B', margin: 0 }}>
-              Plataforma Educativa Virtual Nacional (PEvN)
+            <p style={{ fontSize: '0.875rem', color: '#64748B', margin: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}>
+              Plataforma Educativa Virtual Nacional (<PevnBrandText variant="light" fontWeight={700} />)
             </p>
           </div>
 

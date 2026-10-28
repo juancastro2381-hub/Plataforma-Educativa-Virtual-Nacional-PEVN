@@ -44,12 +44,12 @@ const variantStyles: Record<BadgeVariant, { bg: string; color: string; border: s
   },
   neutral: {
     bg: '#F1F5F9',
-    color: '#475569',
-    border: '#E2E8F0',
+    color: '#334155',
+    border: '#CBD5E1',
   },
   primary: {
     bg: '#EEF2FF',
-    color: '#3730A3',
+    color: '#312E81',
     border: '#C7D2FE',
   },
 }
@@ -58,12 +58,14 @@ export const Badge: React.FC<BadgeProps> = ({
   children,
   variant = 'neutral',
   size = 'md',
+  className,
 }) => {
   const style = variantStyles[variant]
   const isSm = size === 'sm'
 
   return (
     <span
+      className={className}
       style={{
         display: 'inline-flex',
         alignItems: 'center',

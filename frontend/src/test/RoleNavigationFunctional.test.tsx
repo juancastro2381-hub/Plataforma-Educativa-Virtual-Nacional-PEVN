@@ -261,6 +261,37 @@ describe('Phase 10 — Role Navigation & UX Functional Validation', () => {
         expect(screen.queryByText('Analítica Territorial')).not.toBeInTheDocument()
       })
     })
+
+    it('does not expose "Académica" navbar link to administrative roles (superadmin, national_admin, department_admin, municipality_admin)', async () => {
+      activeUser = createMockUser('department_admin', ['institutions:read', 'academic_years:read'], false)
+      render(
+        <MemoryRouter initialEntries={['/']}>
+          <AuthProvider>
+            <RootLayout />
+          </AuthProvider>
+        </MemoryRouter>
+      )
+
+      await waitFor(() => {
+        expect(screen.queryByText('Académica')).not.toBeInTheDocument()
+        expect(screen.getByText('Analítica Territorial')).toBeInTheDocument()
+      })
+    })
+
+    it('shows "Académica" navbar link to institutional directives (rector, academic_coordinator)', async () => {
+      activeUser = createMockUser('academic_coordinator', ['academic_years:read'], false)
+      render(
+        <MemoryRouter initialEntries={['/']}>
+          <AuthProvider>
+            <RootLayout />
+          </AuthProvider>
+        </MemoryRouter>
+      )
+
+      await waitFor(() => {
+        expect(screen.getByText('Académica')).toBeInTheDocument()
+      })
+    })
   })
 
   // -------------------------------------------------------------------------
@@ -319,6 +350,22 @@ describe('Phase 10 — Role Navigation & UX Functional Validation', () => {
         expect(screen.getByText(/Portal de Acompañamiento Familiar/i)).toBeInTheDocument()
       })
     })
+
+    it('does not render Academic Management card for Department Admin even with active institution', async () => {
+      activeUser = createMockUser('department_admin', ['academic_years:read', 'groups:read'], false)
+      localStorage.setItem('pevn_active_institution_id', 'inst-001')
+      render(
+        <MemoryRouter initialEntries={['/dashboard']}>
+          <AuthProvider>
+            <Dashboard />
+          </AuthProvider>
+        </MemoryRouter>
+      )
+
+      await waitFor(() => {
+        expect(screen.queryByText(/Módulo de Gestión Académica/i)).not.toBeInTheDocument()
+      })
+    })
   })
 
   // -------------------------------------------------------------------------
@@ -348,6 +395,35 @@ describe('Phase 10 — Role Navigation & UX Functional Validation', () => {
       await waitFor(() => {
         expect(screen.getByText('Dashboard Redirección Exitosa')).toBeInTheDocument()
         expect(screen.queryByText('Ruta Instituciones Secreta')).not.toBeInTheDocument()
+      })
+    })
+
+    it('denies direct access to /academic for administrative roles (superadmin, national_admin, department_admin, municipality_admin)', async () => {
+      activeUser = createMockUser('superadmin', ['*:*'], true, null)
+      render(
+        <MemoryRouter initialEntries={['/academic']}>
+          <AuthProvider>
+            <Routes>
+              <Route
+                path="/academic"
+                element={
+                  <RequireAuth
+                    roles={['rector', 'institution_admin', 'coordinator', 'academic_coordinator']}
+                    requireInstitutionContext
+                  >
+                    <div>Módulo Académico Secreto</div>
+                  </RequireAuth>
+                }
+              />
+              <Route path="/dashboard" element={<div>Dashboard Redirección Admin</div>} />
+            </Routes>
+          </AuthProvider>
+        </MemoryRouter>
+      )
+
+      await waitFor(() => {
+        expect(screen.getByText('Dashboard Redirección Admin')).toBeInTheDocument()
+        expect(screen.queryByText('Módulo Académico Secreto')).not.toBeInTheDocument()
       })
     })
   })

@@ -11,8 +11,6 @@
 **Versión del Paquete Auditado:** 1.0-FINAL-MEN  
 **Directorio Auditado de Entrega:**  
 `C:\Users\juanc\OneDrive\Documentos\Desarrollo proyectos\Plataforma Educativa PEVN\Plataforma Educativa Virtual Nacional PEVN\docs\government\pdf`  
-**Repositorio Principal:**  
-`https://github.com/juancastro2381-hub/Plataforma-Educativa-Virtual-Nacional-PEVN.git`  
 **Clasificación:** Dictamen Técnico de Aseguramiento de Calidad y Entrega Institucional  
 
 ---

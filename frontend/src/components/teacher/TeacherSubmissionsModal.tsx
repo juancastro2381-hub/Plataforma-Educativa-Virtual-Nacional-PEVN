@@ -296,7 +296,7 @@ export const TeacherSubmissionsModal: React.FC<TeacherSubmissionsModalProps> = (
               background: 'none',
               border: 'none',
               fontSize: '1.5rem',
-              color: '#94A3B8',
+              color: '#475569',
               cursor: 'pointer',
               padding: '0.2rem',
               lineHeight: 1,
@@ -804,7 +804,7 @@ export const TeacherSubmissionsModal: React.FC<TeacherSubmissionsModalProps> = (
                           <td style={{ padding: '0.75rem', color: '#475569' }}>
                             {item.attachments_count > 0 ? `📎 ${item.attachments_count}` : '—'}
                           </td>
-                          <td style={{ padding: '0.75rem', fontWeight: 700, color: item.grade_score !== null ? '#15803D' : '#94A3B8' }}>
+                          <td style={{ padding: '0.75rem', fontWeight: 700, color: item.grade_score !== null ? '#15803D' : '#64748B' }}>
                             {item.grade_score !== null ? Number(item.grade_score).toFixed(1) : '—'}
                           </td>
                           <td style={{ padding: '0.75rem', textAlign: 'right' }}>

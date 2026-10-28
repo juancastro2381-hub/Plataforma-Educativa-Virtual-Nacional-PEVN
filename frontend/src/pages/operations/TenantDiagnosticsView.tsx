@@ -132,7 +132,7 @@ export const TenantDiagnosticsView: React.FC = () => {
           <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: '0 0 0.5rem 0', color: '#FFFFFF' }}>
             Diagnóstico Operacional de Inquilino / Tenant
           </h1>
-          <p style={{ color: '#94A3B8', fontSize: '0.875rem', margin: 0, maxWidth: '750px' }}>
+          <p style={{ color: '#CBD5E1', fontSize: '0.875rem', margin: 0, maxWidth: '750px' }}>
             Sondeo técnico y aislamiento de instituciones educativas. Requiere selección explícita y registra traza de auditoría obligatoria en cada ejecución.
           </p>
         </div>
@@ -156,8 +156,8 @@ export const TenantDiagnosticsView: React.FC = () => {
               variant="secondary"
               style={{
                 backgroundColor: 'transparent',
-                color: '#94A3B8',
-                border: '1px solid #334155',
+                color: '#CBD5E1',
+                border: '1px solid #475569',
               }}
             >
               ← Volver

@@ -278,7 +278,7 @@ export const TeacherAttendanceView: React.FC<Props> = ({ assignments, initialGro
                 <tbody>
                   {sheet.items.map((item, idx) => (
                     <tr key={item.student_id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                      <td style={{ padding: '0.625rem 0.75rem', color: '#94A3B8', fontWeight: 600 }}>
+                      <td style={{ padding: '0.625rem 0.75rem', color: '#475569', fontWeight: 600 }}>
                         {idx + 1}
                       </td>
                       <td style={{ padding: '0.625rem 0.75rem', fontWeight: 600, color: '#0F172A' }}>

@@ -159,9 +159,8 @@ class PresentationPDF:
         # Metadata
         self.c.setFont("Helvetica", 9)
         self.c.setFillColor(colors.HexColor("#A0B9D2"))
-        self.c.drawString(85, 115, "Autor / Iniciativa Técnica: Juan Carlos Castro Narváez | Versión: 1.0-FINAL-MEN | Octubre 2026")
-        self.c.drawString(85, 95, "Repositorio: github.com/juancastro2381-hub/Plataforma-Educativa-Virtual-Nacional-PEVN")
-        self.c.drawString(85, 75, "Nota: Iniciativa técnica independiente. No constituye aprobación, contrato ni certificación previa del MEN.")
+        self.c.drawString(85, 105, "Autor / Iniciativa Técnica: Juan Carlos Castro Narváez | Versión: 1.0-FINAL-MEN | Octubre 2026")
+        self.c.drawString(85, 85, "Nota: Iniciativa técnica independiente. No constituye aprobación, contrato ni certificación previa del MEN.")
 
         self.c.restoreState()
         self.c.showPage()
@@ -194,8 +193,7 @@ class PresentationPDF:
         self.c.setFont("Helvetica", 10.5)
         self.c.setFillColor(colors.HexColor("#E2E8F0"))
         self.c.drawString(85, SLIDE_H - 260, "Juan Carlos Castro Narváez — Desarrollador Principal y Consultor de Transformación Digital")
-        self.c.drawString(85, SLIDE_H - 280, "Repositorio Oficial: https://github.com/juancastro2381-hub/Plataforma-Educativa-Virtual-Nacional-PEVN.git")
-        self.c.drawString(85, SLIDE_H - 300, "Octubre 2026 — Bogotá D.C., Colombia")
+        self.c.drawString(85, SLIDE_H - 285, "Octubre 2026 — Bogotá D.C., Colombia")
 
         self.c.restoreState()
         self.c.showPage()

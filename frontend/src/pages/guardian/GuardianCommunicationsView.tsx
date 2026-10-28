@@ -333,7 +333,7 @@ export const GuardianCommunicationsView: React.FC<Props> = ({ onBackToDashboard:
                       justifyContent: 'space-between',
                       alignItems: 'center',
                       fontSize: '0.75rem',
-                      color: '#94A3B8',
+                      color: '#475569',
                     }}
                   >
                     <span>✍️ {item.author_name}</span>

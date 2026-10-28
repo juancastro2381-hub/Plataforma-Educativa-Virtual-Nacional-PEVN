@@ -815,7 +815,7 @@ export const TeacherIncidentsView: React.FC<Props> = ({
                           {incident.description}
                         </div>
                         {incident.location && (
-                          <div style={{ fontSize: '0.75rem', color: '#94A3B8', marginTop: '0.15rem' }}>
+                          <div style={{ fontSize: '0.75rem', color: '#475569', marginTop: '0.15rem' }}>
                             📍 {incident.location}
                           </div>
                         )}
@@ -955,7 +955,7 @@ export const TeacherIncidentsView: React.FC<Props> = ({
                   border: 'none',
                   fontSize: '1.25rem',
                   cursor: 'pointer',
-                  color: '#94A3B8',
+                  color: '#64748B',
                 }}
               >
                 ✕
@@ -1386,7 +1386,7 @@ export const TeacherIncidentsView: React.FC<Props> = ({
                   border: 'none',
                   fontSize: '1.25rem',
                   cursor: 'pointer',
-                  color: '#94A3B8',
+                  color: '#64748B',
                 }}
               >
                 ✕

@@ -179,7 +179,7 @@ export const TechnicalSupportView: React.FC = () => {
           <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: '0 0 0.5rem 0', color: '#FFFFFF' }}>
             Mesa de Ayuda Técnica e Incidentes de Plataforma
           </h1>
-          <p style={{ color: '#94A3B8', fontSize: '0.875rem', margin: 0, maxWidth: '750px' }}>
+          <p style={{ color: '#CBD5E1', fontSize: '0.875rem', margin: 0, maxWidth: '750px' }}>
             Gestión de incidencias operacionales, degradación de servicios, tickets de soporte de infraestructura y ciclo de vida de mitigación.
           </p>
         </div>
@@ -209,8 +209,8 @@ export const TechnicalSupportView: React.FC = () => {
               variant="secondary"
               style={{
                 backgroundColor: 'transparent',
-                color: '#94A3B8',
-                border: '1px solid #334155',
+                color: '#CBD5E1',
+                border: '1px solid #475569',
               }}
             >
               ← Volver

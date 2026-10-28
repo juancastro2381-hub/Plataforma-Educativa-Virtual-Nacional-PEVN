@@ -211,7 +211,7 @@ export const StudentVirtualClassCard: React.FC<StudentVirtualClassCardProps> = (
         )}
 
         {!classroom.can_join && !classroom.has_recordings && isEnded && (
-          <div style={{ fontSize: '0.8125rem', color: '#94A3B8', fontStyle: 'italic', padding: '0.4rem 0' }}>
+          <div style={{ fontSize: '0.8125rem', color: '#475569', fontStyle: 'italic', padding: '0.4rem 0' }}>
             Esta sesión finalizó y no cuenta con grabaciones archivadas.
           </div>
         )}
