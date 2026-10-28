@@ -257,18 +257,17 @@ async def test_03_superadmin_institutional_context_requirement(
         f"SuperAdmin with ?institution_id query param must receive 200, got {vc_with_query.status_code}"
     )
 
-    # --- Scenario B: Academic Years ---
+    # --- Scenario B: Academic Years (Academic Management Module - Least Privilege Denial) ---
     # Without context -> 403
     ay_no_ctx = await client.get("/api/v1/academic-years", headers=headers)
     assert ay_no_ctx.status_code == 403, (
         f"SuperAdmin without context must receive 403 on /academic-years, got {ay_no_ctx.status_code}"
     )
-    assert "Contexto institucional no disponible" in ay_no_ctx.text
 
-    # With header -> 200
+    # With header -> 403 (SuperAdmin denied academic management access under least-privilege policy)
     ay_with_ctx = await client.get("/api/v1/academic-years", headers=headers_with_ctx)
-    assert ay_with_ctx.status_code == 200, (
-        f"SuperAdmin with X-Institution-Context must receive 200 on /academic-years, got {ay_with_ctx.status_code}"
+    assert ay_with_ctx.status_code == 403, (
+        f"SuperAdmin with X-Institution-Context must receive 403 on /academic-years under least privilege, got {ay_with_ctx.status_code}"
     )
 
 

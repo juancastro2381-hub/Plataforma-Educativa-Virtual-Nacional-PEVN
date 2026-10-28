@@ -128,6 +128,21 @@ async def e2e_fixture(  # noqa: PLR0915
             select(Role).where(Role.name == SystemRole.SUPERADMIN.value)
         )
     ).scalar_one()
+    role_nat_admin = (
+        await db_session.execute(
+            select(Role).where(Role.name == SystemRole.NATIONAL_ADMIN.value)
+        )
+    ).scalar_one()
+    role_dept_admin = (
+        await db_session.execute(
+            select(Role).where(Role.name == SystemRole.DEPARTMENT_ADMIN.value)
+        )
+    ).scalar_one()
+    role_muni_admin = (
+        await db_session.execute(
+            select(Role).where(Role.name == SystemRole.MUNICIPALITY_ADMIN.value)
+        )
+    ).scalar_one()
 
     # Users
     pwd = password_hasher.hash("Seguro123456*!")
@@ -167,6 +182,42 @@ async def e2e_fixture(  # noqa: PLR0915
         last_name="Administrador",
         document_type=DocumentType.CC,
         document_number="80000000",
+        institution_id=None,
+        is_active=True,
+        is_verified=True,
+    )
+    user_nat_admin = User(
+        email="natadmin@pevn.gov.co",
+        username="natadmin_e2e",
+        hashed_password=pwd,
+        first_name="Admin",
+        last_name="Nacional",
+        document_type=DocumentType.CC,
+        document_number="81000000",
+        institution_id=None,
+        is_active=True,
+        is_verified=True,
+    )
+    user_dept_admin = User(
+        email="deptadmin@pevn.gov.co",
+        username="deptadmin_e2e",
+        hashed_password=pwd,
+        first_name="Admin",
+        last_name="Departamental",
+        document_type=DocumentType.CC,
+        document_number="82000000",
+        institution_id=None,
+        is_active=True,
+        is_verified=True,
+    )
+    user_muni_admin = User(
+        email="muniadmin@pevn.gov.co",
+        username="muniadmin_e2e",
+        hashed_password=pwd,
+        first_name="Admin",
+        last_name="Municipal",
+        document_type=DocumentType.CC,
+        document_number="83000000",
         institution_id=None,
         is_active=True,
         is_verified=True,
@@ -242,6 +293,9 @@ async def e2e_fixture(  # noqa: PLR0915
             user_rector_a,
             user_rector_b,
             user_superadmin,
+            user_nat_admin,
+            user_dept_admin,
+            user_muni_admin,
             user_teacher_1,
             user_teacher_2,
             user_student_1,
@@ -278,6 +332,30 @@ async def e2e_fixture(  # noqa: PLR0915
     )
     db_session.add(
         UserRole(
+            user_id=user_nat_admin.id,
+            role_id=role_nat_admin.id,
+            institution_id=None,
+            is_active=True,
+        )
+    )
+    db_session.add(
+        UserRole(
+            user_id=user_dept_admin.id,
+            role_id=role_dept_admin.id,
+            institution_id=None,
+            is_active=True,
+        )
+    )
+    db_session.add(
+        UserRole(
+            user_id=user_muni_admin.id,
+            role_id=role_muni_admin.id,
+            institution_id=None,
+            is_active=True,
+        )
+    )
+    db_session.add(
+        UserRole(
             user_id=user_student_1.id,
             role_id=role_student.id,
             institution_id=inst_a.id,
@@ -308,6 +386,30 @@ async def e2e_fixture(  # noqa: PLR0915
             "institution_id": None,
         },
     )
+    token_nat_admin = await token_service.create_access_token(
+        subject=str(user_nat_admin.id),
+        additional_claims={
+            "roles": [SystemRole.NATIONAL_ADMIN.value],
+            "institution_id": None,
+        },
+    )
+    token_dept_admin = await token_service.create_access_token(
+        subject=str(user_dept_admin.id),
+        additional_claims={
+            "roles": [SystemRole.DEPARTMENT_ADMIN.value],
+            "department_id": str(dept.id),
+            "institution_id": None,
+        },
+    )
+    token_muni_admin = await token_service.create_access_token(
+        subject=str(user_muni_admin.id),
+        additional_claims={
+            "roles": [SystemRole.MUNICIPALITY_ADMIN.value],
+            "department_id": str(dept.id),
+            "municipality_id": str(mun.id),
+            "institution_id": None,
+        },
+    )
     token_student_1 = await token_service.create_access_token(
         subject=str(user_student_1.id),
         additional_claims={
@@ -333,6 +435,9 @@ async def e2e_fixture(  # noqa: PLR0915
         "token_rector_a": token_rector_a,
         "token_rector_b": token_rector_b,
         "token_superadmin": token_superadmin,
+        "token_nat_admin": token_nat_admin,
+        "token_dept_admin": token_dept_admin,
+        "token_muni_admin": token_muni_admin,
         "token_student_1": token_student_1,
     }
 
@@ -767,11 +872,106 @@ async def test_cross_tenant_isolation_and_rbac_boundaries(
     )
     assert tenant_b_act_attack.status_code == 404
 
-    # 5. SuperAdmin can legitimately access Tenant A's academic year using institution override
-    super_res = await client.get(
+    headers_nat = {"Authorization": f"Bearer {e2e_fixture['token_nat_admin']}"}
+    headers_dept = {"Authorization": f"Bearer {e2e_fixture['token_dept_admin']}"}
+    headers_muni = {"Authorization": f"Bearer {e2e_fixture['token_muni_admin']}"}
+
+    # 5. PO Least-Privilege Policy: Administrative roles (SuperAdmin, National Admin, Department Admin,
+    # Municipality Admin) are strictly denied direct academic management API access (reads & writes),
+    # even when providing ?institution_id= and despite any wildcard (*:*) permissions.
+
+    # 5a. SuperAdmin attempting READ on Tenant A's academic year -> 403 Forbidden
+    super_read_res = await client.get(
         f"/api/v1/academic-years/{year_a_id}",
         headers=headers_super,
         params={"institution_id": str(e2e_fixture["inst_a"].id)},
     )
-    assert super_res.status_code == 200
-    assert super_res.json()["name"] == "Año 2028 Tenant A"
+    assert super_read_res.status_code == 403
+
+    # 5b. SuperAdmin attempting WRITE on Tenant A's academic years -> 403 Forbidden
+    super_write_res = await client.post(
+        "/api/v1/academic-years",
+        headers=headers_super,
+        params={"institution_id": str(e2e_fixture["inst_a"].id)},
+        json={
+            "year": 2029,
+            "name": "Intento No Autorizado SuperAdmin",
+            "start_date": "2029-02-01",
+            "end_date": "2029-11-30",
+        },
+    )
+    assert super_write_res.status_code == 403
+
+    # 5c. National Admin attempting READ on Tenant A's academic year -> 403 Forbidden
+    nat_read_res = await client.get(
+        f"/api/v1/academic-years/{year_a_id}",
+        headers=headers_nat,
+        params={"institution_id": str(e2e_fixture["inst_a"].id)},
+    )
+    assert nat_read_res.status_code == 403
+
+    # 5d. National Admin attempting WRITE on Tenant A's academic years -> 403 Forbidden
+    nat_write_res = await client.post(
+        "/api/v1/academic-years",
+        headers=headers_nat,
+        params={"institution_id": str(e2e_fixture["inst_a"].id)},
+        json={
+            "year": 2029,
+            "name": "Intento No Autorizado National Admin",
+            "start_date": "2029-02-01",
+            "end_date": "2029-11-30",
+        },
+    )
+    assert nat_write_res.status_code == 403
+
+    # 5e. Department Admin attempting READ on Tenant A's academic year -> 403 Forbidden
+    dept_read_res = await client.get(
+        f"/api/v1/academic-years/{year_a_id}",
+        headers=headers_dept,
+        params={"institution_id": str(e2e_fixture["inst_a"].id)},
+    )
+    assert dept_read_res.status_code == 403
+
+    # 5f. Department Admin attempting WRITE on Tenant A's academic years -> 403 Forbidden
+    dept_write_res = await client.post(
+        "/api/v1/academic-years",
+        headers=headers_dept,
+        params={"institution_id": str(e2e_fixture["inst_a"].id)},
+        json={
+            "year": 2029,
+            "name": "Intento No Autorizado Dept Admin",
+            "start_date": "2029-02-01",
+            "end_date": "2029-11-30",
+        },
+    )
+    assert dept_write_res.status_code == 403
+
+    # 5g. Municipality Admin attempting READ on Tenant A's academic year -> 403 Forbidden
+    muni_read_res = await client.get(
+        f"/api/v1/academic-years/{year_a_id}",
+        headers=headers_muni,
+        params={"institution_id": str(e2e_fixture["inst_a"].id)},
+    )
+    assert muni_read_res.status_code == 403
+
+    # 5h. Municipality Admin attempting WRITE on Tenant A's academic years -> 403 Forbidden
+    muni_write_res = await client.post(
+        "/api/v1/academic-years",
+        headers=headers_muni,
+        params={"institution_id": str(e2e_fixture["inst_a"].id)},
+        json={
+            "year": 2029,
+            "name": "Intento No Autorizado Muni Admin",
+            "start_date": "2029-02-01",
+            "end_date": "2029-11-30",
+        },
+    )
+    assert muni_write_res.status_code == 403
+
+    # 6. Legitimate Rector A CAN access Tenant A's academic year -> 200 OK
+    rector_a_res = await client.get(
+        f"/api/v1/academic-years/{year_a_id}",
+        headers=headers_a,
+    )
+    assert rector_a_res.status_code == 200
+    assert rector_a_res.json()["name"] == "Año 2028 Tenant A"

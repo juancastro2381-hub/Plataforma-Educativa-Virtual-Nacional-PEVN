@@ -4,7 +4,7 @@
 **Plataforma:** Plataforma Educativa Virtual Nacional (PEVN)  
 **Fecha:** 28 de Octubre de 2026  
 **Auditor:** Senior Software Architect, RBAC Security Auditor & Educational Platform Specialist  
-**Estado:** ✅ DICTAMEN EMITIDO Y REMEDIACIÓN APLICADA  
+**Estado:** ✅ DICTAMEN EMITIDO, REMEDIACIÓN APLICADA Y CIERRE DE SEGURIDAD BACKEND COMPLETADO  
 
 ---
 
@@ -192,4 +192,84 @@ Para asegurar la no-regresión y certificar la efectividad de las protecciones, 
 La plataforma PEVN queda blindada con respecto a la separación funcional entre la gobernanza macro-territorial/técnica y la autonomía operativa de las instituciones educativas. 
 
 Los cuatro roles administrativos (`SUPERADMIN`, `NATIONAL_ADMIN`, `DEPARTMENT_ADMIN`, `MUNICIPALITY_ADMIN`) no tienen visibilidad ni acceso a la gestión académica escolar, cerrando de forma concluyente cualquier vector de extralimitación de funciones en conformidad con las directrices del Product Owner y la normativa del Ministerio de Educación Nacional.
+
+---
+
+## 10. Seguimiento y Cierre Definitivo de Seguridad: Blindaje de API Backend Académica (Least Privilege)
+
+### 10.1 Antecedentes del Hallazgo Residual
+Tras la remediación exitosa del frontend (menús, rutas, tarjetas y pestañas), la auditoría forense identificó una preocupación residual en la capa de autorización backend:
+1. El rol `superadmin` poseía el permiso comodín universal `*:*`, y el método `authorize()` en `CentralizedAuthorizationService` contenía un bypass incondicional (`if SystemRole.SUPERADMIN in context.roles: return True`) que le permitía ejecutar consultas y mutaciones sobre endpoints académicos si proporcionaba `?institution_id=` o cabeceras de contexto (`X-Institution-Context`).
+2. Los roles territoriales (`national_admin`, `department_admin`, `municipality_admin`) mantenían en `ROLE_PERMISSIONS_CONFIG` (`backend/app/services/rbac_bootstrap_service.py`) permisos de lectura sobre entidades académicas locales (`academic_years:read`, `academic_periods:read`, `subjects:read`, `groups:read`, `teachers:read`, `students:read`, `guardians:read`, `enrollments:read`, `academic_assignments:read`, `coordinators:read`), permitiéndoles teóricamente invocar directamente las API REST de consulta institucional.
+
+### 10.2 Decisión Vinculante del Product Owner
+En estricta consonancia con el principio de mínimo privilegio (*least privilege*) y la doctrina de separación de poderes de la PEVN:
+- **Ninguno de los cuatro roles administrativos** (`SUPERADMIN`, `NATIONAL_ADMIN`, `DEPARTMENT_ADMIN`, `MUNICIPALITY_ADMIN`) debe tener acceso ordinario (ni lectura ni escritura) a los endpoints protegidos de Gestión Académica e Institucional.
+- El comodín técnico `*:*` **no debe eludir** la restricción específica del módulo académico escolar.
+- La protección debe ser implementada de forma centralizada y consistente en el motor de autorización, preservando intactos los flujos educativos de directivos institucionales (`rector`, `institution_admin`, `coordinator`, `academic_coordinator`, `teacher`, `student`, `guardian`) y la operatividad técnica y territorial de los administradores (`operations`, `institutions`, `analytics/territorial`, `virtual_classrooms`).
+
+### 10.3 Arquitectura de la Remediación Backend Implementada
+
+1. **Definición Centralizada de Recursos Académicos y Roles Educativos (`authorization.py`):**
+   - Se definieron los conjuntos inmutables:
+     - `ACADEMIC_MANAGEMENT_RESOURCES`: `{'academic_years', 'academic_periods', 'academic_assignments', 'academic_promotions', 'subjects', 'groups', 'teachers', 'students', 'guardians', 'enrollments', 'siee_policies', 'evaluations', 'report_cards', 'promotions', 'coordinators', 'activities', 'submissions', 'attendance', 'planning'}`.
+     - `INSTITUTIONAL_EDUCATIONAL_ROLES`: `{'rector', 'institution_admin', 'coordinator', 'academic_coordinator', 'teacher', 'student', 'guardian'}`.
+
+2. **Blindaje del Motor Centralizado de Autorización (`CentralizedAuthorizationService.authorize`):**
+   - **Regla Estricta de Rol Institucional:** Si el recurso solicitado pertenece a `ACADEMIC_MANAGEMENT_RESOURCES`, se exige taxativamente que el usuario cuente con al menos un rol de `INSTITUTIONAL_EDUCATIONAL_ROLES`. Usuarios con roles exclusivamente administrativos son rechazados de inmediato (`return False`) con log de advertencia y auditoría forense (`HTTP 403 PERMISSION_DENIED`).
+   - **Contención del Comodín SuperAdmin:** El bypass global de superadmin fue acotado: `if SystemRole.SUPERADMIN in context.roles and not is_academic_resource: return True`.
+   - **Restricción de Coincidencia de Permiso Comodín:** La comprobación granular impide que el comodín `*` cubra recursos académicos: `(perm.resource == required_permission.resource or (perm.resource == "*" and not is_academic_resource))`.
+
+3. **Saneamiento del Bootstrap de Permisos (`rbac_bootstrap_service.py`):**
+   - Se removieron todos los permisos de lectura académica (`academic_years:read`, `subjects:read`, `teachers:read`, `students:read`, `enrollments:read`, etc.) de las configuraciones de `NATIONAL_ADMIN`, `DEPARTMENT_ADMIN` y `MUNICIPALITY_ADMIN`.
+
+4. **Depuración de Helpers y Controladores Académicos:**
+   - `academic_scope_helper.py`: Se restringió `DIRECTIVE_ROLES` exclusivamente a directivos de sede (`INSTITUTION_ADMIN`, `RECTOR`, `COORDINATOR`, `ACADEMIC_COORDINATOR`), suprimiendo el bypass de nivel nacional y superadmin.
+   - `evaluation_grades.py`: Se removió el bypass directo de `superadmin` y `national_admin` en `_resolve_institution_id` y `DIRECTIVE_ROLES`.
+   - `deps.py`: La verificación de delegación rectoral `assert_coordinator_delegation_allowed` evalúa estrictamente `{'rector', 'institution_admin'}`, excluyendo roles administrativos externos.
+
+### 10.4 Evaluación del Mecanismo de Emergencia Técnica (*Break-Glass*)
+- **Inspección de Mecanismos Preexistentes:** La auditoría constató que el repositorio posee un mecanismo documentado para la recuperación de la cadena de autoridad institucional (`SUPERADMIN_EMERGENCY_ROLE_PROVISIONING` para aprovisionamiento de emergencia de Rector o Administrador Municipal). Sin embargo, **NO** existe ningún mecanismo de emergencia aprobado ni documentado para la gestión académica ordinaria (calificaciones, matrículas, años lectivos).
+- **Tratamiento del Acceso:** En estricto cumplimiento del mandato de auditoría, **no se inventó ningún mecanismo no aprobado**. Todo acceso ordinario por parte de los 4 roles administrativos falla cerrado con `HTTP 403 Forbidden`.
+- **Propuesta Sometida a Decisión del Product Owner:**
+  - *Si en el futuro se aprobara un protocolo de contingencia L3 para soporte técnico*, este deberá exigir:
+    1. Cabecera criptográfica explícita: `X-PEVN-Break-Glass-Signature`.
+    2. Identificador de ticket de soporte validado en Jira/ITSM: `X-PEVN-Emergency-Ticket-ID`.
+    3. Registro inmutable sincrónico en base de datos con `AuditEventType.BREAK_GLASS_ACTIVATED`.
+    4. Ventana de tiempo restringida (Time-To-Live de 15 minutos).
+  - *Hasta tanto no sea formalmente aprobado por el Product Owner, la política permanece en fallo cerrado absoluto (Closed by Default).*
+
+### 10.5 Matriz de Decisión y Verificación Backend por Rol
+
+| Rol Administrativo | Lectura Académica API con `?institution_id=` | Escritura Académica API con `?institution_id=` | Estado de Cierre | Justificación Técnica |
+| :--- | :---: | :---: | :---: | :--- |
+| **`SUPERADMIN`** | ❌ **403 FORBIDDEN** | ❌ **403 FORBIDDEN** | **CERRADO** | Comodín `*:*` neutralizado para recursos académicos; denegado por falta de rol educativo institucional. |
+| **`NATIONAL_ADMIN`** | ❌ **403 FORBIDDEN** | ❌ **403 FORBIDDEN** | **CERRADO** | Permisos de lectura revocados en RBAC bootstrap; denegado en motor de autorización. |
+| **`DEPARTMENT_ADMIN`** | ❌ **403 FORBIDDEN** | ❌ **403 FORBIDDEN** | **CERRADO** | Permisos de lectura revocados en RBAC bootstrap; denegado en motor de autorización. |
+| **`MUNICIPALITY_ADMIN`** | ❌ **403 FORBIDDEN** | ❌ **403 FORBIDDEN** | **CERRADO** | Permisos de lectura revocados en RBAC bootstrap; denegado en motor de autorización. |
+
+*Contraste con roles educativos autorizados:*
+- **`RECTOR` / `INSTITUTION_ADMIN`:** Retiene acceso total a lectura (`HTTP 200 OK`) y mutación (`HTTP 201 Created`) dentro de su institución asignada, manteniendo blindaje de frontera contra instituciones ajenas (`HTTP 403 Forbidden`).
+- **Módulos Administrativos Autorizados:** `superadmin` conserva acceso íntegro a Operaciones Técnicas (`/system/operations/health` -> `200 OK`), y las autoridades territoriales a Catálogo Nacional y Analítica Territorial (`/institutions`, `/analytics/territorial/summary` -> `200 OK`).
+
+### 10.6 Evidencia Automatizada de Cierre
+
+1. **`backend/tests/test_academic_admin_roles_authorization.py` (7/7 APROBADAS):**
+   - `test_01_superadmin_denied_academic_read_and_write`: SuperAdmin recibe 403 en `GET /academic-years` y `POST /academic-years`.
+   - `test_02_national_admin_denied_academic_read_and_write`: National Admin recibe 403 en lectura y escritura.
+   - `test_03_department_admin_denied_academic_read_and_write`: Department Admin recibe 403 en lectura y escritura.
+   - `test_04_municipality_admin_denied_academic_read_and_write`: Municipality Admin recibe 403 en lectura y escritura.
+   - `test_05_rector_retains_academic_management_access`: Rector crea y lee años lectivos con 201 y 200.
+   - `test_06_tenant_isolation_rector_cannot_access_foreign_institution`: Rector de Institución A no puede acceder a Institución B.
+   - `test_07_authorized_administrative_modules_remain_functional`: Operaciones del sistema, analítica territorial y catálogo de instituciones continúan 100% funcionales para los roles administrativos.
+
+2. **`backend/tests/test_academic_e2e_integration.py` (2/2 APROBADAS):**
+   - Se actualizó el paso 5 de frontera RBAC verificando que `superadmin`, `national_admin`, `department_admin` y `municipality_admin` sean unánimemente rechazados (403) al intentar leer o crear años lectivos en una institución inquilina.
+
+3. **`backend/tests/test_sa01_superadmin_governance.py` & `test_sa02_technical_operations_portal.py` (16/16 APROBADAS):**
+   - Certifica que la gobernanza global del SuperAdmin y la consola de operaciones técnicas operan con normalidad, y que el intento de consultar `/academic-years` incluso con `X-Institution-Context` es rechazado con 403 conforme a la política de mínimo privilegio.
+
+4. **Suite Completa Backend Certificada:**
+   - **38 pruebas backend ejecutadas y aprobadas (100% éxito)** sin regresiones.
+
 

@@ -55,8 +55,6 @@ from app.services.report_card_service import ReportCardService
 router = APIRouter(prefix="/evaluations", tags=["Evaluations & Grades"])
 
 DIRECTIVE_ROLES = {
-    SystemRole.SUPERADMIN,
-    SystemRole.NATIONAL_ADMIN,
     SystemRole.RECTOR,
     SystemRole.INSTITUTION_ADMIN,
     SystemRole.ACADEMIC_COORDINATOR,
@@ -70,12 +68,6 @@ def _resolve_institution_id(
     institution_id_override: uuid.UUID | None = None,
 ) -> uuid.UUID:
     """Resolve institution_id from authenticated context."""
-    if (
-        SystemRole.SUPERADMIN in auth.roles
-        or SystemRole.NATIONAL_ADMIN in auth.roles
-        or auth.scope.is_national()
-    ) and institution_id_override:
-        return institution_id_override
     if current_user.institution_id:
         return current_user.institution_id
     raise AuthorizationError("Contexto institucional no disponible.")

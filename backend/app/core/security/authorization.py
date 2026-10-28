@@ -26,6 +26,46 @@ from app.exceptions.errors import AuthorizationError
 
 _logger = get_logger(__name__)
 
+# Resources belonging strictly to the school-level Academic and Institutional Management module.
+# In accordance with the PO least-privilege policy, administrative roles (SUPERADMIN, NATIONAL_ADMIN,
+# DEPARTMENT_ADMIN, MUNICIPALITY_ADMIN) are strictly barred from ordinary operations on these resources.
+ACADEMIC_MANAGEMENT_RESOURCES: frozenset[str] = frozenset(
+    {
+        "academic_years",
+        "academic_periods",
+        "academic_assignments",
+        "academic_promotions",
+        "subjects",
+        "groups",
+        "teachers",
+        "students",
+        "guardians",
+        "enrollments",
+        "siee_policies",
+        "evaluations",
+        "report_cards",
+        "promotions",
+        "coordinators",
+        "activities",
+        "submissions",
+        "attendance",
+        "planning",
+    }
+)
+
+# Legitimate institutional roles authorized to perform school-level educational operations
+INSTITUTIONAL_EDUCATIONAL_ROLES: frozenset[str] = frozenset(
+    {
+        SystemRole.RECTOR.value,
+        SystemRole.INSTITUTION_ADMIN.value,
+        "coordinator",
+        SystemRole.ACADEMIC_COORDINATOR.value,
+        SystemRole.TEACHER.value,
+        SystemRole.STUDENT.value,
+        "guardian",
+    }
+)
+
 
 def scope_contains(
     actor_scope: OrganizationalScope, target_scope: OrganizationalScope
@@ -104,9 +144,30 @@ class CentralizedAuthorizationService(IAuthorizationService):
         Returns:
             True if authorized, False otherwise.
         """
-        # Superadmin has global platform access; audit sensitive educational resource accesses
-        if SystemRole.SUPERADMIN in context.roles:
-            if required_permission.resource in {"incidents", "evaluations", "report_cards"}:
+        user_role_names = {
+            r.value if isinstance(r, SystemRole) else str(r).lower()
+            for r in context.roles
+        }
+        is_academic_resource = required_permission.resource in ACADEMIC_MANAGEMENT_RESOURCES
+
+        # 0. PO Least-Privilege Policy: Administrative roles (SUPERADMIN, NATIONAL_ADMIN,
+        # DEPARTMENT_ADMIN, MUNICIPALITY_ADMIN) are strictly barred from school-level
+        # Academic & Institutional Management. Wildcards and superadmin bypasses cannot
+        # override this restriction.
+        if is_academic_resource:
+            has_institutional_role = bool(user_role_names & INSTITUTIONAL_EDUCATIONAL_ROLES)
+            if not has_institutional_role:
+                _logger.warning(
+                    "Academic API access denied for administrative role (PO least-privilege policy)",
+                    user_id=context.user_id,
+                    roles=list(user_role_names),
+                    required_permission=str(required_permission),
+                )
+                return False
+
+        # Superadmin has global platform access for technical operations, but NOT for academic resources
+        if SystemRole.SUPERADMIN in context.roles and not is_academic_resource:
+            if required_permission.resource in {"incidents"}:
                 await audit_service.record(
                     AuditEvent(
                         event_type=AuditEventType.SUSPICIOUS_ACTIVITY_DETECTED,
@@ -130,8 +191,12 @@ class CentralizedAuthorizationService(IAuthorizationService):
             return True
 
         # 1. Verify Granular Permission
+        # Wildcard (*) does NOT match academic management resources
         has_permission = any(
-            perm.resource in {required_permission.resource, "*"}
+            (
+                perm.resource == required_permission.resource
+                or (perm.resource == "*" and not is_academic_resource)
+            )
             and perm.action in {required_permission.action, "*"}
             for perm in context.permissions
         )

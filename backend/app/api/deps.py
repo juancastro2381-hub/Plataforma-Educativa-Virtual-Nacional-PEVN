@@ -312,11 +312,11 @@ async def assert_coordinator_delegation_allowed(
     """
     role_names = {r.value if isinstance(r, SystemRole) else str(r).lower() for r in auth.roles}
     is_coordinator = bool({"coordinator", "academic_coordinator"} & role_names)
-    is_rector_or_higher = bool(
-        {"rector", "superadmin", "national_admin"} & role_names
+    is_rector = bool(
+        {"rector", "institution_admin"} & role_names
     )
 
-    if is_coordinator and not is_rector_or_higher:
+    if is_coordinator and not is_rector:
         inst_stmt = select(Institution.coordinator_delegation_enabled).where(Institution.id == institution_id)
         result = await db.execute(inst_stmt)
         delegation_enabled = result.scalar_one_or_none()

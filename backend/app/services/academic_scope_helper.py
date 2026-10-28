@@ -24,8 +24,6 @@ from app.models.teacher import Teacher
 
 DIRECTIVE_ROLES: frozenset[SystemRole] = frozenset(
     {
-        SystemRole.SUPERADMIN,
-        SystemRole.NATIONAL_ADMIN,
         SystemRole.INSTITUTION_ADMIN,
         SystemRole.RECTOR,
         SystemRole.COORDINATOR,
@@ -46,8 +44,6 @@ def is_directive_actor(
         return True
 
     if auth:
-        if auth.scope.is_national() or SystemRole.SUPERADMIN in auth.roles:
-            return True
         if any(r in DIRECTIVE_ROLES for r in auth.roles):
             return True
 
