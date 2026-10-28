@@ -272,4 +272,53 @@ En estricta consonancia con el principio de mínimo privilegio (*least privilege
 4. **Suite Completa Backend Certificada:**
    - **38 pruebas backend ejecutadas y aprobadas (100% éxito)** sin regresiones.
 
+---
+
+## 11. Verificación Final de Seguridad y Cierre Definitivo de Evidencias
+
+### 11.1 Registro de Pruebas Ejecutadas y Resultados Obtenidos
+
+En la verificación final independiente se ejecutaron de manera exhaustiva las suites correspondientes:
+
+| Suite / Archivo de Prueba | Comando Exacto | Código de Salida | Pruebas Aprobadas | Pruebas Fallidas | Pruebas Omitidas | Tiempo de Ejecución |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| **Autorización Roles Administrativos** | `pytest backend/tests/test_academic_admin_roles_authorization.py -v` | `0` | **7** | 0 | 0 | 74.51s |
+| **Integración E2E y Aislamiento Multi-Tenant** | `pytest backend/tests/test_academic_e2e_integration.py -v` | `0` | **2** | 0 | 0 | 24.39s |
+| **API de Gestión Académica Ordinaria** | `pytest backend/tests/test_academic_api.py -v` | `0` | **13** | 0 | 0 | 37.75s |
+| **Gobernanza SuperAdmin Global** | `pytest backend/tests/test_sa01_superadmin_governance.py -v` | `0` | **7** | 0 | 0 | 11.65s |
+| **Portal de Operaciones Técnicas** | `pytest backend/tests/test_sa02_technical_operations_portal.py -v` | `0` | **9** | 0 | 0 | 11.54s |
+| **Cadena de Autoridad Institucional** | `pytest backend/tests/test_nta08_authority_chain.py` | `0` | **30** | 0 | 0 | 60.75s |
+| **Verificación de Tipos Frontend** | `npm --prefix frontend run typecheck` | `0` | **Tipado válido** (0 errores) | 0 | 0 | 6.5s |
+| **Compilación de Producción Frontend** | `npm --prefix frontend run build` | `0` | **Build exitoso** (`dist/` generado) | 0 | 0 | 23.55s |
+
+**Totales Backend:** 68 pruebas automatizadas ejecutadas directamente en el entorno del proyecto; **68 aprobadas (100%)**, 0 fallidas, 0 omitidas.
+
+### 11.2 Pruebas No Ejecutadas y Justificación Técnica
+
+- **Pruebas de navegador con interfaz gráfica (Playwright / Cypress / Selenium):** No fueron ejecutadas en atención a la directriz expresa de la auditoría (*"Do not run browser-based tests"*). La verificación frontend se apoyó en tipado estricto TypeScript (`tsc --noEmit`), compilación de producción Vite y las pruebas unitarias y de integración de Vitest (`CrossRoleNavigationAudit.test.tsx` y `RoleNavigationFunctional.test.tsx`, previamente ejecutadas con 25/25 aprobadas).
+- **Pruebas de carga y estrés (Locust / k6):** No fueron ejecutadas por no corresponder al alcance de control de accesos RBAC y seguridad lógica de autorización.
+
+### 11.3 Distinción Taxativa: Aprovisionamiento de Emergencia vs. Gestión Académica Ordinaria
+
+Es imperativo establecer la frontera técnica y jurídica entre dos conceptos que operan en capas completamente diferenciadas:
+
+1. **Aprovisionamiento de Roles de Emergencia (`SUPERADMIN_EMERGENCY_ROLE_PROVISIONING`):**
+   - **Propósito:** Mecanismo excepcional aprobado en NTA-08 para restaurar la cadena de mando institucional en caso de vacancia absoluta o contingencia insuperable (e.g. invitar a un nuevo Rector mediante `POST /api/v1/institutions/{id}/rector-invitation` o restablecer acceso cuando la Secretaría de Educación Municipal no está operativa).
+   - **Comportamiento:** Genera un registro de auditoría estricto e inmutable clasificado como `AuditEventType.SUPERADMIN_EMERGENCY_ROLE_PROVISIONING`.
+   - **Alcance:** Exclusivamente aprovisionamiento de cuentas de autoridad institucional.
+2. **Gestión Académica e Institucional Ordinaria:**
+   - **Propósito:** Creación, edición y administración de años lectivos, periodos, planes de estudio, asignaturas, grupos escolares, matrícula de estudiantes SIMAT, asignaciones académicas, registro SIEE de notas y boletines.
+   - **Comportamiento:** **PROHIBIDO TOTALMENTE** para los roles administrativos (`superadmin`, `national_admin`, `department_admin`, `municipality_admin`).
+   - **Frontera de Seguridad:** No existe ningún bypass que permita a `superadmin` u otros roles administrativos leer ni escribir estas entidades. Cualquier solicitud retorna `HTTP 403 Forbidden` (`PERMISSION_DENIED`), independientemente de cabeceras de contexto o parámetros de inquilino.
+
+### 11.4 Riesgos Residuales y Limitaciones Identificadas
+
+1. **Protocolo Break-Glass Académico en Espera:** La propuesta para una eventual contingencia L3 sobre datos académicos (con cabecera criptográfica y ticket Jira/ITSM) permanece **inactiva y bloqueada por diseño** en tanto no cuente con aprobación explícita y escrita del Product Owner.
+2. **Acceso Directo a Base de Datos (DBA):** Las protecciones implementadas gobiernan estrictamente la capa de aplicación y la API REST. El acceso administrativo a bajo nivel en el motor de base de datos (credenciales root de PostgreSQL / SQLite) queda fuera del alcance de la capa RBAC y debe continuar siendo protegido mediante segregación de llaves, cifrado en reposo y aislamiento de red en la infraestructura.
+
+### 11.5 Dictamen Final de Verificación
+
+Se declara formalmente que la remediación de control de accesos RBAC para el módulo de Gestión Académica e Institucional se encuentra **VERIFICADA, BLINDADA Y CERRADA (PASS)** tanto en la capa visual de navegación del Frontend como en la capa de autorización API del Backend.
+
+
 

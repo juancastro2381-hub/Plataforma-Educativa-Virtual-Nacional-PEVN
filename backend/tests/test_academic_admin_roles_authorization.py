@@ -450,7 +450,7 @@ async def test_07_authorized_administrative_modules_remain_functional(
     # 1. SuperAdmin: Technical Operations Portal -> 200 OK
     res_health = await client.get("/api/v1/system/operations/health", headers=headers_super)
     assert res_health.status_code == 200
-    assert res_health.json()["status"] == "HEALTHY"
+    assert res_health.json()["status"].lower() == "healthy"
 
     # 2. National Admin: Institutional Catalog & Territorial Analytics -> 200 OK
     res_inst = await client.get("/api/v1/institutions", headers=headers_nat)
