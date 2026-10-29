@@ -14,6 +14,12 @@
  */
 
 import type { ComponentType } from 'react'
+import {
+  PLATFORM_CAPABILITIES,
+  HERO_STATUS_BADGE,
+  EVOLUTION_NOTICE_TEXT,
+  type PlatformCapability,
+} from '@config/platformCapabilities'
 
 export function ComingSoon() {
   return (
@@ -36,7 +42,7 @@ export function ComingSoon() {
               className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse-soft"
               aria-hidden="true"
             />
-            Plataforma Integral · Gestión Académica, Portales, SIEE y Convivencia Implementados
+            {HERO_STATUS_BADGE.text}
           </div>
 
           {/* Main heading */}
@@ -92,9 +98,8 @@ export function ComingSoon() {
                 clipRule="evenodd"
               />
             </svg>
-            <span className="text-white/80">
-              Plataforma en evolución continua. Las principales funcionalidades académicas, evaluación SIEE,
-              portales por rol y convivencia escolar se encuentran implementadas y verificadas.
+            <span className="text-white/80 leading-relaxed">
+              {EVOLUTION_NOTICE_TEXT}
             </span>
           </div>
         </div>
@@ -108,54 +113,70 @@ export function ComingSoon() {
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {PHASES.map((phase, index) => (
+            {PLATFORM_CAPABILITIES.map((cap) => (
               <div
-                key={phase.phase}
-                className={`rounded-xl p-5 border-2 flex flex-col justify-between ${
-                  phase.status === 'complete'
-                    ? 'border-emerald-500 bg-emerald-50/60 shadow-sm'
-                    : phase.status === 'software_ready'
-                      ? 'border-blue-500 bg-blue-50/50 shadow-sm'
-                      : 'border-gray-200 bg-gray-50/70'
+                key={cap.id}
+                className={`rounded-xl p-5 border-2 flex flex-col justify-between transition-shadow hover:shadow-md ${
+                  cap.badgeVariant === 'verified'
+                    ? 'border-emerald-500 bg-emerald-50/70 shadow-sm'
+                    : cap.badgeVariant === 'implemented'
+                      ? 'border-emerald-400 bg-emerald-50/50 shadow-sm'
+                      : cap.badgeVariant === 'dependency_pending'
+                        ? 'border-blue-500 bg-blue-50/60 shadow-sm'
+                        : 'border-slate-300 bg-slate-50/80 shadow-sm'
                 }`}
               >
                 <div>
                   <div className="flex items-center gap-2 mb-2">
                     <span
-                      className={`w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center ${
-                        phase.status === 'complete'
+                      className={`w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center flex-shrink-0 ${
+                        cap.badgeVariant === 'verified'
                           ? 'bg-emerald-600 text-white'
-                          : phase.status === 'software_ready'
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-gray-300 text-gray-600'
+                          : cap.badgeVariant === 'implemented'
+                            ? 'bg-emerald-500 text-white'
+                            : cap.badgeVariant === 'dependency_pending'
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-slate-300 text-slate-700'
                       }`}
-                      aria-label={`Módulo ${String(index + 1)}`}
+                      aria-label={`Capacidad ${String(cap.id)}: ${cap.statusLabel}`}
                     >
-                      {phase.status === 'complete' ? '✓' : phase.status === 'software_ready' ? '⚡' : String(index + 1)}
+                      {cap.iconText}
                     </span>
                     <span
-                      className={`text-xs font-semibold uppercase tracking-wide ${
-                        phase.status === 'complete'
-                          ? 'text-emerald-700 font-bold'
-                          : phase.status === 'software_ready'
-                            ? 'text-blue-700 font-bold'
-                            : 'text-gray-500'
+                      className={`text-xs font-bold uppercase tracking-wide ${
+                        cap.badgeVariant === 'verified' || cap.badgeVariant === 'implemented'
+                          ? 'text-emerald-800'
+                          : cap.badgeVariant === 'dependency_pending'
+                            ? 'text-blue-800'
+                            : 'text-slate-700'
                       }`}
                     >
-                      {phase.statusLabel}
+                      {cap.statusLabel}
                     </span>
                   </div>
 
-                  {phase.statusDetail && (
-                    <div className="mb-2">
-                      <span className="inline-block text-[10px] font-medium leading-tight text-amber-800 bg-amber-100/80 border border-amber-300/60 rounded px-1.5 py-0.5">
-                        {phase.statusDetail}
+                  {cap.statusDetail && (
+                    <div className="mb-2.5">
+                      <span
+                        className={`inline-block text-[10px] font-semibold leading-tight rounded px-2 py-0.5 border ${
+                          cap.badgeVariant === 'dependency_pending'
+                            ? 'text-amber-950 bg-amber-100/90 border-amber-300'
+                            : cap.badgeVariant === 'verified'
+                              ? 'text-emerald-950 bg-emerald-100/90 border-emerald-300'
+                              : 'text-slate-800 bg-slate-200/90 border-slate-300'
+                        }`}
+                      >
+                        {cap.statusDetail}
                       </span>
                     </div>
                   )}
 
-                  <h3 className="font-semibold text-pevn-blue text-sm mb-1">{phase.phase}</h3>
-                  <p className="text-xs text-gray-600 leading-relaxed">{phase.description}</p>
+                  <h3 className="font-bold text-pevn-blue text-sm mb-1.5 leading-snug">
+                    {cap.title}
+                  </h3>
+                  <p className="text-xs text-slate-700 leading-relaxed font-normal">
+                    {cap.description}
+                  </p>
                 </div>
               </div>
             ))}
@@ -174,14 +195,6 @@ interface Feature {
   title: string
   description: string
   Icon: ComponentType<{ className?: string }>
-}
-
-interface PhaseItem {
-  phase: string
-  description: string
-  status: 'complete' | 'software_ready' | 'pending'
-  statusLabel: string
-  statusDetail?: string
 }
 
 function ShieldIcon({ className }: { className?: string }) {
@@ -259,56 +272,7 @@ const FEATURES: Feature[] = [
   },
 ]
 
-const PHASES: PhaseItem[] = [
-  {
-    phase: '1. Fundación, Seguridad e Identidad',
-    description: 'Arquitectura base, autenticación Argon2id, tokens efímeros, control de acceso RBAC y auditoría inmutable.',
-    status: 'complete',
-    statusLabel: '✓ Implementada',
-  },
-  {
-    phase: '2. Estructura Institucional y Matrícula',
-    description: 'Catálogo DANE/DUE de sedes, años lectivos, períodos, grupos, matrícula SIMAT y control de cupos.',
-    status: 'complete',
-    statusLabel: '✓ Implementada',
-  },
-  {
-    phase: '3. Gestión Académica y Portales Soberanos',
-    description: 'Portales dedicados para directivos, docentes, estudiantes y acudientes con asignaciones académicas.',
-    status: 'complete',
-    statusLabel: '✓ Implementada',
-  },
-  {
-    phase: '4. Actividades Pedagógicas y Asistencia',
-    description: 'Gestión de tareas, entregas de estudiantes con archivos o texto, planilla de asistencia y planeación.',
-    status: 'complete',
-    statusLabel: '✓ Implementada',
-  },
-  {
-    phase: '5. Evaluación SIEE y Promoción Escolar',
-    description: 'Políticas autónomas (Decreto 1290), planillas periódicas, nivelaciones con tope legal y actas de promoción.',
-    status: 'complete',
-    statusLabel: '✓ Implementada',
-  },
-  {
-    phase: '6. Comunicaciones y Convivencia Escolar',
-    description: 'Circulares oficiales con acuse de recibo digital, periódico escolar y observador formativo (Ley 1620).',
-    status: 'complete',
-    statusLabel: '✓ Implementada',
-  },
-  {
-    phase: '7. Aulas Virtuales Sincrónicas',
-    description: 'Software y adaptador BBB con firmas criptográficas SHA integrados. Comisionamiento de servidor físico en curso.',
-    status: 'software_ready',
-    statusLabel: '● Software Integrado',
-    statusDetail: 'Validación de infraestructura BBB real pendiente',
-  },
-  {
-    phase: '8. Validación en Campo y Despliegue',
-    description: 'Aprovisionamiento de infraestructura de producción pública, dominio .gov.co y pruebas de carga masiva.',
-    status: 'pending',
-    statusLabel: 'En Alistamiento',
-  },
-]
+export { PLATFORM_CAPABILITIES as PHASES }
+export type { PlatformCapability, PlatformCapability as PhaseItem }
 
 export default ComingSoon

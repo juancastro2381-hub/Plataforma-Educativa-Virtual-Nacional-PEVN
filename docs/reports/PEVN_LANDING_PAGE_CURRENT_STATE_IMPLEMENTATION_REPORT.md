@@ -261,3 +261,41 @@ Every public statement was reviewed against authoritative documentation:
 ## 20. Next Action
 
 Human-in-the-Loop review by the project owner to verify the visual presentation on `http://localhost:3000/` and authorize Git commit when desired.
+
+---
+
+## 21. Addendum — Auditoría y Actualización de Tarjetas de Capacidad (Octubre 2026)
+
+### 21.1 Contexto y Remediación RBAC
+Tras la auditoría forense y remediación de autorización backend documentada en `PEVN_RBAC_ACADEMIC_MANAGEMENT_ADMIN_ROLES_AUDIT.md`, se llevó a cabo una actualización exhaustiva de la sección **"Estado y Capacidades de la Plataforma"** en la página de inicio (`frontend/src/pages/ComingSoon.tsx`).
+
+### 21.2 Fuente Única de Verdad (`platformCapabilities.ts`)
+Para evitar duplicidad y mantener una arquitectura mantenible, se creó el módulo centralizado:
+`frontend/src/config/platformCapabilities.ts`
+
+El cual define:
+1. **Modelo de Estados Estandarizado:**
+   - `IMPLEMENTADA_Y_VERIFICADA`: Software implementado y respaldado por pruebas automatizadas o certificación de ingeniería.
+   - `IMPLEMENTADA`: Funcionalidad implementada en código dentro de su alcance delimitado.
+   - `SOFTWARE_INTEGRADO_INFRAESTRUCTURA_PENDIENTE`: Capa lógica y adaptadores listos; pendiente infraestructura física o servicio de terceros.
+   - `EN_ALISTAMIENTO`: Pruebas de campo, infraestructura productiva, dominio o avales en preparación.
+   - `NO_VERIFICADA`: Evidencia insuficiente para aseverar su estado.
+
+2. **Matriz Comparativa de Capacidades:**
+
+| Tarjeta | Estado Previo | Estado Auditado y Actualizado | Evidencia y Justificación Técnica |
+| :--- | :---: | :---: | :--- |
+| **1. Fundación, Seguridad e Identidad** | `✓ IMPLEMENTADA` | **`✓ IMPLEMENTADA Y VERIFICADA`** | Verificado en `test_academic_admin_roles_authorization.py`, `test_sa01_superadmin_governance.py` y `test_nta08_authority_chain.py`. Criptografía Argon2id, tokens volátiles y RBAC cerrado: `superadmin`, `national_admin`, `department_admin` y `municipality_admin` bloqueados formalmente de la gestión académica escolar ordinaria. Se evita sobredimensionar como "certificación externa". |
+| **2. Estructura Institucional y Matrícula** | `✓ IMPLEMENTADA` | **`✓ IMPLEMENTADA Y VERIFICADA`** | Catálogo DANE/DUE (33 departamentos, municipios, colegios y sedes), vigencias, períodos, grupos y matrículas verificados en `test_academic_e2e_integration.py` y `test_academic_api.py`. Se explicita que la estructura SIMAT opera con datos de referencia locales, sin implicar enlace en tiempo real con servidores centrales del MEN. |
+| **3. Gestión Académica y Portales Soberanos** | `✓ IMPLEMENTADA` | **`✓ IMPLEMENTADA Y VERIFICADA`** | Portales para Directivos (Rector), Coordinadores, Docentes, Estudiantes y Acudientes verificados en pruebas de integración (`RoleNavigationFunctional.test.tsx`, `test_academic_api.py`). Se confirma que el bloqueo a roles administrativos externos no vulnera las facultades soberanas de la sede escolar. |
+| **4. Actividades Pedagógicas y Asistencia** | `✓ IMPLEMENTADA` | **`✓ IMPLEMENTADA Y VERIFICADA`** | Tareas pedagógicas, entregas con texto o archivo adjunto, planilla diaria de asistencia y planeación docente verificadas en `test_academic_api.py`. |
+| **5. Evaluación SIEE y Promoción Escolar** | `✓ IMPLEMENTADA` | **`✓ IMPLEMENTADA Y VERIFICADA`** | Parámetros del Decreto 1290, escalas institucionales, planillas periódicas, nivelaciones con tope legal y actas de promoción verificadas en código y pruebas, aclarando que no constituye certificación jurídica externa. |
+| **6. Comunicaciones y Convivencia Escolar** | `✓ IMPLEMENTADA` | **`✓ IMPLEMENTADA Y VERIFICADA`** | Circulares oficiales con acuse de recibo digital, periódico escolar y observador formativo según Ley 1620 verificados en pruebas unitarias y de integración. |
+| **7. Aulas Virtuales Sincrónicas** | `● SOFTWARE INTEGRADO` | **`● SOFTWARE INTEGRADO — INFRAESTRUCTURA PENDIENTE`** | Adaptador BigBlueButton (`BBBAdapter`) con firmas criptográficas SHA verificado en código. Servidores físicos de medios, configuración STUN/TURN y conectividad territorial permanecen en alistamiento. |
+| **8. Validación en Campo y Despliegue** | `EN ALISTAMIENTO` | **`EN ALISTAMIENTO`** | Infraestructura de producción para el sector público, gestión del dominio oficial `.gov.co`, pruebas de carga masiva concurrente y autorizaciones de pilotos institucionales pendientes de ejecución. |
+
+### 21.3 Verificación Automatizada
+- **`frontend/src/test/PlatformCapabilities.test.tsx`:** 8/8 pruebas aprobadas (renderizado de 8 tarjetas, consistencia de textos, badges y fronteras RBAC).
+- **`tsc --noEmit`:** 0 errores de tipado.
+- **`npm run build`:** Compilación exitosa para producción en Vite.
+
