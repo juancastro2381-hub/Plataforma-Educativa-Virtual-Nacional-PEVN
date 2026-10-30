@@ -184,6 +184,24 @@ class User(Base):
         return f"{self.first_name} {self.last_name}".strip()
 
     @property
+    def roles(self) -> list[str]:
+        """
+        Return deduplicated canonical role identifiers (machine names) for active role assignments.
+
+        Returns an empty list if there are no active assignments or if user_roles is not loaded.
+        """
+        if not hasattr(self, "user_roles") or not self.user_roles:
+            return []
+
+        assigned_roles: list[str] = []
+        for ur in self.user_roles:
+            if ur.is_active and getattr(ur, "role", None) is not None:
+                role_name = ur.role.name
+                if role_name and role_name not in assigned_roles:
+                    assigned_roles.append(role_name)
+        return assigned_roles
+
+    @property
     def is_locked(self) -> bool:
         """Check if account is currently locked due to brute force protection."""
         if self.locked_until is None:

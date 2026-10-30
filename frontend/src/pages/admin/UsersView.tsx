@@ -89,13 +89,13 @@ export const UsersView: React.FC = () => {
       national_admin: 'Administrador Nacional',
       department_admin: 'Administrador Departamental',
       municipality_admin: 'Administrador Municipal',
-      rector: 'Rector',
+      rector: 'Rector / Director',
       institution_admin: 'Admin Institucional',
       coordinator: 'Coordinador',
       academic_coordinator: 'Coordinador Académico',
       teacher: 'Docente',
       student: 'Estudiante',
-      guardian: 'Acudiente',
+      guardian: 'Acudiente / Tutor',
     }
     return map[role] || role
   }
@@ -330,14 +330,16 @@ export const UsersView: React.FC = () => {
                     </td>
                     <td style={{ padding: '1rem' }}>
                       <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
-                        {u.roles && u.roles.length > 0 ? (
+                        {Array.isArray(u.roles) && u.roles.length > 0 ? (
                           u.roles.map((r: string) => (
                             <Badge key={r} variant="neutral">
                               {formatRoleName(r)}
                             </Badge>
                           ))
-                        ) : (
+                        ) : Array.isArray(u.roles) && u.roles.length === 0 ? (
                           <span style={{ color: '#94A3B8', fontSize: '0.75rem' }}>Sin roles</span>
+                        ) : (
+                          <span style={{ color: '#E11D48', fontSize: '0.75rem' }}>Error en formato de roles</span>
                         )}
                       </div>
                     </td>
@@ -447,14 +449,16 @@ export const UsersView: React.FC = () => {
             <div>
               <span style={{ color: '#64748B', fontSize: '0.75rem', fontWeight: 600 }}>ROLES ATÓMICOS ASIGNADOS</span>
               <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.35rem' }}>
-                {selectedUser.roles && selectedUser.roles.length > 0 ? (
+                {Array.isArray(selectedUser.roles) && selectedUser.roles.length > 0 ? (
                   selectedUser.roles.map((r: string) => (
                     <Badge key={r} variant="primary">
                       {formatRoleName(r)}
                     </Badge>
                   ))
+                ) : Array.isArray(selectedUser.roles) && selectedUser.roles.length === 0 ? (
+                  <span style={{ color: '#94A3B8', fontSize: '0.8125rem' }}>Sin roles</span>
                 ) : (
-                  <span style={{ color: '#94A3B8', fontSize: '0.8125rem' }}>No especificados</span>
+                  <span style={{ color: '#E11D48', fontSize: '0.8125rem' }}>Error en formato de roles</span>
                 )}
               </div>
             </div>

@@ -60,7 +60,7 @@ class UserService:
         national administrators / superadmins.
         """
         stmt = select(User).options(
-            selectinload(User.user_roles),
+            selectinload(User.user_roles).selectinload(UserRole.role),
             selectinload(User.institution),
         )
         count_stmt = select(func.count(User.id))
@@ -145,7 +145,7 @@ class UserService:
         Retrieve user by ID ensuring institutional/territorial tenant containment.
         """
         stmt = select(User).where(User.id == user_id).options(
-            selectinload(User.user_roles),
+            selectinload(User.user_roles).selectinload(UserRole.role),
             selectinload(User.institution),
         )
         if institution_id is not None:

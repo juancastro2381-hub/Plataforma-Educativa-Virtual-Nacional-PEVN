@@ -213,3 +213,162 @@ async def test_get_user_by_id_tenant_boundary(
     # Forbidden / Not Found: User in different institution
     resp_b = await client.get(f"/api/v1/users/{pedro_b.id}", headers=headers)
     assert resp_b.status_code == 404
+
+
+@pytest.mark.anyio
+async def test_users_api_serializes_assigned_canonical_roles(
+    client: AsyncClient,
+    users_test_setup: dict,
+) -> None:
+    """
+    Validates:
+      1. GET /api/v1/users returns roles: ["rector"] for a user with an active rector assignment.
+      2. GET /api/v1/users returns roles: ["teacher"] for a teacher.
+      3. GET /api/v1/users/{id} returns the assigned canonical roles.
+    """
+    rector_a = users_test_setup["rector_a"]
+    carlos_a = users_test_setup["carlos_a"]
+    headers = await _auth_headers_for(rector_a, ["rector"])
+
+    resp = await client.get("/api/v1/users", headers=headers)
+    assert resp.status_code == 200
+    items = resp.json()["items"]
+
+    rector_item = next(i for i in items if i["id"] == str(rector_a.id))
+    assert rector_item["roles"] == ["rector"]
+
+    carlos_item = next(i for i in items if i["id"] == str(carlos_a.id))
+    assert carlos_item["roles"] == ["teacher"]
+
+    # Detail endpoint GET /api/v1/users/{id}
+    detail_carlos = await client.get(f"/api/v1/users/{carlos_a.id}", headers=headers)
+    assert detail_carlos.status_code == 200
+    assert detail_carlos.json()["roles"] == ["teacher"]
+
+    detail_rector = await client.get(f"/api/v1/users/{rector_a.id}", headers=headers)
+    assert detail_rector.status_code == 200
+    assert detail_rector.json()["roles"] == ["rector"]
+
+
+@pytest.mark.anyio
+async def test_user_roles_multiple_active_and_deduplication(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    users_test_setup: dict,
+) -> None:
+    """Validate multiple active roles are returned without duplicate codes."""
+    rector_a = users_test_setup["rector_a"]
+    carlos_a = users_test_setup["carlos_a"]
+    headers = await _auth_headers_for(rector_a, ["rector"])
+
+    role_coord = (await db_session.execute(select(Role).where(Role.name == "coordinator"))).scalar_one_or_none()
+    if not role_coord:
+        role_coord = Role(name="coordinator", display_name="Coordinador", level=50)
+        db_session.add(role_coord)
+        await db_session.flush()
+
+    role_teacher = (await db_session.execute(select(Role).where(Role.name == "teacher"))).scalar_one()
+
+    # Assign coordinator and another redundant teacher assignment
+    db_session.add_all([
+        UserRole(user_id=carlos_a.id, role_id=role_coord.id, is_active=True),
+        UserRole(user_id=carlos_a.id, role_id=role_teacher.id, is_active=True),
+    ])
+    await db_session.commit()
+
+    resp = await client.get(f"/api/v1/users/{carlos_a.id}", headers=headers)
+    assert resp.status_code == 200
+    roles = resp.json()["roles"]
+
+    # Must contain both teacher and coordinator without duplicates
+    assert "teacher" in roles
+    assert "coordinator" in roles
+    assert len(roles) == 2
+    assert len(roles) == len(set(roles))
+
+
+@pytest.mark.anyio
+async def test_inactive_and_revoked_roles_are_excluded(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    users_test_setup: dict,
+) -> None:
+    """Validate inactive or revoked UserRole assignments are excluded from serialization."""
+    rector_a = users_test_setup["rector_a"]
+    inst_a = users_test_setup["inst_a"]
+    headers = await _auth_headers_for(rector_a, ["rector"])
+
+    # Create a user with only an inactive role assignment
+    user_inactive_role = User(
+        institution_id=inst_a.id,
+        email="inactive.role@inst-a.edu.co",
+        username="inactive_role_user",
+        hashed_password=password_hasher.hash("SecurePass2026!"),
+        first_name="Inactivo",
+        last_name="Rol Test",
+        document_type=DocumentType.CC,
+        document_number="99887766",
+        is_active=True,
+        is_verified=True,
+    )
+    db_session.add(user_inactive_role)
+    await db_session.flush()
+
+    role_teacher = (await db_session.execute(select(Role).where(Role.name == "teacher"))).scalar_one()
+    ur_inactive = UserRole(
+        user_id=user_inactive_role.id,
+        role_id=role_teacher.id,
+        institution_id=inst_a.id,
+        is_active=False,  # REVOKED / INACTIVE
+    )
+    db_session.add(ur_inactive)
+    await db_session.commit()
+
+    resp = await client.get(f"/api/v1/users/{user_inactive_role.id}", headers=headers)
+    assert resp.status_code == 200
+    assert resp.json()["roles"] == []
+
+
+@pytest.mark.anyio
+async def test_user_with_no_assignments_returns_empty_roles_list(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    users_test_setup: dict,
+) -> None:
+    """Validate that a user with no role assignments receives roles: []."""
+    rector_a = users_test_setup["rector_a"]
+    inst_a = users_test_setup["inst_a"]
+    headers = await _auth_headers_for(rector_a, ["rector"])
+
+    orphan_user = User(
+        institution_id=inst_a.id,
+        email="orphan.test@inst-a.edu.co",
+        username="orphan_user_test",
+        hashed_password=password_hasher.hash("SecurePass2026!"),
+        first_name="Sin",
+        last_name="Roles Test",
+        document_type=DocumentType.CC,
+        document_number="1122334455",
+        is_active=True,
+        is_verified=True,
+    )
+    db_session.add(orphan_user)
+    await db_session.commit()
+
+    resp = await client.get(f"/api/v1/users/{orphan_user.id}", headers=headers)
+    assert resp.status_code == 200
+    assert resp.json()["roles"] == []
+
+
+@pytest.mark.anyio
+async def test_unauthorized_user_denied_access_to_user_directory(
+    client: AsyncClient,
+    users_test_setup: dict,
+) -> None:
+    """Validate unauthorized user (student without users:read) is rejected with 403."""
+    carlos_a = users_test_setup["carlos_a"]
+    # Student role lacks users:read
+    headers = await _auth_headers_for(carlos_a, ["student"])
+
+    resp = await client.get("/api/v1/users", headers=headers)
+    assert resp.status_code == 403

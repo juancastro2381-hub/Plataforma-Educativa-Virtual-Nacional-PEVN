@@ -115,7 +115,7 @@ export interface UserResponse {
   institution_id: string | null
   is_active: boolean
   is_verified: boolean
-  roles?: string[]
+  roles: string[]
   phone_number?: string | null
   created_at: string
   updated_at: string

@@ -55,6 +55,10 @@ class UserResponse(BaseModel):
     institution_id: uuid.UUID | None = None
     is_active: bool
     is_verified: bool
+    roles: list[str] = Field(
+        default_factory=list,
+        description="Canonical active role codes assigned to the user",
+    )
     created_at: datetime
     updated_at: datetime
 
