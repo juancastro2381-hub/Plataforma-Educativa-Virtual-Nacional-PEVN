@@ -210,15 +210,14 @@ class EvaluationService:
                 activity_grades_map[str(act.id)] = (
                     float(score_val) if score_val is not None else None
                 )
-                if score_val is not None and act.weight_percentage:
-                    w = act.weight_percentage
+                if score_val is not None:
+                    act_weight = getattr(act, "weight_percentage", None)
+                    w = Decimal(str(act_weight)) if act_weight and act_weight > 0 else Decimal("1.00")
                     total_weight += w
-                    weighted_sum += score_val * (w / Decimal("100.00"))
+                    weighted_sum += score_val * w
 
             if total_weight > Decimal("0.00"):
-                computed_score = round(
-                    weighted_sum * (Decimal("100.00") / total_weight), 2
-                )
+                computed_score = round(weighted_sum / total_weight, 2)
             else:
                 computed_score = Decimal("0.00")
 
@@ -306,9 +305,18 @@ class EvaluationService:
                 {
                     "id": str(a.id),
                     "title": a.title,
-                    "weight_percentage": float(a.weight_percentage) if a.weight_percentage else 0.0,
-                    "max_score": float(a.max_score),
-                    "due_date": str(a.due_date) if a.due_date else None,
+                    "weight_percentage": float(
+                        getattr(a, "weight_percentage", None)
+                        or (round(100.0 / len(activities), 2) if activities else 0.0)
+                    ),
+                    "max_score": float(a.max_score) if a.max_score else 5.0,
+                    "due_date": (
+                        a.due_date.date()
+                        if isinstance(a.due_date, datetime)
+                        else a.due_date
+                    )
+                    if a.due_date
+                    else None,
                 }
                 for a in activities
             ],

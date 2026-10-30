@@ -376,6 +376,69 @@ async def test_regression_period_sheet_empty_when_no_activities(
 
 
 @pytest.mark.asyncio
+async def test_regression_period_sheet_with_activities_and_grades_recurrence(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    period_sheet_fixture: dict[str, Any],
+) -> None:
+    """Recurrence validation: Sheet loads successfully when AcademicActivity records exist.
+    Prevents AttributeError: 'AcademicActivity' object has no attribute 'weight_percentage'.
+    """
+    f = period_sheet_fixture
+    p_id = str(f["period_open"].id)
+    g_id = str(f["group1"].id)
+    s_id = str(f["subject_bio"].id)
+    st_id = f["student"].id
+
+    # 1. Create an AcademicActivity for this group and subject
+    activity = AcademicActivity(
+        institution_id=f["inst1"].id,
+        teacher_id=f["teacher_assigned"].id,
+        academic_assignment_id=f["assignment"].id,
+        subject_id=f["subject_bio"].id,
+        group_id=f["group1"].id,
+        academic_year_id=f["period_open"].academic_year_id,
+        title="Taller 1 - Fotosíntesis y Celular",
+        due_date=datetime(2026, 4, 10, 18, 0, tzinfo=UTC),
+        max_score=Decimal("5.00"),
+    )
+    db_session.add(activity)
+    await db_session.flush()
+
+    # 2. Grade student on this activity
+    act_grade = ActivityGrade(
+        activity_id=activity.id,
+        student_id=st_id,
+        score=Decimal("4.60"),
+    )
+    db_session.add(act_grade)
+    await db_session.flush()
+
+    # 3. Call GET period-sheet
+    resp = await client.get(
+        f"/api/v1/evaluations/period-sheet?period_id={p_id}&group_id={g_id}&subject_id={s_id}",
+        headers={"Authorization": f"Bearer {f['token_assigned']}"},
+    )
+    assert resp.status_code == 200, f"Expected 200, got {resp.status_code}: {resp.text}"
+    data = resp.json()
+
+    # Verify Pydantic schema validation
+    validated = PeriodSheetResponse.model_validate(data)
+    assert len(validated.activities) == 1
+    assert validated.activities[0].title == "Taller 1 - Fotosíntesis y Celular"
+    assert validated.activities[0].weight_percentage == 100.0
+    assert validated.activities[0].max_score == 5.0
+    assert validated.activities[0].due_date == date(2026, 4, 10)
+
+    # Verify student computed score reflects activity
+    assert len(validated.students) == 1
+    student_row = validated.students[0]
+    assert student_row.calculated_score == 4.6
+    assert str(activity.id) in student_row.activity_grades
+    assert student_row.activity_grades[str(activity.id)] == 4.6
+
+
+@pytest.mark.asyncio
 async def test_regression_period_sheet_with_grades_and_orm_timestamps(
     client: AsyncClient,
     db_session: AsyncSession,

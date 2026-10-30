@@ -341,3 +341,122 @@ Untracked files:
 3. **Plena Compatibilidad Legal:** El cálculo ponderado y la escala nacional cualitativa (BAJO, BÁSICO, ALTO, SUPERIOR) operan conforme al Decreto 1290 de 2009.
 4. **Certificación:** La plataforma se encuentra lista para pruebas de aceptación funcional por el Product Owner en el entorno local.
 
+---
+
+## 10. RECURRENCE INVESTIGATION — MIGRATION 033
+
+### 10.1. Contexto de la Recurrencia
+Tras el despliegue de la migración `033_siee_evaluations_audit_timestamps.py` y la verificación inicial exitosa en el navegador (cuando la sábana de notas cargó correctamente sin actividades creadas), el usuario reportó una reaparición del error `HTTP 500 (Internal Server Error)` en el endpoint:
+`GET /api/v1/evaluations/period-sheet?period_id=<period_id>&group_id=<group_id>&subject_id=<subject_id>`
+al interactuar con el docente `mauro` de la institución `ALEGRIA DE APRENDER` en el grupo `101`, asignatura `Ciencias Naturales y Educación Ambiental - Primero`.
+
+### 10.2. Verificación de la Base de Datos del Backend en Ejecución
+- **Proceso Activo:** `uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload` (PID 20904, subproceso worker PID 24232).
+- **Destino de Base de Datos:** Conexión TCP activa contra `127.0.0.1:5433` (PostgreSQL en contenedor Docker, base de datos `pevn_db`).
+- **Estado de Migración Alembic:** La base de datos real `pevn_db` se encuentra exactamente en la revisión `033_siee_evaluations_audit_timestamps` (confirmada vía `alembic current`).
+- **Verificación de Esquema PostgreSQL:**
+  - `period_subject_grades.created_at`: `timestamp with time zone NOT NULL DEFAULT now()` (Presente).
+  - `academic_achievements.updated_at`: `timestamp with time zone NOT NULL DEFAULT now()` (Presente).
+  - `recovery_grades.updated_at`: `timestamp with time zone NOT NULL DEFAULT now()` (Presente).
+  - `student_promotions.updated_at`: `timestamp with time zone NOT NULL DEFAULT now()` (Presente).
+- **Conclusión de Fase 2 y 3:** La migración 033 **sí** fue aplicada correctamente a la base de datos de desarrollo y las columnas físicas existen. El fallo recurrente **no** se debió a una base de datos errónea ni a la falta de columnas en `period_subject_grades`.
+
+### 10.3. Captura Forense de la Nueva Excepción Raíz
+Al reproducir la petición directamente contra el contexto académico real del usuario `mauro` (`period_id = 7c6b481b-fd3d-45ff-8d06-0db8752942f5`, `group_id = 5f560cc6-a2f8-4b69-bd52-5c1291f1d76e`, `subject_id = c6ada5c2-09fd-4e72-b3a9-f4be0fe62393`), el servidor arrojó la siguiente excepción real no controlada:
+
+```text
+File "backend/app/services/evaluation_service.py", line 213, in get_period_sheet
+    if score_val is not None and act.weight_percentage:
+                                 ^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'AcademicActivity' object has no attribute 'weight_percentage'
+```
+
+### 10.4. Mecanismo de Disparo de la Recurrencia
+1. **Línea de Tiempo de Datos:**
+   - Previo a la sesión de prueba, el grupo `101` no tenía ninguna actividad académica creada (`activities = []`).
+   - Con `activities = []`, los bucles de consolidación de actividades (`for act in activities:`) y de serialización (`activities: [{... for a in activities}]`) eran ignorados limpiamente. Por ello, la sábana cargó inicialmente sin error.
+   - A las `08:32:43 UTC`, el docente `mauro` creó la primera actividad real: `Taller 1 - Investigación` (`id: ba7e05e9-2acd-4bec-b200-0e29d35ff88d`) y la calificó con nota `4.50`.
+   - Al volver a consultar la sábana de notas, `activities` contenía 1 registro.
+2. **Defecto del Código:**
+   - La entidad `AcademicActivity` (`backend/app/models/academic_activity.py` y tabla `academic_activities`) **no posee ni ha poseído nunca** la columna `weight_percentage`. Las ponderaciones porcentuales existen a nivel de período académico (`AcademicPeriod.weight_percentage`), mas no en la tabla de actividades.
+   - En `evaluation_service.py`, las líneas 213-214 y 309 intentaban acceder directamente a `act.weight_percentage` y `a.weight_percentage`, detonando un `AttributeError` que FastAPI convirtió en `HTTP 500`.
+
+### 10.5. Corrección Aplicada
+En `backend/app/services/evaluation_service.py`:
+1. **Cálculo Determinístico de Promedio Ponderado / Aritmético:**
+   Se sustituyó el acceso directo por una lectura segura y extensible:
+   ```python
+   for act in activities:
+       sub = submissions.get((act.id, st.id))
+       score_val = sub.score if sub and sub.score is not None else None
+       activity_grades_map[str(act.id)] = (
+           float(score_val) if score_val is not None else None
+       )
+       if score_val is not None:
+           act_weight = getattr(act, "weight_percentage", None)
+           w = Decimal(str(act_weight)) if act_weight and act_weight > 0 else Decimal("1.00")
+           total_weight += w
+           weighted_sum += score_val * w
+
+   if total_weight > Decimal("0.00"):
+       computed_score = round(weighted_sum / total_weight, 2)
+   else:
+       computed_score = Decimal("0.00")
+   ```
+   Si no se define ponderación individual por actividad, cada actividad calificada recibe un peso uniforme (`Decimal("1.00")`), calculando de forma exacta la media aritmética de las actividades evaluadas, garantizando total estabilidad matemática y respeto por el Decreto 1290 de 2009.
+2. **Serialización Segura de Actividades en Respuesta:**
+   En la construcción del diccionario de actividades:
+   ```python
+   "activities": [
+       {
+           "id": str(a.id),
+           "title": a.title,
+           "weight_percentage": float(
+               getattr(a, "weight_percentage", None)
+               or (round(100.0 / len(activities), 2) if activities else 0.0)
+           ),
+           "max_score": float(a.max_score) if a.max_score else 5.0,
+           "due_date": (
+               a.due_date.date()
+               if isinstance(a.due_date, datetime)
+               else a.due_date
+           )
+           if a.due_date
+           else None,
+       }
+       for a in activities
+   ],
+   ```
+   Distribuye equitativamente el 100% entre las actividades disponibles y convierte el objeto `datetime` de PostgreSQL en un `date` limpio compatible con `ActivitySummary(due_date: date | None)`.
+
+### 10.6. Verificación en el Servidor Real de Desarrollo
+Se ejecutó una prueba de integración HTTP en vivo contra el servidor activo `http://127.0.0.1:8000`:
+- **Petición:** `GET /api/v1/evaluations/period-sheet?period_id=7c6b481b-fd3d-45ff-8d06-0db8752942f5&group_id=5f560cc6-a2f8-4b69-bd52-5c1291f1d76e&subject_id=c6ada5c2-09fd-4e72-b3a9-f4be0fe62393`
+- **Autenticación:** Token del docente `mauro` (`ALEGRIA DE APRENDER`).
+- **Respuesta:** `HTTP 200 OK`
+- **Datos Obtenidos:**
+  - Actividades: 1 (`Taller 1 - Investigación`, peso 100.0%, max_score 5.0, due_date 2026-10-31).
+  - Estudiantes: 1 (`Danna Gonzalez`, nota calculada 4.5, nota definitiva 4.5, nivel `ALTO`).
+- **Prueba de Guardado de Notas:** `POST /api/v1/evaluations/period-grades` retornó `HTTP 200 OK` con persistencia confirmada de notas y observaciones.
+
+### 10.7. Ampliación de la Batería de Pruebas Automatizadas
+Se incorporó la prueba `test_regression_period_sheet_with_activities_and_grades_recurrence` en `backend/tests/test_evaluation_period_sheet_regression.py`. La suite completa arrojó:
+
+```text
+backend\tests\test_evaluation_period_sheet_regression.py::test_regression_period_sheet_empty_when_no_activities PASSED [ 14%]
+backend\tests\test_evaluation_period_sheet_regression.py::test_regression_period_sheet_with_activities_and_grades_recurrence PASSED [ 28%]
+backend\tests\test_evaluation_period_sheet_regression.py::test_regression_period_sheet_with_grades_and_orm_timestamps PASSED [ 42%]
+backend\tests\test_evaluation_period_sheet_regression.py::test_regression_period_sheet_closed_period_lock PASSED [ 57%]
+backend\tests\test_evaluation_period_sheet_regression.py::test_regression_period_sheet_unassigned_teacher_denied PASSED [ 71%]
+backend\tests\test_evaluation_period_sheet_regression.py::test_regression_period_sheet_cross_tenant_isolation PASSED [ 85%]
+backend\tests\test_evaluation_period_sheet_regression.py::test_regression_period_sheet_invalid_period_or_group PASSED [100%]
+
+============================= 7 passed in 20.39s ==============================
+```
+
+### 10.8. Archivos Modificados
+- `backend/app/services/evaluation_service.py`: Corrección del acceso a ponderación y fecha en cálculo y serialización de actividades.
+- `backend/tests/test_evaluation_period_sheet_regression.py`: Incorporación del caso de recurrencia con actividades reales.
+- `docs/reports/PEVN_TEACHER_SIEE_PERIOD_SHEET_HTTP500_FIX_REPORT.md`: Actualización del dictamen forense y certificación de resolución.
+
+
