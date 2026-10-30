@@ -119,8 +119,12 @@ export function PevnBrandText({
 }
 
 export interface PevnLogoBadgeProps {
-  /** Size in pixels (width & height), defaults to 56 */
+  /** Size in pixels (width & height), defaults to 56 when width/height are not set */
   size?: number
+  /** Optional width override (number in pixels or CSS string) */
+  width?: number | string
+  /** Optional height override (number in pixels or CSS string) */
+  height?: number | string
   /** Border radius in pixels, defaults to 14 */
   borderRadius?: number | string
   /** Background color of the container, defaults to '#0F172A' */
@@ -146,6 +150,8 @@ export interface PevnLogoBadgeProps {
  */
 export function PevnLogoBadge({
   size = 56,
+  width,
+  height,
   borderRadius = '14px',
   backgroundColor = '#0F172A',
   border = '1px solid rgba(255, 255, 255, 0.1)',
@@ -156,6 +162,11 @@ export function PevnLogoBadge({
   style = {},
   withAccentStripe = false,
 }: PevnLogoBadgeProps) {
+  const badgeWidth =
+    width !== undefined ? (typeof width === 'number' ? `${width}px` : width) : `${size}px`
+  const badgeHeight =
+    height !== undefined ? (typeof height === 'number' ? `${height}px` : height) : `${size}px`
+
   return (
     <div
       className={`pevn-logo-badge ${className}`}
@@ -164,8 +175,8 @@ export function PevnLogoBadge({
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        width: `${size}px`,
-        height: `${size}px`,
+        width: badgeWidth,
+        height: badgeHeight,
         borderRadius,
         backgroundColor,
         border,

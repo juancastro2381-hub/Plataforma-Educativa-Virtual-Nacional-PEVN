@@ -103,8 +103,9 @@ export const Login: React.FC = () => {
           {/* Institution Header */}
           <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
             <PevnLogoBadge
-              size={56}
-              borderRadius="14px"
+              width={80}
+              height={48}
+              borderRadius="12px"
               backgroundColor="#0F172A"
               border="1px solid rgba(255, 255, 255, 0.12)"
               boxShadow="0 8px 16px -4px rgba(15, 23, 42, 0.3)"
