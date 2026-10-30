@@ -249,6 +249,7 @@ class SieePolicy(Base):
         nullable=False,
         default=lambda: datetime.now(UTC),
         server_default=func.now(),
+        doc="Policy creation timestamp.",
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -256,6 +257,7 @@ class SieePolicy(Base):
         default=lambda: datetime.now(UTC),
         onupdate=lambda: datetime.now(UTC),
         server_default=func.now(),
+        doc="Policy update timestamp.",
     )
 
     # Relationships
@@ -417,11 +419,19 @@ class PeriodSubjectGrade(Base):
         nullable=True,
         doc="Teacher who validated and consolidated this grade.",
     )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(UTC),
+        server_default=func.now(),
+        doc="Record creation timestamp.",
+    )
     calculated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
         default=lambda: datetime.now(UTC),
         server_default=func.now(),
+        doc="Timestamp of calculated score computation.",
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -429,6 +439,7 @@ class PeriodSubjectGrade(Base):
         default=lambda: datetime.now(UTC),
         onupdate=lambda: datetime.now(UTC),
         server_default=func.now(),
+        doc="Timestamp of latest modification or teacher validation.",
     )
 
     # Relationships
@@ -530,6 +541,15 @@ class AcademicAchievement(Base):
         nullable=False,
         default=lambda: datetime.now(UTC),
         server_default=func.now(),
+        doc="Achievement creation timestamp.",
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+        server_default=func.now(),
+        doc="Achievement update timestamp.",
     )
 
     # Relationships
@@ -633,6 +653,15 @@ class RecoveryGrade(Base):
         nullable=False,
         default=lambda: datetime.now(UTC),
         server_default=func.now(),
+        doc="Achievement creation timestamp.",
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+        server_default=func.now(),
+        doc="Achievement update timestamp.",
     )
 
     # Relationships
@@ -780,6 +809,15 @@ class StudentPromotion(Base):
         nullable=False,
         default=lambda: datetime.now(UTC),
         server_default=func.now(),
+        doc="Achievement creation timestamp.",
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+        server_default=func.now(),
+        doc="Achievement update timestamp.",
     )
 
     # Relationships
