@@ -43,6 +43,7 @@ from app.models.group import Group
 from app.models.student import Student
 from app.models.subject import Subject
 from app.models.teacher import Teacher
+from app.services.academic_calculation_service import AcademicCalculationService
 from app.services.siee_policy_service import SieePolicyService
 
 
@@ -62,6 +63,7 @@ class EvaluationService:
         self._session = session
         self._audit = audit_service or audit or _default_audit_service
         self._siee_service = siee_service or SieePolicyService(session, audit=self._audit)
+        self._academic_calc_service = AcademicCalculationService(session=session)
 
     # =======================================================================
     # 1. Period Sheet Consolidation (Sábana de Calificaciones del Período)
@@ -174,17 +176,7 @@ class EvaluationService:
         )
         activities = list((await self._session.execute(act_stmt)).scalars().all())
 
-        # 9. Fetch Activity Grades
-        submissions: dict[tuple[uuid.UUID, uuid.UUID], ActivityGrade] = {}
-        if activities:
-            act_ids = [a.id for a in activities]
-            sub_stmt = select(ActivityGrade).where(
-                ActivityGrade.activity_id.in_(act_ids)
-            )
-            for sub in (await self._session.execute(sub_stmt)).scalars().all():
-                submissions[(sub.activity_id, sub.student_id)] = sub
-
-        # 10. Fetch Achievements / Descriptors
+        # 9. Fetch Achievements / Descriptors
         ach_stmt = select(AcademicAchievement).where(
             AcademicAchievement.institution_id == institution_id,
             AcademicAchievement.academic_period_id == period_id,
@@ -192,87 +184,16 @@ class EvaluationService:
         )
         achievements = list((await self._session.execute(ach_stmt)).scalars().all())
 
-        # 11. Assemble Student Rows
-        student_rows = []
-        for enr in enrollments:
-            st = enr.student
-            st_user = st.user
-            existing_rec = existing_grades.get(st.id)
-
-            # Compute automatic weighted average from activities
-            activity_grades_map = {}
-            total_weight = Decimal("0.00")
-            weighted_sum = Decimal("0.00")
-
-            for act in activities:
-                sub = submissions.get((act.id, st.id))
-                score_val = sub.score if sub and sub.score is not None else None
-                activity_grades_map[str(act.id)] = (
-                    float(score_val) if score_val is not None else None
-                )
-                if score_val is not None:
-                    act_weight = getattr(act, "weight_percentage", None)
-                    w = Decimal(str(act_weight)) if act_weight and act_weight > 0 else Decimal("1.00")
-                    total_weight += w
-                    weighted_sum += score_val * w
-
-            if total_weight > Decimal("0.00"):
-                computed_score = round(weighted_sum / total_weight, 2)
-            else:
-                computed_score = Decimal("0.00")
-
-            if existing_rec:
-                final_score = existing_rec.final_score
-                calculated_score = existing_rec.calculated_score
-                adjustment_reason = existing_rec.adjustment_reason
-                performance_level = existing_rec.performance_level
-                total_absences = existing_rec.total_absences
-                unexcused_absences = existing_rec.unexcused_absences
-                observations = existing_rec.observations
-                is_locked = existing_rec.is_locked
-                recoveries_list = [
-                    {
-                        "id": str(r.id),
-                        "initial_score": float(r.initial_score),
-                        "recovery_score": float(r.recovery_score),
-                        "applied_cap": float(r.applied_cap),
-                        "final_adjusted_score": float(r.final_adjusted_score),
-                        "recovery_date": str(r.recovery_date),
-                        "act_number": r.act_number,
-                    }
-                    for r in existing_rec.recovery_records
-                ]
-            else:
-                final_score = computed_score
-                calculated_score = computed_score
-                adjustment_reason = None
-                performance_level = self._siee_service.map_score_to_performance_level(
-                    final_score, policy
-                )
-                total_absences = 0
-                unexcused_absences = 0
-                observations = None
-                is_locked = period.is_closed
-                recoveries_list = []
-
-            student_rows.append({
-                "student_id": str(st.id),
-                "enrollment_id": str(enr.id),
-                "simat_code": st.code_simat,
-                "first_name": st_user.first_name if st_user else "",
-                "last_name": st_user.last_name if st_user else "",
-                "document_number": st_user.document_number if st_user else "",
-                "activity_grades": activity_grades_map,
-                "calculated_score": float(calculated_score),
-                "final_score": float(final_score),
-                "adjustment_reason": adjustment_reason,
-                "performance_level": performance_level.value,
-                "total_absences": total_absences,
-                "unexcused_absences": unexcused_absences,
-                "observations": observations,
-                "is_locked": is_locked or period.is_closed,
-                "recoveries": recoveries_list,
-            })
+        # 10. Assemble Student Rows with Authoritative Calculation Engine
+        student_rows = await self._academic_calc_service.batch_calculate_period_sheet(
+            institution_id=institution_id,
+            period=period,
+            group_id=group_id,
+            subject_id=subject_id,
+            policy=policy,
+            enrollments=enrollments,
+            existing_grades_map=existing_grades,
+        )
 
         return {
             "period": {
@@ -438,6 +359,19 @@ class EvaluationService:
             observations = item.get("observations")
             total_absences = int(item.get("total_absences", 0))
             unexcused_absences = int(item.get("unexcused_absences", 0))
+
+            # If client provides 0 absences, synchronize from authoritative DailyAttendance marks
+            if total_absences == 0 and unexcused_absences == 0:
+                att = await self._academic_calc_service.calculate_period_attendance(
+                    institution_id=institution_id,
+                    student_id=student_id,
+                    academic_year_id=period.academic_year_id,
+                    period=period,
+                    subject_id=subject_id,
+                    group_id=group_id,
+                )
+                total_absences = att.total_absences
+                unexcused_absences = att.unexcused_absences
 
             # Enforce inclusive score bounds [0.00, 5.00]
             if final_score < Decimal("0.00"):

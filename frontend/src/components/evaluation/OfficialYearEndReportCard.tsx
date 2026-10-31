@@ -36,7 +36,7 @@ export const OfficialYearEndReportCard: React.FC<Props> = ({
     }
   }
 
-  const getLevelBadge = (level: SieePerformanceLevel) => {
+  const getLevelBadge = (level?: SieePerformanceLevel | string | null) => {
     switch (level) {
       case 'SUPERIOR':
         return { bg: '#EFF6FF', border: '#93C5FD', text: '#1D4ED8', label: 'SUPERIOR' }
@@ -46,8 +46,13 @@ export const OfficialYearEndReportCard: React.FC<Props> = ({
         return { bg: '#FEFCE8', border: '#FDE047', text: '#854D0E', label: 'BÁSICO' }
       case 'BAJO':
         return { bg: '#FEF2F2', border: '#FCA5A5', text: '#B91C1C', label: 'BAJO' }
+      case 'PENDIENTE':
+      case 'PENDING':
+      case null:
+      case undefined:
+        return { bg: '#F8FAFC', border: '#CBD5E1', text: '#64748B', label: 'PENDIENTE' }
       default:
-        return { bg: '#F8FAFC', border: '#CBD5E1', text: '#475569', label: level }
+        return { bg: '#F8FAFC', border: '#CBD5E1', text: '#475569', label: String(level) }
     }
   }
 
@@ -89,6 +94,15 @@ export const OfficialYearEndReportCard: React.FC<Props> = ({
           title: 'PENDIENTE DE NIVELACIÓN EXTRAORDINARIA',
           description: 'Habilitado para presentar evaluaciones de recuperación de fin de año.',
         }
+      case 'PENDIENTE':
+        return {
+          bg: '#EFF6FF',
+          border: '#BFDBFE',
+          text: '#1E40AF',
+          icon: '⏳',
+          title: 'AÑO LECTIVO EN CURSO — DICTAMEN PROVISIONAL',
+          description: 'El año lectivo se encuentra en curso. El dictamen definitivo de promoción se emitirá tras la finalización y cierre de todos los períodos académicos.',
+        }
       default:
         return {
           bg: '#F8FAFC',
@@ -104,12 +118,14 @@ export const OfficialYearEndReportCard: React.FC<Props> = ({
   const promoBadge = getPromotionBadge(promotion.status)
   const summaryLevelStyle = getLevelBadge(summary.performance_level)
 
-  // Extract all distinct period numbers from subjects
-  const allPeriodNumbers = Array.from(
-    new Set(
-      subjects.flatMap((s) => Object.keys(s.period_grades).map((k) => Number(k)))
-    )
-  ).sort((a, b) => a - b)
+  // Extract all distinct period numbers from subjects or academic_year.periods
+  const allPeriodNumbers = (academic_year.periods && academic_year.periods.length > 0)
+    ? academic_year.periods.map((p) => p.period_number).sort((a, b) => a - b)
+    : Array.from(
+        new Set(
+          subjects.flatMap((s) => Object.keys(s.period_grades || {}).map((k) => Number(k)))
+        )
+      ).sort((a, b) => a - b)
 
   return (
     <div className="official-report-document" style={{ width: '100%', maxWidth: '960px', margin: '0 auto' }}>
@@ -305,7 +321,7 @@ export const OfficialYearEndReportCard: React.FC<Props> = ({
               Promedio Acumulado Anual
             </span>
             <strong style={{ fontSize: '1.35rem', fontWeight: 800, color: summaryLevelStyle.text }}>
-              {summary.cumulative_average.toFixed(2)}
+              {summary.cumulative_average != null ? summary.cumulative_average.toFixed(2) : '0.00'}
             </strong>
           </div>
 
@@ -418,10 +434,10 @@ export const OfficialYearEndReportCard: React.FC<Props> = ({
                           fontWeight: 800,
                           fontSize: '0.9375rem',
                           backgroundColor: '#F8FAFC',
-                          color: '#0F172A',
+                          color: sub.final_annual_score != null ? '#0F172A' : '#64748B',
                         }}
                       >
-                        {sub.final_annual_score.toFixed(2)}
+                        {sub.final_annual_score != null ? sub.final_annual_score.toFixed(2) : 'Pendiente'}
                       </td>
 
                       {/* Performance Level */}

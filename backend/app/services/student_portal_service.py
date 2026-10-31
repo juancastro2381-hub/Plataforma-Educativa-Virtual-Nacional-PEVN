@@ -50,6 +50,7 @@ from app.models.subject import Subject
 from app.models.teacher import Teacher
 from app.models.user import User
 from app.models.virtual_classroom import MeetingRecording, VirtualClassroom
+from app.services.academic_curriculum_service import AcademicCurriculumService
 from app.schemas.student_portal import (
     StudentActivitiesListResponse,
     StudentActivityItemResponse,
@@ -90,6 +91,7 @@ class StudentPortalService:
     ) -> None:
         self._session = session
         self._audit = audit
+        self._curriculum_service = AcademicCurriculumService(session=session)
         self._enrollment_cache: dict[uuid.UUID, Enrollment | None] = {}
 
     async def get_student_by_user_id(
@@ -183,73 +185,29 @@ class StudentPortalService:
         self,
         student: Student,
     ) -> StudentSubjectsListResponse:
-        """List all curriculum subjects for the student's active group."""
+        """List all curriculum subjects for the student's active group using the centralized curriculum service."""
         enrollment = await self.get_active_enrollment(student.id)
-        if not enrollment or not enrollment.group:
+        if not enrollment or not enrollment.group or not enrollment.academic_year_id:
             return StudentSubjectsListResponse(items=[], total=0)
 
-        group_id = enrollment.group.id
-        grade_id = enrollment.group.grade_id
-
-        # 1. Fetch active academic assignments for this group
-        assignments_stmt = (
-            select(AcademicAssignment)
-            .where(
-                AcademicAssignment.group_id == group_id,
-                AcademicAssignment.is_active.is_(True),
-            )
-            .options(
-                selectinload(AcademicAssignment.subject).selectinload(Subject.knowledge_area),
-                selectinload(AcademicAssignment.teacher).selectinload(Teacher.user),
-            )
+        matrix = await self._curriculum_service.resolve_student_curriculum(
+            institution_id=student.institution_id,
+            student_id=student.id,
+            academic_year_id=enrollment.academic_year_id,
         )
-        assignments = (await self._session.execute(assignments_stmt)).scalars().all()
 
-        items: list[StudentSubjectItemResponse] = []
-        covered_subject_ids: set[uuid.UUID] = set()
-
-        for assign in assignments:
-            subj = assign.subject
-            covered_subject_ids.add(subj.id)
-            teacher_name = assign.teacher.user.full_name if assign.teacher and assign.teacher.user else None
-            teacher_email = assign.teacher.user.email if assign.teacher and assign.teacher.user else None
-
-            items.append(
-                StudentSubjectItemResponse(
-                    subject_id=subj.id,
-                    name=subj.name,
-                    weekly_hours=assign.weekly_hours,
-                    knowledge_area_name=subj.knowledge_area.name if subj.knowledge_area else None,
-                    teacher_id=assign.teacher_id,
-                    teacher_name=teacher_name,
-                    teacher_email=teacher_email,
-                )
+        items = [
+            StudentSubjectItemResponse(
+                subject_id=sub.subject_id,
+                name=sub.subject_name,
+                weekly_hours=sub.weekly_hours,
+                knowledge_area_name=sub.knowledge_area_name,
+                teacher_id=sub.teacher_id,
+                teacher_name=sub.teacher_name,
+                teacher_email=sub.teacher_email,
             )
-
-        # 2. Add any statutory subjects for the grade not yet formally assigned to a teacher
-        subjects_stmt = (
-            select(Subject)
-            .where(
-                Subject.institution_id == student.institution_id,
-                Subject.grade_id == grade_id,
-                Subject.id.not_in(covered_subject_ids) if covered_subject_ids else True,
-            )
-            .options(selectinload(Subject.knowledge_area))
-            .order_by(Subject.name.asc())
-        )
-        unassigned_subjects = (await self._session.execute(subjects_stmt)).scalars().all()
-        for subj in unassigned_subjects:
-            items.append(
-                StudentSubjectItemResponse(
-                    subject_id=subj.id,
-                    name=subj.name,
-                    weekly_hours=subj.weekly_hours,
-                    knowledge_area_name=subj.knowledge_area.name if subj.knowledge_area else None,
-                    teacher_id=None,
-                    teacher_name=None,
-                    teacher_email=None,
-                )
-            )
+            for sub in matrix.subjects
+        ]
 
         return StudentSubjectsListResponse(items=items, total=len(items))
 

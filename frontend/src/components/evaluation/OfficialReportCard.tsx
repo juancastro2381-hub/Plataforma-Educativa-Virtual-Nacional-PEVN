@@ -36,7 +36,7 @@ export const OfficialReportCard: React.FC<Props> = ({
     }
   }
 
-  const getLevelBadge = (level: SieePerformanceLevel) => {
+  const getLevelBadge = (level?: SieePerformanceLevel | string | null) => {
     switch (level) {
       case 'SUPERIOR':
         return { bg: '#EFF6FF', border: '#93C5FD', text: '#1D4ED8', label: 'SUPERIOR' }
@@ -46,8 +46,13 @@ export const OfficialReportCard: React.FC<Props> = ({
         return { bg: '#FEFCE8', border: '#FDE047', text: '#854D0E', label: 'BÁSICO' }
       case 'BAJO':
         return { bg: '#FEF2F2', border: '#FCA5A5', text: '#B91C1C', label: 'BAJO' }
+      case 'PENDIENTE':
+      case 'PENDING':
+      case null:
+      case undefined:
+        return { bg: '#F8FAFC', border: '#CBD5E1', text: '#64748B', label: 'PENDIENTE' }
       default:
-        return { bg: '#F8FAFC', border: '#CBD5E1', text: '#475569', label: level }
+        return { bg: '#F8FAFC', border: '#CBD5E1', text: '#475569', label: String(level) }
     }
   }
 
@@ -298,13 +303,16 @@ export const OfficialReportCard: React.FC<Props> = ({
             }}
           >
             <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', display: 'block' }}>
-              Aprobadas / Reprobadas
+              Aprobadas / Reprobadas {summary.pending_subjects ? '/ Pendientes' : ''}
             </span>
             <strong style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0F172A' }}>
               <span style={{ color: '#15803D' }}>{summary.passed_subjects}</span> /{' '}
               <span style={{ color: summary.failed_subjects > 0 ? '#B91C1C' : '#64748B' }}>
                 {summary.failed_subjects}
               </span>
+              {summary.pending_subjects ? (
+                <span style={{ color: '#D97706', fontSize: '0.85rem' }}> ({summary.pending_subjects} pend.)</span>
+              ) : null}
             </strong>
           </div>
 
@@ -364,7 +372,7 @@ export const OfficialReportCard: React.FC<Props> = ({
                           {sub.weekly_hours}h
                         </td>
                         <td style={{ padding: '0.625rem 0.5rem', textAlign: 'center', color: '#64748B', verticalAlign: 'top' }}>
-                          {sub.calculated_score.toFixed(2)}
+                          {sub.calculated_score != null ? sub.calculated_score.toFixed(2) : '—'}
                         </td>
                         <td
                           style={{
@@ -372,11 +380,11 @@ export const OfficialReportCard: React.FC<Props> = ({
                             textAlign: 'center',
                             fontWeight: 800,
                             fontSize: '0.9375rem',
-                            color: sub.is_passed ? '#0F172A' : '#B91C1C',
+                            color: sub.final_score != null ? (sub.is_passed ? '#0F172A' : '#B91C1C') : '#64748B',
                             verticalAlign: 'top',
                           }}
                         >
-                          {sub.final_score.toFixed(2)}
+                          {sub.final_score != null ? sub.final_score.toFixed(2) : 'Pendiente'}
                         </td>
                         <td style={{ padding: '0.625rem 0.75rem', textAlign: 'center', verticalAlign: 'top' }}>
                           <span

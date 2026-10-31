@@ -51,7 +51,7 @@ from app.core.exceptions import (
     SieePolicyValidationError,
 )
 from app.core.logging import get_logger
-from app.models.academic_year import AcademicPeriod, AcademicYear
+from app.models.academic_year import AcademicPeriod, AcademicYear, AcademicYearStatus
 from app.models.enrollment import Enrollment, EnrollmentStatus
 from app.models.evaluation import (
     PerformanceLevelEnum,
@@ -65,6 +65,7 @@ from app.models.group import Group
 from app.models.institution import Campus, Institution
 from app.models.student import Student
 from app.models.subject import KnowledgeArea, Subject
+from app.services.academic_curriculum_service import AcademicCurriculumService
 from app.services.siee_policy_service import SieePolicyService
 
 _logger = get_logger(__name__)
@@ -82,10 +83,12 @@ class AcademicPromotionService:
         audit: IAuditService | None = None,
         audit_service: IAuditService | None = None,
         siee_service: SieePolicyService | None = None,
+        curriculum_service: AcademicCurriculumService | None = None,
     ) -> None:
         self._session = session
         self._audit = audit_service or audit or _default_audit_service
         self._siee_service = siee_service or SieePolicyService(session, audit=self._audit)
+        self._curriculum_service = curriculum_service or AcademicCurriculumService(session=session)
 
     # =======================================================================
     # 1. Promotion Preview (Evaluación para Comisión de Evaluación y Promoción)
@@ -122,7 +125,18 @@ class AcademicPromotionService:
             academic_year_id=academic_year_id,
         )
 
-        # 3. Fetch Active / Graduated Enrollments
+        # 3. Resolve Group Curriculum Matrix
+        curriculum_subjects = await self._curriculum_service.resolve_group_curriculum(
+            institution_id=institution_id,
+            group_id=group_id,
+            academic_year_id=academic_year_id,
+            grade_id=group.grade_id,
+            grade_name=group.grade.name if group.grade else "",
+        )
+        total_curriculum_count = len(curriculum_subjects)
+        is_year_active = (year.status == AcademicYearStatus.ACTIVE)
+
+        # 4. Fetch Active / Graduated Enrollments
         enr_stmt = (
             select(Enrollment)
             .where(
@@ -267,6 +281,15 @@ class AcademicPromotionService:
                     proposed_status = PromotionStatusEnum.PROMOVIDO
                     decision_reason = "Promovido al grado siguiente por excelencia o suficiencia académica."
 
+            evaluated_subjects_count = len(subject_map)
+            pending_subjects_count = max(0, total_curriculum_count - evaluated_subjects_count)
+            is_provisional = is_year_active or (pending_subjects_count > 0)
+
+            if is_provisional and proposed_status in (PromotionStatusEnum.PROMOVIDO, PromotionStatusEnum.GRADUADO):
+                decision_reason = (
+                    f"Dictamen provisional: año lectivo en curso con {evaluated_subjects_count} de {total_curriculum_count} asignaturas evaluadas."
+                )
+
             existing_promo = existing_promotions.get(st.id)
 
             candidates.append({
@@ -280,6 +303,10 @@ class AcademicPromotionService:
                 "attendance_percentage": float(att_percentage),
                 "proposed_status": proposed_status.value,
                 "decision_reason": decision_reason,
+                "is_provisional": is_provisional,
+                "total_curriculum_subjects": total_curriculum_count,
+                "evaluated_subjects_count": evaluated_subjects_count,
+                "pending_subjects_count": pending_subjects_count,
                 "is_committed": existing_promo is not None,
                 "committed_status": existing_promo.promotion_status.value if existing_promo else None,
                 "acta_number": existing_promo.acta_number if existing_promo else None,

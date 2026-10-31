@@ -277,10 +277,11 @@ export interface ReportCardSubjectItem {
   area_name: string
   weekly_hours: number
   teacher_name: string
-  calculated_score: number
-  final_score: number
-  performance_level: SieePerformanceLevel
-  is_passed: boolean
+  calculated_score: number | null
+  final_score: number | null
+  performance_level: SieePerformanceLevel | string | null
+  is_passed: boolean | null
+  evaluation_status?: 'GRADED' | 'PENDING' | 'CLOSED' | string
   adjustment_reason?: string | null
   total_absences: number
   unexcused_absences: number
@@ -291,14 +292,16 @@ export interface ReportCardSubjectItem {
 
 export interface ReportCardSummary {
   average_score: number
-  performance_level: SieePerformanceLevel
+  performance_level: SieePerformanceLevel | string
   total_subjects: number
   failed_subjects: number
   passed_subjects: number
+  pending_subjects?: number
   rank: number
   total_students: number
   total_absences: number
   unexcused_absences: number
+  is_provisional?: boolean
 }
 
 export interface StudentReportCardResponse {
@@ -342,9 +345,12 @@ export interface YearEndSubjectItem {
   subject_id: string
   subject_name: string
   area_name: string
+  weekly_hours?: number
+  teacher_name?: string
   period_grades: Record<string | number, { score: number; weight: number }>
-  final_annual_score: number
-  performance_level: SieePerformanceLevel
+  final_annual_score: number | null
+  performance_level: SieePerformanceLevel | string | null
+  evaluation_status?: 'GRADED' | 'PENDING' | 'CLOSED' | string
   total_absences: number
   unexcused_absences: number
 }
@@ -354,6 +360,9 @@ export interface YearEndPromotionInfo {
   acta_number?: string | null
   decision_date?: string | null
   observations?: string | null
+  is_provisional?: boolean
+  evaluated_periods_count?: number
+  total_periods_count?: number
 }
 
 export interface YearEndReportCardResponse {
@@ -376,6 +385,13 @@ export interface YearEndReportCardResponse {
     id: string
     year: number
     status?: string
+    periods?: Array<{
+      id: string
+      period_number: number
+      name: string
+      weight_percentage: number
+      is_closed: boolean
+    }>
   }
   group: {
     id: string
@@ -384,8 +400,13 @@ export interface YearEndReportCardResponse {
   }
   summary: {
     cumulative_average: number
-    performance_level: SieePerformanceLevel
+    performance_level: SieePerformanceLevel | string
+    total_subjects?: number
     failed_subjects_count: number
+    pending_subjects_count?: number
+    total_absences?: number
+    unexcused_absences?: number
+    is_provisional?: boolean
   }
   promotion: YearEndPromotionInfo
   subjects: YearEndSubjectItem[]
