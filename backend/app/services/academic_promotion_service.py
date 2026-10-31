@@ -65,6 +65,7 @@ from app.models.group import Group
 from app.models.institution import Campus, Institution
 from app.models.student import Student
 from app.models.subject import KnowledgeArea, Subject
+from app.services.academic_calculation_service import AcademicCalculationService
 from app.services.academic_curriculum_service import AcademicCurriculumService
 from app.services.siee_policy_service import SieePolicyService
 
@@ -84,11 +85,13 @@ class AcademicPromotionService:
         audit_service: IAuditService | None = None,
         siee_service: SieePolicyService | None = None,
         curriculum_service: AcademicCurriculumService | None = None,
+        calc_service: AcademicCalculationService | None = None,
     ) -> None:
         self._session = session
         self._audit = audit_service or audit or _default_audit_service
         self._siee_service = siee_service or SieePolicyService(session, audit=self._audit)
         self._curriculum_service = curriculum_service or AcademicCurriculumService(session=session)
+        self._calc_service = calc_service or AcademicCalculationService(session=session)
 
     # =======================================================================
     # 1. Promotion Preview (Evaluación para Comisión de Evaluación y Promoción)
@@ -164,6 +167,64 @@ class AcademicPromotionService:
             )
         )
         all_grades = list((await self._session.execute(grades_stmt)).scalars().all()) if enrollments else []
+
+        # Dynamic synchronization of open period grades for all enrolled students
+        p_stmt = (
+            select(AcademicPeriod)
+            .where(AcademicPeriod.academic_year_id == academic_year_id, AcademicPeriod.is_closed.is_(False))
+            .order_by(AcademicPeriod.period_number.asc())
+        )
+        open_periods = list((await self._session.execute(p_stmt)).scalars().all())
+
+        existing_grades_idx = {
+            (g.student_id, g.academic_period_id, g.subject_id): g for g in all_grades
+        }
+
+        has_new_grades = False
+        for enr in enrollments:
+            for p in open_periods:
+                for cur_sub in curriculum_subjects:
+                    key = (enr.student_id, p.id, cur_sub.subject_id)
+                    g = existing_grades_idx.get(key)
+                    if g is None:
+                        calc = await self._calc_service.calculate_subject_period_grade(
+                            institution_id=institution_id,
+                            student_id=enr.student_id,
+                            group_id=group_id,
+                            subject_id=cur_sub.subject_id,
+                            academic_year_id=academic_year_id,
+                            period=p,
+                            policy=policy,
+                            existing_grade=None,
+                        )
+                        if calc.has_evaluation:
+                            new_g = PeriodSubjectGrade(
+                                institution_id=institution_id,
+                                academic_period_id=p.id,
+                                enrollment_id=enr.id,
+                                student_id=enr.student_id,
+                                subject_id=cur_sub.subject_id,
+                                academic_assignment_id=cur_sub.assignment_id,
+                                calculated_score=calc.calculated_score,
+                                final_score=calc.final_score,
+                                adjustment_reason=calc.adjustment_reason,
+                                performance_level=calc.performance_level,
+                                total_absences=calc.total_absences,
+                                unexcused_absences=calc.unexcused_absences,
+                                observations=None,
+                                is_locked=False,
+                                graded_by_teacher_id=cur_sub.teacher_id,
+                                calculated_at=datetime.now(UTC),
+                                created_at=datetime.now(UTC),
+                                updated_at=datetime.now(UTC),
+                            )
+                            self._session.add(new_g)
+                            existing_grades_idx[key] = new_g
+                            has_new_grades = True
+
+        if has_new_grades:
+            await self._session.flush()
+            all_grades = list((await self._session.execute(grades_stmt)).scalars().all())
 
         # 5. Fetch Existing Promotion Decisions if already committed
         promo_stmt = select(StudentPromotion).where(

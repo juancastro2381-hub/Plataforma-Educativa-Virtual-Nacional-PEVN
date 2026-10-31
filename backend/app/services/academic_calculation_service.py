@@ -116,10 +116,8 @@ class AcademicCalculationService:
             stmt = stmt.where(DailyAttendance.group_id == group_id)
 
         if subject_id is not None:
-            # Match records specific to this subject OR group-level homeroom attendance
-            stmt = stmt.where(
-                (DailyAttendance.subject_id == subject_id) | (DailyAttendance.subject_id.is_(None))
-            )
+            # Match strictly records specific to this subject
+            stmt = stmt.where(DailyAttendance.subject_id == subject_id)
 
         # Date window logic:
         # If this is the earliest period (period_number == 1), all attendance up to period.end_date counts
@@ -169,9 +167,8 @@ class AcademicCalculationService:
             stmt = stmt.where(DailyAttendance.group_id == group_id)
 
         if subject_id is not None:
-            stmt = stmt.where(
-                (DailyAttendance.subject_id == subject_id) | (DailyAttendance.subject_id.is_(None))
-            )
+            # Match strictly records specific to this subject
+            stmt = stmt.where(DailyAttendance.subject_id == subject_id)
 
         records = list((await self._session.execute(stmt)).scalars().all())
 

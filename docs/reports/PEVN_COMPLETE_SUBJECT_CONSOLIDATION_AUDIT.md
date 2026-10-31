@@ -361,5 +361,109 @@ PWA v0.21.2: sw.js generated
    No se realizaron commits ni pushes no autorizados a los repositorios remotos de Git, manteniendo intacto el ciclo de revisión y control de cambios del proyecto.
 
 ---
-**Dictamen Final:** REMEDIACIÓN ARQUITECTÓNICA APROBADA Y CERTIFICADA PARA PRODUCCIÓN.
+
+## 16. FINAL CROSS-REPORT GRADE CONSISTENCY VALIDATION
+
+### 16.1. Causa Raíz de la Discrepancia en Matemáticas
+Durante la auditoría forense entre el Boletín Periódico y el Informe Final de Promoción Anual se detectó que la asignatura *Matemáticas - Primero* (`id: 7ad31577-c278-4e53-aeb5-07af2ea393b5`) contaba con calificaciones de actividades registradas y evaluadas en el LMS (calificación de 3.50 en la actividad "Tarea Matemáticas"), pero carecía de una fila consolidada persistida en la tabla `period_subject_grades`.
+1. **Cálculo en Memoria vs. Persistencia:** `ReportCardService.get_student_report_card` calculaba dinámicamente la nota de Matemáticas (3.50) a través de `calculate_subject_period_grade`, pero cuando `existing_g is None`, no creaba ni persistía la fila en la base de datos PostgreSQL.
+2. **Desincronización en Reporte Anual:** `ReportCardService.get_student_final_report_card` y `AcademicPromotionService.calculate_promotion_preview` consultaban directamente los registros de `period_subject_grades`. Al no existir la fila de Matemáticas, el reporte final anual la omitía de los períodos acumulados, renderizando el Período 1 en blanco, asignando nota definitiva vacía (`None`), excluyéndola del promedio anual (3.37 en lugar de 3.44) y reportándola como pendiente (9 asignaturas pendientes en vez de 8).
+
+### 16.2. Archivos Modificados en el Backend y Frontend
+- `backend/app/services/report_card_service.py`:
+  - En `get_student_report_card`: Sincronización y persistencia atómica inmediata de `PeriodSubjectGrade` cuando se calcula una nota activa del período que aún no existía en base de datos.
+  - En `get_student_final_report_card`: Integración del cálculo y persistencia para todas las asignaturas evaluadas del currículo en períodos abiertos. Implementación de la **Regla 10 (Decreto 1290)**: cuando el año lectivo se encuentra activo (`is_year_completed = False`), `final_annual_score` se mantiene en `None` (renderizado como "Pendiente" y estado `PENDING`), pero se exponen las notas periódicas (P1 = 3.50, P1 = 3.37) y se calcula el promedio acumulado institucional de las asignaturas evaluadas (`3.44`).
+- `backend/app/services/academic_calculation_service.py`:
+  - Corrección del filtro de asistencia en `calculate_period_attendance` y `calculate_annual_attendance`: cuando se evalúa una asignatura específica (`subject_id is not None`), la consulta se restringe estrictamente a `DailyAttendance.subject_id == subject_id`. Se eliminó la condición `or subject_id is None` que provocaba que 1 inasistencia de dirección de grupo (homeroom) se replicara en las 10 filas de asignaturas individuales.
+- `backend/app/services/academic_promotion_service.py`:
+  - Inyección de `AcademicCalculationService` y sincronización previa de notas de períodos abiertos contra la matriz curricular, permitiendo que la vista previa de promoción (`calculate_promotion_preview`) refleje exactamente el promedio acumulado real de las notas del LMS (`3.44`, 2 asignaturas evaluadas, 8 pendientes).
+- `backend/tests/test_academic_calculation_integrity.py`:
+  - Adaptación de la aserción de inasistencias en boletines para validar la separación estricta entre inasistencias generales de dirección de grupo (1 en resumen) y por asignatura (0 en fila de materia).
+
+### 16.3. Flujo de Datos Antes y Después de la Corrección
+
+```mermaid
+graph TD
+    subgraph "Antes (Discrepancia y Fugas de Datos)"
+        A1[Actividades LMS Matemáticas: 3.50] --> B1[ReportCardService: Cálculo volátil en memoria]
+        B1 -.->|No persistía en BD| C1[(period_subject_grades: Solo Ciencias 3.37)]
+        C1 --> D1[Boletín Anual: Matemáticas omitida / P1 Vacío]
+        C1 --> E1[Promoción Anual: Promedio 3.37 - 9 Pendientes]
+        F1[Inasistencia Dirección de Grupo: 1 falla] --> G1[Filtro OR subject_id IS NULL]
+        G1 --> H1[Boletín: 1 falla replicada en las 10 materias]
+    end
+
+    subgraph "Después (Consistencia Total y Regla 10 SIEE)"
+        A2[Actividades LMS Matemáticas: 3.50] --> B2[AcademicCalculationService: Cálculo evaluado]
+        B2 -->|Persistencia Atómica| C2[(period_subject_grades: Ciencias 3.37 & Matemáticas 3.50)]
+        C2 --> D2[Boletín Periódico: P1 Mat=3.50, C.Nat=3.37, Prom=3.44, Pend=8]
+        C2 --> E2[Boletín Anual: P1 Mat=3.50, C.Nat=3.37, Prom=3.44, Def=Pendiente por año activo]
+        C2 --> F2[Comité Promoción: Danna Promedio 3.44, 2 Evaluadas, 8 Pendientes]
+        G2[Inasistencia Dirección de Grupo: 1 falla] --> H2[Filtro Estricto de Asignatura]
+        H2 --> I2[Resumen Boletín: 1 falla institucional / Filas Materias: 0 fallas]
+    end
+```
+
+### 16.4. Matriz de Validación de las 10 Asignaturas Curriculares (Caso Danna Gonzalez)
+
+| # | Asignatura Curricular | Área de Conocimiento | Horas | Nota P1 | Estado P1 | Nota Definitiva Anual | Nivel Desempeño Anual | Fallas Materia | Fallas Institucional |
+|---|---|---|---|---|---|---|---|---|---|
+| 1 | Ciencias Naturales y Educación Ambiental - Primero | Ciencias Naturales | 4 | **3.37** | EVALUADA | *Pendiente* (Regla 10) | PENDIENTE | 0 | 1 (Resumen) |
+| 2 | Matemáticas - Primero | Matemáticas | 5 | **3.50** | EVALUADA | *Pendiente* (Regla 10) | PENDIENTE | 0 | 1 (Resumen) |
+| 3 | Ciencias Sociales - Primero | Ciencias Sociales | 3 | — | PENDIENTE | *Pendiente* | PENDIENTE | 0 | 1 (Resumen) |
+| 4 | Educación Artística - Primero | Educación Artística | 2 | — | PENDIENTE | *Pendiente* | PENDIENTE | 0 | 1 (Resumen) |
+| 5 | Educación Física, Recreación y Deporte - Primero | Educación Física | 2 | — | PENDIENTE | *Pendiente* | PENDIENTE | 0 | 1 (Resumen) |
+| 6 | Educación Religiosa - Primero | Educación Religiosa | 1 | — | PENDIENTE | *Pendiente* | PENDIENTE | 0 | 1 (Resumen) |
+| 7 | Ética y Valores - Primero | Ética y Valores | 1 | — | PENDIENTE | *Pendiente* | PENDIENTE | 0 | 1 (Resumen) |
+| 8 | Inglés - Primero | Idiomas Extranjeros | 2 | — | PENDIENTE | *Pendiente* | PENDIENTE | 0 | 1 (Resumen) |
+| 9 | Lengua Castellana - Primero | Humanidades | 5 | — | PENDIENTE | *Pendiente* | PENDIENTE | 0 | 1 (Resumen) |
+| 10 | Tecnología e Informática - Primero | Tecnología | 2 | — | PENDIENTE | *Pendiente* | PENDIENTE | 0 | 1 (Resumen) |
+
+### 16.5. Valores Reales Persistidos y Extraídos de PostgreSQL (`localhost:5433/pevn_db`)
+- **Estudiante Auditado:** Danna Gonzalez (`id: d901ca15-d414-430d-8983-fe4f0c354617`, SIMAT: `SIMAT-2026-004`).
+- **Institución:** ALEGRIA DE APRENDER (`id: 3b445e50-ca10-4f6c-977d-2d10640ee24f`).
+- **Año Lectivo:** 2027 (`id: a2a0cd88-d0bd-4c1c-aaac-47c3f3eab5e4`, estado: `ACTIVE`, períodos no cerrados).
+- **Período 1:** `id: 7c6b481b-fd3d-45ff-8d06-0db8752942f5` (Abierto, peso: 33.33%).
+- **Calificaciones Consolidadas en `period_subject_grades`:**
+  - Registro 1: `subject_id: c6ada5c2-09fd-4e72-b3a9-f4be0fe62393` (*Ciencias Naturales*) -> `calculated_score: 3.37`, `final_score: 3.37`, `performance_level: BASICO`.
+  - Registro 2: `subject_id: 7ad31577-c278-4e53-aeb5-07af2ea393b5` (*Matemáticas*) -> `calculated_score: 3.50`, `final_score: 3.50`, `performance_level: BASICO`.
+
+### 16.6. Cálculo y Reconciliación de Promedios Periódicos y Anuales
+- **Asignaturas con Nota:** 2 (Ciencias Naturales = 3.37, Matemáticas = 3.50).
+- **Cálculo Aritmético:**  
+  $$\text{Promedio} = \frac{3.37 + 3.50}{2} = \frac{6.87}{2} = 3.435 \xrightarrow{\text{round(..., 2)}} \mathbf{3.44}$$
+- **Boletín de Período 1:** `average_score = 3.44`, nivel `BASICO`.
+- **Informe Final de Promoción Anual:** `cumulative_average = 3.44`, nivel `BASICO`.
+- **Vista Previa de Promoción:** `cumulative_average = 3.44`, estado propuesto `PROMOVIDO` (provisional).
+
+### 16.7. Reconciliación del Conteo de Asignaturas Pendientes
+- **Total Asignaturas del Plan de Estudios Institucional:** 10
+- **Asignaturas Evaluadas:** 2 (Ciencias Naturales y Matemáticas)
+- **Asignaturas Aprobadas:** 2 (ambas $\ge 3.00$)
+- **Asignaturas Reprobadas:** 0
+- **Asignaturas Pendientes (sin evaluar en el período / año):** $\mathbf{8}$ (exactamente reconciliado, eliminando la discrepancia previa entre 8 y 9).
+
+### 16.8. Reconciliación de Asistencia e Inasistencias
+- **Registro en `daily_attendances`:** 1 inasistencia injustificada el `2026-10-29`, registrada sin `subject_id` (asistencia general de dirección de grupo institucional).
+- **Resumen General del Boletín y Reporte Final:** Muestra con exactitud `total_absences: 1` e `unexcused_absences: 1`.
+- **Filas Individuales por Materia:** Cada una de las 10 materias muestra `total_absences: 0` y `unexcused_absences: 0`, previniendo la duplicación errónea de la falta en el plan de estudios.
+
+### 16.9. Resultados de Pruebas Automatizadas
+1. **Script de Verificación en Vivo contra PostgreSQL:**  
+   `verify_reconciliation.py` ejecutado exitosamente con 100% de aserciones validadas (boletín de período, reporte anual final y promoción preventiva).
+2. **Suite Completa de Pruebas Pytest:**  
+   `pytest backend/tests/test_academic_curriculum_and_report_cards.py backend/tests/test_academic_calculation_integrity.py backend/tests/test_siee_and_evaluations_domain_services.py backend/tests/test_siee_and_evaluations_api.py -v`  
+   **Resultado:** 21 pruebas pasadas (100% exitosas) en 43.64 segundos.
+3. **Chequeo de Tipos TypeScript:**  
+   `npm --prefix frontend run typecheck` (`tsc --noEmit`) -> Código de salida 0 (0 errores de tipado).
+4. **Compilación de Producción Frontend:**  
+   `npm --prefix frontend run build` (`vite build`) -> Código de salida 0 (éxito en 6.09s).
+
+### 16.10. Limitaciones Remanentes y Condiciones de Operación
+- **Cierre del Año Lectivo:** Las notas definitivas anuales de las asignaturas se mantendrán deliberadamente como `None` ("Pendiente") hasta que la institución educativa ejecute el cierre formal de los períodos reglamentarios (Períodos 2 y 3), en estricta observancia del Decreto 1290 de 2009.
+- **Asignaciones Docentes Faltantes:** Las 8 asignaturas pendientes que no cuentan con docente asignado ni actividades creadas continuarán reportándose formalmente en el currículo sin penalizar la calificación de los estudiantes hasta que la rectoría institucional efectúe las asignaciones pedagógicas correspondientes.
+
+---
+**Dictamen Final de Auditoría:** CERTIFICACIÓN DE INTEGRIDAD Y CONSISTENCIA ACADÉMICA TOTAL APROBADA.
+
 

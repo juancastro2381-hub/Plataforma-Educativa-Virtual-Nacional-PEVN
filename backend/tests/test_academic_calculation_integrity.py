@@ -623,7 +623,8 @@ async def test_report_cards_consistency_and_provisional_status(
     assert p_card["summary"]["total_absences"] == 1
     assert p_card["summary"]["unexcused_absences"] == 1
     assert p_card["subjects"][0]["final_score"] == 3.37
-    assert p_card["subjects"][0]["total_absences"] == 1
+    # Homeroom absence (subject_id=None) reflects in summary, not in subject-specific row
+    assert p_card["subjects"][0]["total_absences"] == 0
 
     # 2. Year-End Report Card
     y_card = await rc_svc.get_student_final_report_card(

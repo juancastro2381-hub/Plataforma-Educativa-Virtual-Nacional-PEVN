@@ -201,23 +201,48 @@ class ReportCardService:
                     existing_grade=existing_g,
                 )
                 if calc.has_evaluation:
-                    # Sync into existing grade record if present
-                    if existing_g and not existing_g.is_locked:
-                        if (
-                            existing_g.calculated_score != calc.calculated_score
-                            or existing_g.final_score != calc.final_score
-                            or existing_g.total_absences != calc.total_absences
-                            or existing_g.unexcused_absences != calc.unexcused_absences
-                        ):
-                            existing_g.calculated_score = calc.calculated_score
-                            existing_g.final_score = calc.final_score
-                            existing_g.adjustment_reason = calc.adjustment_reason
-                            existing_g.performance_level = calc.performance_level
-                            existing_g.total_absences = calc.total_absences
-                            existing_g.unexcused_absences = calc.unexcused_absences
-                            existing_g.calculated_at = datetime.now(UTC)
-                            existing_g.updated_at = datetime.now(UTC)
-                            self._session.add(existing_g)
+                    # Sync into existing grade record if present, or create new record
+                    if existing_g:
+                        if not existing_g.is_locked:
+                            if (
+                                existing_g.calculated_score != calc.calculated_score
+                                or existing_g.final_score != calc.final_score
+                                or existing_g.total_absences != calc.total_absences
+                                or existing_g.unexcused_absences != calc.unexcused_absences
+                            ):
+                                existing_g.calculated_score = calc.calculated_score
+                                existing_g.final_score = calc.final_score
+                                existing_g.adjustment_reason = calc.adjustment_reason
+                                existing_g.performance_level = calc.performance_level
+                                existing_g.total_absences = calc.total_absences
+                                existing_g.unexcused_absences = calc.unexcused_absences
+                                existing_g.calculated_at = datetime.now(UTC)
+                                existing_g.updated_at = datetime.now(UTC)
+                                self._session.add(existing_g)
+                    else:
+                        new_g = PeriodSubjectGrade(
+                            institution_id=institution_id,
+                            academic_period_id=period_id,
+                            enrollment_id=enrollment.id,
+                            student_id=student_id,
+                            subject_id=cur_sub.subject_id,
+                            academic_assignment_id=cur_sub.assignment_id,
+                            calculated_score=calc.calculated_score,
+                            final_score=calc.final_score,
+                            adjustment_reason=calc.adjustment_reason,
+                            performance_level=calc.performance_level,
+                            total_absences=calc.total_absences,
+                            unexcused_absences=calc.unexcused_absences,
+                            observations=None,
+                            is_locked=False,
+                            graded_by_teacher_id=cur_sub.teacher_id,
+                            calculated_at=datetime.now(UTC),
+                            created_at=datetime.now(UTC),
+                            updated_at=datetime.now(UTC),
+                        )
+                        self._session.add(new_g)
+                        existing_grades_map[cur_sub.subject_id] = new_g
+                        existing_g = new_g
 
                     final_score_val: float | None = float(calc.final_score)
                     calc_score_val: float | None = float(calc.calculated_score)
@@ -520,40 +545,68 @@ class ReportCardService:
         )
         all_grades = list((await self._session.execute(grades_stmt)).scalars().all())
 
-        # Dynamic synchronization of open period grades
-        for g in all_grades:
-            if not g.academic_period.is_closed and not g.is_locked:
-                calc = await self._academic_calc_service.calculate_subject_period_grade(
-                    institution_id=institution_id,
-                    student_id=student_id,
-                    group_id=group.id,
-                    subject_id=g.subject_id,
-                    academic_year_id=academic_year_id,
-                    period=g.academic_period,
-                    policy=policy,
-                    existing_grade=g,
-                )
-                if (
-                    g.calculated_score != calc.calculated_score
-                    or g.final_score != calc.final_score
-                    or g.total_absences != calc.total_absences
-                    or g.unexcused_absences != calc.unexcused_absences
-                ):
-                    g.calculated_score = calc.calculated_score
-                    g.final_score = calc.final_score
-                    g.adjustment_reason = calc.adjustment_reason
-                    g.performance_level = calc.performance_level
-                    g.total_absences = calc.total_absences
-                    g.unexcused_absences = calc.unexcused_absences
-                    g.calculated_at = datetime.now(UTC)
-                    g.updated_at = datetime.now(UTC)
-                    self._session.add(g)
-        await self._session.flush()
-
         # Index existing grades by (period_id, subject_id)
         grades_by_period_subject = {
             (g.academic_period_id, g.subject_id): g for g in all_grades
         }
+
+        # Dynamic synchronization of open period grades across ALL curriculum subjects
+        for cur_sub in curriculum.subjects:
+            for p in all_year_periods:
+                if not p.is_closed:
+                    g = grades_by_period_subject.get((p.id, cur_sub.subject_id))
+                    calc = await self._academic_calc_service.calculate_subject_period_grade(
+                        institution_id=institution_id,
+                        student_id=student_id,
+                        group_id=group.id,
+                        subject_id=cur_sub.subject_id,
+                        academic_year_id=academic_year_id,
+                        period=p,
+                        policy=policy,
+                        existing_grade=g,
+                    )
+                    if calc.has_evaluation:
+                        if g:
+                            if not g.is_locked:
+                                if (
+                                    g.calculated_score != calc.calculated_score
+                                    or g.final_score != calc.final_score
+                                    or g.total_absences != calc.total_absences
+                                    or g.unexcused_absences != calc.unexcused_absences
+                                ):
+                                    g.calculated_score = calc.calculated_score
+                                    g.final_score = calc.final_score
+                                    g.adjustment_reason = calc.adjustment_reason
+                                    g.performance_level = calc.performance_level
+                                    g.total_absences = calc.total_absences
+                                    g.unexcused_absences = calc.unexcused_absences
+                                    g.calculated_at = datetime.now(UTC)
+                                    g.updated_at = datetime.now(UTC)
+                                    self._session.add(g)
+                        else:
+                            new_g = PeriodSubjectGrade(
+                                institution_id=institution_id,
+                                academic_period_id=p.id,
+                                enrollment_id=enrollment.id,
+                                student_id=student_id,
+                                subject_id=cur_sub.subject_id,
+                                academic_assignment_id=cur_sub.assignment_id,
+                                calculated_score=calc.calculated_score,
+                                final_score=calc.final_score,
+                                adjustment_reason=calc.adjustment_reason,
+                                performance_level=calc.performance_level,
+                                total_absences=calc.total_absences,
+                                unexcused_absences=calc.unexcused_absences,
+                                observations=None,
+                                is_locked=False,
+                                graded_by_teacher_id=cur_sub.teacher_id,
+                                calculated_at=datetime.now(UTC),
+                                created_at=datetime.now(UTC),
+                                updated_at=datetime.now(UTC),
+                            )
+                            self._session.add(new_g)
+                            grades_by_period_subject[(p.id, cur_sub.subject_id)] = new_g
+        await self._session.flush()
 
         # Calculate authoritative live annual attendance from DailyAttendance
         annual_att = await self._academic_calc_service.calculate_annual_attendance(
@@ -568,6 +621,7 @@ class ReportCardService:
         cumulative_scores = []
         failed_subjects = 0
         pending_subjects = 0
+        is_year_completed = (year.status == AcademicYearStatus.CLOSED) and (len(open_periods) == 0)
 
         for cur_sub in curriculum.subjects:
             p_grades = {}
@@ -598,15 +652,23 @@ class ReportCardService:
             if total_weight > Decimal("0.00"):
                 final_subj_score = round(weighted_sum * (Decimal("100.00") / total_weight), 2)
                 cumulative_scores.append(final_subj_score)
-                if final_subj_score < policy.min_passing_score:
-                    failed_subjects += 1
                 subj_perf = self._siee_service.map_score_to_performance_level(final_subj_score, policy).value
-                eval_status = "CLOSED" if all(p.is_closed for p in all_year_periods) else "GRADED"
-                final_annual_val: float | None = float(final_subj_score)
-                perf_level_val: str | None = subj_perf
+
+                # Rule 10: Annual final grades must remain pending when the academic year is active
+                # and the required evaluation periods have not been closed.
+                if is_year_completed:
+                    if final_subj_score < policy.min_passing_score:
+                        failed_subjects += 1
+                    final_annual_val: float | None = float(final_subj_score)
+                    perf_level_val: str | None = subj_perf
+                    eval_status = "CLOSED"
+                else:
+                    final_annual_val = None
+                    perf_level_val = "PENDIENTE"
+                    eval_status = "PENDING"
             else:
                 final_annual_val = None
-                perf_level_val = None
+                perf_level_val = "PENDIENTE"
                 eval_status = "PENDING"
                 pending_subjects += 1
 
@@ -618,6 +680,7 @@ class ReportCardService:
                 "teacher_name": cur_sub.teacher_name or "No asignado",
                 "period_grades": p_grades,
                 "final_annual_score": final_annual_val,
+                "provisional_annual_score": float(final_subj_score) if total_weight > Decimal("0.00") else None,
                 "performance_level": perf_level_val if perf_level_val else "PENDIENTE",
                 "evaluation_status": eval_status,
                 "total_absences": sub_att.total_absences,
