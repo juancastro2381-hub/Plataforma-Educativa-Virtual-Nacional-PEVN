@@ -12,6 +12,7 @@
 
 import React, { useEffect, useState } from 'react'
 import { communicationApi } from '@/services/communication'
+import { useNotification } from '@/hooks/useNotification'
 import type {
   CommunicationCategory,
   InstitutionalCommunicationItem,
@@ -39,6 +40,7 @@ const PRIORITY_STYLES: Record<string, { bg: string; color: string; border: strin
 }
 
 export const GuardianCommunicationsView: React.FC<Props> = ({ onBackToDashboard: _onBackToDashboard }) => {
+  const { success: notifySuccess, error: notifyError } = useNotification()
   const [communications, setCommunications] = useState<InstitutionalCommunicationItem[]>([])
   const [unreadCount, setUnreadCount] = useState<number>(0)
   const [loading, setLoading] = useState<boolean>(true)
@@ -78,9 +80,10 @@ export const GuardianCommunicationsView: React.FC<Props> = ({ onBackToDashboard:
         setSelectedItem((prev) => (prev ? { ...prev, acknowledged_at: updated.acknowledged_at, has_read: true } : null))
       }
       setUnreadCount((prev) => Math.max(0, prev - 1))
+      notifySuccess('Lectura confirmada', 'Acuse de recibo institucional registrado exitosamente.')
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error al registrar la confirmación de lectura.'
-      alert(msg)
+      notifyError('Error de confirmación', msg)
     } finally {
       setAcknowledgingId(null)
     }

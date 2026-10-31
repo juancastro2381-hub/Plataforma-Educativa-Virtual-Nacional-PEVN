@@ -15,6 +15,7 @@ import { Alert } from '@/components/ui/Alert'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { useAuth } from '@/hooks/useAuth'
+import { useNotification } from '@/hooks/useNotification'
 import type {
   ApiError,
   MeetingAttendanceResponse,
@@ -26,6 +27,7 @@ import type {
 
 export const VirtualClassroomsView: React.FC = () => {
   const { hasPermission } = useAuth()
+  const { confirm: confirmDialog, success: notifySuccess, error: notifyError } = useNotification()
 
   const [classrooms, setClassrooms] = useState<VirtualClassroomResponse[]>([])
   const [total, setTotal] = useState<number>(0)
@@ -134,19 +136,30 @@ export const VirtualClassroomsView: React.FC = () => {
   }
 
   const handleEnd = async (classroomId: string) => {
-    if (!window.confirm('¿Está seguro de finalizar la clase para todos los participantes?')) {
+    const approved = await confirmDialog({
+      title: 'Finalizar Aula Virtual',
+      message: '¿Está seguro de finalizar la clase para todos los participantes?',
+      description: 'La sesión interactiva se cerrará inmediatamente para el docente y todos los estudiantes conectados.',
+      confirmText: 'Finalizar Clase',
+      cancelText: 'Continuar Clase',
+      severity: 'destructive',
+    })
+    if (!approved) {
       return
     }
     setError(null)
     try {
       await virtualClassroomApi.endVirtualClassroom(classroomId)
-      setSuccessMsg('Aula virtual finalizada correctamente.')
+      const msg = 'Aula virtual finalizada correctamente.'
+      setSuccessMsg(msg)
+      notifySuccess(msg)
       void loadClassrooms()
       if (selectedClassroom?.id === classroomId) {
         setIsDetailOpen(false)
       }
     } catch (err: unknown) {
       setError(err as ApiError)
+      notifyError((err as Error).message || 'Error al finalizar el aula virtual.')
     }
   }
 
@@ -203,13 +216,24 @@ export const VirtualClassroomsView: React.FC = () => {
   }
 
   const handleDeleteRecording = async (recordingId: string) => {
-    if (!window.confirm('¿Está seguro de eliminar esta grabación?')) return
+    const approved = await confirmDialog({
+      title: 'Eliminar Grabación',
+      message: '¿Está seguro de eliminar esta grabación?',
+      description: 'Esta acción no se puede deshacer. Los estudiantes ya no podrán reproducir la sesión grabada.',
+      confirmText: 'Eliminar Grabación',
+      cancelText: 'Cancelar',
+      severity: 'destructive',
+    })
+    if (!approved) return
     try {
       await virtualClassroomApi.deleteRecording(recordingId)
-      setRecordings(prev => prev.filter(r => r.id !== recordingId))
-      setSuccessMsg('Grabación eliminada.')
+      setRecordings((prev) => prev.filter((r) => r.id !== recordingId))
+      const msg = 'Grabación eliminada.'
+      setSuccessMsg(msg)
+      notifySuccess(msg)
     } catch (err: unknown) {
       setError(err as ApiError)
+      notifyError((err as Error).message || 'Error al eliminar la grabación.')
     }
   }
 

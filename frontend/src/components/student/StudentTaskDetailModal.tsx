@@ -18,6 +18,7 @@ import type {
   StudentSubmissionDetailResponse,
 } from '@/types/student'
 import { studentApi } from '@/services/student'
+import { useNotification } from '@/hooks/useNotification'
 import { StudentStatusBadge } from './StudentStatusBadge'
 import { formatDateTime } from '@/utils'
 
@@ -32,6 +33,7 @@ export const StudentTaskDetailModal: React.FC<StudentTaskDetailModalProps> = ({
   onClose,
   onSubmitted,
 }) => {
+  const { success: notifySuccess, error: notifyError, confirm: confirmDialog } = useNotification()
   const [downloadingResourceId, setDownloadingResourceId] = useState<string | null>(null)
   const [downloadingAttachmentId, setDownloadingAttachmentId] = useState<string | null>(null)
 
@@ -110,7 +112,7 @@ export const StudentTaskDetailModal: React.FC<StudentTaskDetailModalProps> = ({
       window.URL.revokeObjectURL(blobUrl)
       document.body.removeChild(a)
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : 'Error al descargar el archivo adjunto.')
+      notifyError('Error de descarga', err instanceof Error ? err.message : 'Error al descargar el archivo adjunto.')
     } finally {
       setDownloadingResourceId(null)
     }
@@ -130,7 +132,7 @@ export const StudentTaskDetailModal: React.FC<StudentTaskDetailModalProps> = ({
       window.URL.revokeObjectURL(blobUrl)
       document.body.removeChild(a)
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : 'Error al descargar el archivo de entrega.')
+      notifyError('Error de descarga', err instanceof Error ? err.message : 'Error al descargar el archivo de entrega.')
     } finally {
       setDownloadingAttachmentId(null)
     }
@@ -190,7 +192,14 @@ export const StudentTaskDetailModal: React.FC<StudentTaskDetailModalProps> = ({
 
   // Delete Attachment from Draft
   const handleDeleteAttachment = async (attachmentId: string) => {
-    if (!window.confirm('¿Seguro que deseas eliminar este archivo adjunto?')) return
+    const confirmed = await confirmDialog({
+      title: 'Eliminar Archivo Adjunto',
+      message: '¿Estás seguro de que deseas eliminar este archivo adjunto de tu borrador de entrega?',
+      severity: 'destructive',
+      confirmText: 'Eliminar archivo',
+      cancelText: 'Cancelar',
+    })
+    if (!confirmed) return
 
     try {
       setDeletingAttachmentId(attachmentId)
@@ -200,9 +209,12 @@ export const StudentTaskDetailModal: React.FC<StudentTaskDetailModalProps> = ({
       const updated = await studentApi.getSubmissionDetail(activity.id)
       setSubmission(updated)
       setSuccessMessage('Archivo eliminado del borrador.')
+      notifySuccess('Archivo eliminado', 'El archivo ha sido retirado del borrador.')
       setTimeout(() => setSuccessMessage(null), 3000)
     } catch (err: unknown) {
-      setSubmissionError(err instanceof Error ? err.message : 'Error al eliminar el archivo.')
+      const msg = err instanceof Error ? err.message : 'Error al eliminar el archivo.'
+      setSubmissionError(msg)
+      notifyError('Error al eliminar', msg)
     } finally {
       setDeletingAttachmentId(null)
     }
@@ -233,11 +245,20 @@ export const StudentTaskDetailModal: React.FC<StudentTaskDetailModalProps> = ({
       }
     }
 
-    const confirmMsg = isPastDeadline
-      ? '⚠️ ATENCIÓN: La fecha límite ha vencido. Tu entrega quedará registrada como TARDÍA.\n\n¿Deseas confirmar la entrega ahora?'
-      : '¿Confirmas que deseas enviar tu entrega? Una vez enviada, no podrás modificarla salvo que el docente la devuelva para corrección.'
+    const confirmed = await confirmDialog({
+      title: isPastDeadline ? 'Confirmar Entrega Tardía' : 'Confirmar Envío de Entrega',
+      message: isPastDeadline
+        ? 'La fecha límite de la actividad ha vencido. Tu entrega quedará registrada formalmente con estado TARDÍA ante el docente.'
+        : '¿Confirmas que deseas formalizar la entrega de tu actividad? Una vez enviada, no podrás modificarla salvo que el docente la devuelva para corrección.',
+      description: isPastDeadline
+        ? 'El docente visualizará el reporte de entrega extemporánea conforme a las directrices del SIEE.'
+        : 'La actividad pasará a estado entregado y estará disponible para revisión.',
+      severity: isPastDeadline ? 'warning' : 'info',
+      confirmText: isPastDeadline ? 'Enviar entrega tardía' : 'Confirmar entrega',
+      cancelText: 'Revisar antes de enviar',
+    })
 
-    if (!window.confirm(confirmMsg)) return
+    if (!confirmed) return
 
     try {
       setSubmitting(true)
@@ -253,11 +274,14 @@ export const StudentTaskDetailModal: React.FC<StudentTaskDetailModalProps> = ({
       const finalDetail = await studentApi.submitActivity(activity.id)
       setSubmission(finalDetail)
       setSuccessMessage('🎉 ¡Actividad entregada exitosamente!')
+      notifySuccess('¡Actividad entregada!', 'Tu trabajo ha sido enviado formalmente al docente.')
       if (onSubmitted) {
         onSubmitted()
       }
     } catch (err: unknown) {
-      setSubmissionError(err instanceof Error ? err.message : 'Error al enviar la entrega.')
+      const msg = err instanceof Error ? err.message : 'Error al enviar la entrega.'
+      setSubmissionError(msg)
+      notifyError('Error al enviar la entrega', msg)
     } finally {
       setSubmitting(false)
     }

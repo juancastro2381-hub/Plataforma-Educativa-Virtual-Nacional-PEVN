@@ -23,6 +23,7 @@ import type {
 import type { TeacherAssignmentItemResponse } from '@/types/teacher'
 import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { useNotification } from '@/hooks/useNotification'
 
 interface Props {
   assignments: TeacherAssignmentItemResponse[]
@@ -44,6 +45,7 @@ export const TeacherSieeEvaluationView: React.FC<Props> = ({
   initialSelectedAssignmentId,
 }) => {
   const { hasPermission } = useAuth()
+  const { success: notifySuccess, warning: notifyWarning, error: notifyError } = useNotification()
   const canGrade = hasPermission('evaluations:grade')
   const canRecover = hasPermission('evaluations:recovery')
 
@@ -424,12 +426,12 @@ export const TeacherSieeEvaluationView: React.FC<Props> = ({
 
     const parsedScore = parseFloat(recoveryScoreInput)
     if (isNaN(parsedScore) || parsedScore < minScale || parsedScore > maxScale) {
-      alert(`La nota de nivelación debe ser un número entre ${minScale} y ${maxScale}.`)
+      notifyWarning(`La nota de nivelación debe ser un número entre ${minScale} y ${maxScale}.`, 'Validación SIEE')
       return
     }
 
     if (!recoveryDateInput) {
-      alert('La fecha del examen o acta de nivelación es obligatoria.')
+      notifyWarning('La fecha del examen o acta de nivelación es obligatoria.', 'Campo Requerido')
       return
     }
 
@@ -447,7 +449,7 @@ export const TeacherSieeEvaluationView: React.FC<Props> = ({
         observations: recoveryObsInput.trim() || null,
       })
 
-      alert('¡Nivelación registrada exitosamente!')
+      notifySuccess('¡Nivelación registrada exitosamente!', 'Calificación Guardada')
       setRecoveryModalStudent(null)
 
       // Reload fresh matrix
@@ -459,7 +461,7 @@ export const TeacherSieeEvaluationView: React.FC<Props> = ({
     } catch (err: unknown) {
       const msg =
         err instanceof Error ? err.message : 'No fue posible registrar la nota de recuperación.'
-      alert(`Error: ${msg}`)
+      notifyError(msg, 'Error al Registrar Nivelación')
     } finally {
       setSavingRecovery(false)
     }

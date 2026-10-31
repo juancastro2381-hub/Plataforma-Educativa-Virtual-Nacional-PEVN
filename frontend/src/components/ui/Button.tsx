@@ -11,6 +11,7 @@
  *   - Color contrast meets WCAG AA (4.5:1 minimum)
  */
 
+import React from 'react'
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
 import { cn } from '@utils/index'
 
@@ -65,23 +66,27 @@ const SIZE_STYLES: Record<ButtonSize, string> = {
 // Component
 // ---------------------------------------------------------------------------
 
-export function Button({
-  variant = 'primary',
-  size = 'md',
-  isLoading = false,
-  leftIcon,
-  rightIcon,
-  fullWidth = false,
-  disabled,
-  children,
-  className,
-  ...props
-}: ButtonProps) {
+export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(function Button(
+  {
+    variant = 'primary',
+    size = 'md',
+    isLoading = false,
+    leftIcon,
+    rightIcon,
+    fullWidth = false,
+    disabled,
+    children,
+    className,
+    ...props
+  },
+  ref
+) {
   const isDisabled = disabled ?? isLoading
 
   return (
     <button
       {...props}
+      ref={ref}
       disabled={isDisabled}
       aria-busy={isLoading}
       aria-disabled={isDisabled}
@@ -108,7 +113,7 @@ export function Button({
       )}
     </button>
   )
-}
+})
 
 // Inline loading spinner (avoids circular import)
 function LoadingSpinner({

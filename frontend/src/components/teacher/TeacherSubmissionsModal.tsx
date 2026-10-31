@@ -19,6 +19,7 @@ import type {
 import { teacherApi } from '@/services/teacher'
 import { formatDateTime } from '@/utils'
 import { Button } from '@/components/ui/Button'
+import { useNotification } from '@/hooks/useNotification'
 
 interface TeacherSubmissionsModalProps {
   activityId: string
@@ -35,6 +36,7 @@ export const TeacherSubmissionsModal: React.FC<TeacherSubmissionsModalProps> = (
   onGradingShortcut,
   initialStudentId,
 }) => {
+  const { error: notifyError } = useNotification()
   const [loadingList, setLoadingList] = useState<boolean>(true)
   const [submissionsList, setSubmissionsList] = useState<TeacherSubmissionsListResponse | null>(null)
   const [listError, setListError] = useState<string | null>(null)
@@ -119,7 +121,7 @@ export const TeacherSubmissionsModal: React.FC<TeacherSubmissionsModalProps> = (
       window.URL.revokeObjectURL(blobUrl)
       document.body.removeChild(a)
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : 'Error al descargar el archivo de la entrega.')
+      notifyError('Error de descarga', err instanceof Error ? err.message : 'Error al descargar el archivo de la entrega.')
     } finally {
       setDownloadingAttachmentId(null)
     }

@@ -118,3 +118,8 @@ export * from './municipalityAdmin'
 // Coordinator Lifecycle Types (NTA-10-R9)
 // ---------------------------------------------------------------------------
 export * from './coordinator'
+
+// ---------------------------------------------------------------------------
+// Centralized Notifications, Alerts & Confirmations
+// ---------------------------------------------------------------------------
+export * from './notification'

@@ -16,6 +16,7 @@ import type {
 import { teacherApi } from '@/services/teacher'
 import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { useNotification } from '@/hooks/useNotification'
 
 interface Props {
   assignments: TeacherAssignmentItemResponse[]
@@ -23,6 +24,7 @@ interface Props {
 }
 
 export const TeacherPlanningView: React.FC<Props> = ({ assignments, initialGroupId }) => {
+  const { confirm: confirmDialog, success: notifySuccess, error: notifyError } = useNotification()
   const [plans, setPlans] = useState<AcademicPlanResponse[]>([])
   const [loading, setLoading] = useState(false)
   const [filterGroup, setFilterGroup] = useState<string>(initialGroupId || '')
@@ -209,14 +211,23 @@ export const TeacherPlanningView: React.FC<Props> = ({ assignments, initialGroup
   }
 
   const handleDeletePlan = async (plan: AcademicPlanResponse) => {
-    if (!window.confirm(`¿Está seguro de eliminar la planeación "${plan.unit_name}"?`)) {
+    const approved = await confirmDialog({
+      title: 'Eliminar Planeación Curricular',
+      message: `¿Está seguro de eliminar la planeación "${plan.unit_name}"?`,
+      description: 'Esta acción no se puede deshacer y removerá los objetivos pedagógicos asociados.',
+      confirmText: 'Eliminar Planeación',
+      cancelText: 'Cancelar',
+      severity: 'destructive',
+    })
+    if (!approved) {
       return
     }
     try {
       await teacherApi.deletePlanning(plan.id)
+      notifySuccess(`Planeación "${plan.unit_name}" eliminada correctamente.`)
       await loadPlans()
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : 'Error al eliminar planeación.')
+      notifyError(err instanceof Error ? err.message : 'Error al eliminar planeación.')
     }
   }
 

@@ -36,6 +36,7 @@ import { TechnicalSupportView } from '@/pages/operations/TechnicalSupportView'
 import { SecurityAuditView } from '@/pages/operations/SecurityAuditView'
 import { TenantDiagnosticsView } from '@/pages/operations/TenantDiagnosticsView'
 import { AuthProvider } from '@/context/AuthContext'
+import { NotificationProvider } from '@/context/NotificationContext'
 import { RequireAuth } from '@/components/auth/RequireAuth'
 
 /**
@@ -303,7 +304,9 @@ export function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
-        <RouterProvider router={router} />
+        <NotificationProvider>
+          <RouterProvider router={router} />
+        </NotificationProvider>
       </AuthProvider>
     </ErrorBoundary>
   )

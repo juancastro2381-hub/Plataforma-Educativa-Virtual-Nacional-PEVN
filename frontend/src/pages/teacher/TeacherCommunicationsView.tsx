@@ -15,6 +15,7 @@ import React, { useEffect, useState } from 'react'
 import { communicationApi } from '@/services/communication'
 import type { InstitutionalCommunicationItem } from '@/types/communication'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { useNotification } from '@/hooks/useNotification'
 
 interface Props {
   teacherName?: string
@@ -58,6 +59,7 @@ function getPriorityStyle(priority: string): { bg: string; color: string; border
 }
 
 export const TeacherCommunicationsView: React.FC<Props> = ({ teacherName: _teacherName }) => {
+  const { success: notifySuccess, error: notifyError } = useNotification()
   const [communications, setCommunications] = useState<InstitutionalCommunicationItem[]>([])
   const [unreadCount, setUnreadCount] = useState<number>(0)
   const [loading, setLoading] = useState<boolean>(true)
@@ -158,10 +160,11 @@ export const TeacherCommunicationsView: React.FC<Props> = ({ teacherName: _teach
       }
 
       setAckSuccess('Acuse de recibo registrado exitosamente.')
+      notifySuccess('Acuse de recibo registrado exitosamente.', 'Lectura Confirmada')
       setTimeout(() => { setAckSuccess(null); }, 4000)
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error al confirmar la lectura del comunicado.'
-      alert(msg)
+      notifyError(msg, 'Error al Confirmar Lectura')
     } finally {
       setAcknowledgingId(null)
     }

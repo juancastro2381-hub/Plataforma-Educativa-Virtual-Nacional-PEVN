@@ -20,6 +20,7 @@ import type {
 import { teacherApi } from '@/services/teacher'
 import { Button } from '@/components/ui/Button'
 import { TeacherSubmissionsModal } from '@/components/teacher/TeacherSubmissionsModal'
+import { useNotification } from '@/hooks/useNotification'
 
 interface Props {
   activities: AcademicActivityResponse[]
@@ -40,6 +41,8 @@ export const TeacherActivitiesView: React.FC<Props> = ({
   initialGroupId,
   initialStatus,
 }) => {
+  const { confirm: confirmDialog, success: notifySuccess, error: notifyError } = useNotification()
+
   // Filters
   const [filterGroup, setFilterGroup] = useState<string>(initialGroupId || '')
   const [filterStatus, setFilterStatus] = useState<string>(initialStatus || '')
@@ -232,14 +235,24 @@ export const TeacherActivitiesView: React.FC<Props> = ({
 
   const handleDeleteResource = async (resourceId: string, resTitle: string) => {
     if (!managingResourcesActivity) return
-    if (!window.confirm(`¿Desea eliminar el recurso "${resTitle}"?`)) return
+    const approved = await confirmDialog({
+      title: 'Eliminar Recurso',
+      message: `¿Desea eliminar el recurso "${resTitle}"?`,
+      description: 'El archivo adjunto se removerá de la actividad pedagógica.',
+      confirmText: 'Eliminar Recurso',
+      cancelText: 'Cancelar',
+      severity: 'destructive',
+    })
+    if (!approved) return
+
     try {
       await teacherApi.deleteResource(managingResourcesActivity.id, resourceId)
       const refreshed = await teacherApi.listActivityResources(managingResourcesActivity.id)
       setActivityResources(refreshed.items)
+      notifySuccess(`Recurso "${resTitle}" eliminado correctamente.`)
       await onRefresh()
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : 'Error al eliminar recurso.')
+      notifyError(err instanceof Error ? err.message : 'Error al eliminar recurso.')
     }
   }
 
@@ -257,7 +270,7 @@ export const TeacherActivitiesView: React.FC<Props> = ({
       window.URL.revokeObjectURL(blobUrl)
       document.body.removeChild(a)
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : 'Error al descargar archivo adjunto.')
+      notifyError(err instanceof Error ? err.message : 'Error al descargar archivo adjunto.')
     } finally {
       setDownloadingResourceId(null)
     }
@@ -338,38 +351,65 @@ export const TeacherActivitiesView: React.FC<Props> = ({
   }
 
   const handlePublish = async (act: AcademicActivityResponse) => {
-    if (!window.confirm(`¿Desea publicar la actividad "${act.title}"? Estará disponible para los estudiantes y se habilitará la planilla de evaluación.`)) {
+    const approved = await confirmDialog({
+      title: 'Publicar Actividad Pedagógica',
+      message: `¿Desea publicar la actividad "${act.title}"?`,
+      description: 'Estará disponible para los estudiantes y se habilitará la planilla de evaluación.',
+      confirmText: 'Publicar Actividad',
+      cancelText: 'Cancelar',
+      severity: 'normal',
+    })
+    if (!approved) {
       return
     }
     try {
       await teacherApi.publishActivity(act.id)
+      notifySuccess(`Actividad "${act.title}" publicada exitosamente.`)
       await onRefresh()
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : 'Error al publicar actividad.')
+      notifyError(err instanceof Error ? err.message : 'Error al publicar actividad.')
     }
   }
 
   const handleClose = async (act: AcademicActivityResponse) => {
-    if (!window.confirm(`¿Desea cerrar la actividad "${act.title}"? No se permitirán nuevas entregas de estudiantes.`)) {
+    const approved = await confirmDialog({
+      title: 'Cerrar Actividad',
+      message: `¿Desea cerrar la actividad "${act.title}"?`,
+      description: 'No se permitirán nuevas entregas de estudiantes.',
+      confirmText: 'Cerrar Actividad',
+      cancelText: 'Cancelar',
+      severity: 'warning',
+    })
+    if (!approved) {
       return
     }
     try {
       await teacherApi.closeActivity(act.id)
+      notifySuccess(`Actividad "${act.title}" cerrada.`)
       await onRefresh()
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : 'Error al cerrar actividad.')
+      notifyError(err instanceof Error ? err.message : 'Error al cerrar actividad.')
     }
   }
 
   const handleDelete = async (act: AcademicActivityResponse) => {
-    if (!window.confirm(`¿Está seguro de eliminar permanentemente la actividad "${act.title}"?`)) {
+    const approved = await confirmDialog({
+      title: 'Eliminar Actividad',
+      message: `¿Está seguro de eliminar permanentemente la actividad "${act.title}"?`,
+      description: 'Esta acción no se puede deshacer. Se eliminarán los recursos y las entregas asociadas.',
+      confirmText: 'Eliminar Actividad',
+      cancelText: 'Cancelar',
+      severity: 'destructive',
+    })
+    if (!approved) {
       return
     }
     try {
       await teacherApi.deleteActivity(act.id)
+      notifySuccess(`Actividad "${act.title}" eliminada.`)
       await onRefresh()
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : 'Error al eliminar actividad.')
+      notifyError(err instanceof Error ? err.message : 'Error al eliminar actividad.')
     }
   }
 

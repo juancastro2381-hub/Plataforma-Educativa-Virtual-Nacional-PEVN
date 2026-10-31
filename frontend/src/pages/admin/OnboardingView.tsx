@@ -20,6 +20,7 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { Modal } from '@/components/ui/Modal'
 import { useAuth } from '@/hooks/useAuth'
+import { useNotification } from '@/hooks/useNotification'
 import { departmentAdminApi } from '@/services/departmentAdmin'
 import { onboardingApi } from '@/services/onboarding'
 import type { DepartmentOption } from '@/types'
@@ -33,6 +34,7 @@ import type {
 
 export const OnboardingView: React.FC = () => {
   const { user, hasRole } = useAuth()
+  const { confirm: confirmDialog, success: notifySuccess, error: notifyError } = useNotification()
 
   const isNational = hasRole('superadmin') || hasRole('national_admin')
   const isDepartmentAdmin = hasRole('department_admin') && !isNational
@@ -317,7 +319,15 @@ export const OnboardingView: React.FC = () => {
   }
 
   const handleProvision = async (req: OnboardingRequestDetail) => {
-    if (!confirm(`¿Confirma el aprovisionamiento operacional del colegio '${req.institution_name}' en PEVN?`)) {
+    const approved = await confirmDialog({
+      title: 'Aprovisionamiento Operacional',
+      message: `¿Confirma el aprovisionamiento operacional del colegio '${req.institution_name}' en PEVN?`,
+      description: 'Esta acción activará formalmente la institución educativa y generará las credenciales y tokens de acceso correspondientes.',
+      confirmText: 'Aprovisionar Colegio',
+      cancelText: 'Cancelar',
+      severity: 'info',
+    })
+    if (!approved) {
       return
     }
 
@@ -330,10 +340,14 @@ export const OnboardingView: React.FC = () => {
         result,
         copiedToken: false,
       })
-      setSuccessMsg(`¡Colegio '${result.institution_name}' aprovisionado exitosamente en PEVN!`)
+      const successMessage = `¡Colegio '${result.institution_name}' aprovisionado exitosamente en PEVN!`
+      setSuccessMsg(successMessage)
+      notifySuccess(successMessage)
       fetchQueue()
     } catch (err: any) {
-      setErrorMsg(err.message || 'Error durante el aprovisionamiento del colegio.')
+      const msg = err.message || 'Error durante el aprovisionamiento del colegio.'
+      setErrorMsg(msg)
+      notifyError(msg)
     } finally {
       setIsActionLoading(false)
     }

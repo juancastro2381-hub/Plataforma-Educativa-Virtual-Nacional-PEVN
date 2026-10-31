@@ -27,9 +27,11 @@ import { GroupConsolidationMatrix } from '@/components/evaluation/GroupConsolida
 import { OfficialReportCard } from '@/components/evaluation/OfficialReportCard'
 import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { useNotification } from '@/hooks/useNotification'
 
 export const DirectiveEvaluationManagementView: React.FC = () => {
   const { hasPermission } = useAuth()
+  const { success: notifySuccess, warning: notifyWarning, error: notifyError } = useNotification()
   const canClosePeriod = hasPermission('evaluations:close_period')
   const canReopenPeriod = hasPermission('evaluations:reopen_period')
 
@@ -213,7 +215,7 @@ export const DirectiveEvaluationManagementView: React.FC = () => {
     } catch (err: unknown) {
       const msg =
         err instanceof Error ? err.message : 'Error al consultar el boletín oficial del estudiante.'
-      alert(`Error: ${msg}`)
+      notifyError(msg, 'Boletín Oficial')
       setStudentCardModalOpen(false)
     } finally {
       setLoadingStudentCard(false)
@@ -228,10 +230,12 @@ export const DirectiveEvaluationManagementView: React.FC = () => {
     setModalActionLoading(true)
     try {
       await evaluationApi.closePeriod(closeModalPeriod.id)
+      const successText = `El período "${closeModalPeriod.name}" ha sido cerrado y sus calificaciones han sido selladas exitosamente.`
       setStatusMessage({
         type: 'success',
-        text: `El período "${closeModalPeriod.name}" ha sido cerrado y sus calificaciones han sido selladas exitosamente.`,
+        text: successText,
       })
+      notifySuccess(successText, 'Período Sellado')
       setCloseModalPeriod(null)
       if (selectedYearId) void loadPeriods(selectedYearId)
     } catch (err: unknown) {
@@ -239,7 +243,7 @@ export const DirectiveEvaluationManagementView: React.FC = () => {
         err instanceof Error
           ? err.message
           : 'Ocurrió un error al intentar cerrar el período académico.'
-      alert(`Error: ${msg}`)
+      notifyError(msg, 'Error al Cerrar Período')
     } finally {
       setModalActionLoading(false)
     }
@@ -252,7 +256,7 @@ export const DirectiveEvaluationManagementView: React.FC = () => {
     if (!unlockModalPeriod) return
 
     if (!unlockReason.trim() || unlockReason.trim().length < 10) {
-      alert('La justificación formal de reapertura debe contener al menos 10 caracteres.')
+      notifyWarning('La justificación formal de reapertura debe contener al menos 10 caracteres.', 'Justificación Requerida')
       return
     }
 
@@ -261,10 +265,12 @@ export const DirectiveEvaluationManagementView: React.FC = () => {
       await evaluationApi.unlockPeriod(unlockModalPeriod.id, {
         reason: unlockReason.trim(),
       })
+      const successText = `El período "${unlockModalPeriod.name}" ha sido reabierto con éxito para modificaciones.`
       setStatusMessage({
         type: 'success',
-        text: `El período "${unlockModalPeriod.name}" ha sido reabierto con éxito para modificaciones.`,
+        text: successText,
       })
+      notifySuccess(successText, 'Período Reabierto')
       setUnlockModalPeriod(null)
       setUnlockReason('')
       if (selectedYearId) void loadPeriods(selectedYearId)
@@ -273,7 +279,7 @@ export const DirectiveEvaluationManagementView: React.FC = () => {
         err instanceof Error
           ? err.message
           : 'Ocurrió un error al intentar reabrir el período académico.'
-      alert(`Error: ${msg}`)
+      notifyError(msg, 'Error al Reabrir Período')
     } finally {
       setModalActionLoading(false)
     }
