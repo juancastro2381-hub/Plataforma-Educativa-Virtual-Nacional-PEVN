@@ -14,9 +14,10 @@ import uuid
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from decimal import Decimal
+from enum import Enum
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -67,6 +68,71 @@ class PeriodSubjectGradeCalculation:
     is_locked: bool
     has_evaluation: bool = True
     is_pending: bool = False
+
+
+class PeriodLifecycleStatus(str, Enum):
+    """
+    Authoritative lifecycle states for academic evaluation terms.
+    1. CONFIGURED: The academic period exists in the institutional calendar.
+    2. SCHEDULED: The period has a defined start and end date but has not started.
+    3. ACTIVE: The current date is within authorized date range and the period is in progress.
+    4. CLOSED: The period has been formally closed through authorized institutional process.
+    """
+
+    CONFIGURED = "CONFIGURED"
+    SCHEDULED = "SCHEDULED"
+    ACTIVE = "ACTIVE"
+    CLOSED = "CLOSED"
+
+
+def resolve_period_lifecycle_status(
+    period: AcademicPeriod,
+    all_year_periods: list[AcademicPeriod],
+    ref_date: date | None = None,
+) -> PeriodLifecycleStatus:
+    """
+    Determine the operational state of an academic period.
+    Enforces that periods occur in sequential order: an unclosed period following
+    an earlier open period is SCHEDULED (future), not ACTIVE.
+    """
+    if period.is_closed:
+        return PeriodLifecycleStatus.CLOSED
+
+    if not period.start_date or not period.end_date:
+        return PeriodLifecycleStatus.CONFIGURED
+
+    sorted_periods = sorted(all_year_periods, key=lambda p: p.period_number)
+    first_open = next((p for p in sorted_periods if not p.is_closed), None)
+    if first_open is None:
+        return PeriodLifecycleStatus.CLOSED
+
+    if period.period_number > first_open.period_number:
+        return PeriodLifecycleStatus.SCHEDULED
+
+    if ref_date and ref_date < period.start_date and period.period_number > 1:
+        return PeriodLifecycleStatus.SCHEDULED
+
+    return PeriodLifecycleStatus.ACTIVE
+
+
+def is_activity_in_period(act: AcademicActivity, period: AcademicPeriod) -> bool:
+    """
+    Determine if an academic activity belongs to the given evaluation term period.
+    Evaluates due_date or publication_date against period start_date and end_date.
+    Period 1 matches activities on or before period.end_date.
+    Subsequent periods match activities strictly within [period.start_date, period.end_date].
+    Activities without explicit deadlines default to the current active evaluation term.
+    """
+    raw_dt = act.due_date or act.publication_date
+    if not raw_dt:
+        return True
+    act_date = raw_dt.date() if isinstance(raw_dt, datetime) else raw_dt
+    if period.period_number == 1:
+        return period.end_date is None or act_date <= period.end_date
+    return (
+        (period.start_date is None or act_date >= period.start_date)
+        and (period.end_date is None or act_date <= period.end_date)
+    )
 
 
 class AcademicCalculationService:
@@ -247,7 +313,8 @@ class AcademicCalculationService:
             )
             .order_by(AcademicActivity.created_at.asc())
         )
-        activities = list((await self._session.execute(act_stmt)).scalars().all())
+        all_activities = list((await self._session.execute(act_stmt)).scalars().all())
+        activities = [a for a in all_activities if is_activity_in_period(a, period)]
 
         # 2. Fetch student activity grades
         total_weight = Decimal("0.00")
@@ -258,7 +325,10 @@ class AcademicCalculationService:
             sub_stmt = select(ActivityGrade).where(
                 ActivityGrade.activity_id.in_(act_ids),
                 ActivityGrade.student_id == student_id,
-                ActivityGrade.status == ActivitySubmissionStatus.GRADED,
+                or_(
+                    ActivityGrade.status == ActivitySubmissionStatus.GRADED,
+                    ActivityGrade.score.is_not(None),
+                ),
             )
             subs = {s.activity_id: s for s in (await self._session.execute(sub_stmt)).scalars().all()}
 
@@ -375,7 +445,8 @@ class AcademicCalculationService:
             )
             .order_by(AcademicActivity.created_at.asc())
         )
-        activities = list((await self._session.execute(act_stmt)).scalars().all())
+        all_activities = list((await self._session.execute(act_stmt)).scalars().all())
+        activities = [a for a in all_activities if is_activity_in_period(a, period)]
 
         # 2. Fetch submissions for all students
         submissions: dict[tuple[uuid.UUID, uuid.UUID], ActivityGrade] = {}
@@ -384,7 +455,10 @@ class AcademicCalculationService:
             sub_stmt = select(ActivityGrade).where(
                 ActivityGrade.activity_id.in_(act_ids),
                 ActivityGrade.student_id.in_(student_ids),
-                ActivityGrade.status == ActivitySubmissionStatus.GRADED,
+                or_(
+                    ActivityGrade.status == ActivitySubmissionStatus.GRADED,
+                    ActivityGrade.score.is_not(None),
+                ),
             )
             for sub in (await self._session.execute(sub_stmt)).scalars().all():
                 submissions[(sub.activity_id, sub.student_id)] = sub
@@ -397,12 +471,12 @@ class AcademicCalculationService:
         )
         all_periods = list((await self._session.execute(p_stmt)).scalars().all())
 
-        # 4. Fetch daily attendances in batch for all students
+        # 4. Fetch daily attendances in batch for all students (strictly subject-specific)
         att_stmt = select(DailyAttendance).where(
             DailyAttendance.institution_id == institution_id,
             DailyAttendance.student_id.in_(student_ids),
             DailyAttendance.academic_year_id == period.academic_year_id,
-            (DailyAttendance.subject_id == subject_id) | (DailyAttendance.subject_id.is_(None)),
+            DailyAttendance.subject_id == subject_id,
         )
         if period.period_number == 1 or (all_periods and all_periods[0].id == period.id):
             if period.end_date:
@@ -455,11 +529,19 @@ class AcademicCalculationService:
             else:
                 computed_score = Decimal("0.00")
 
-            # Attendance metrics
+            # Attendance metrics: prefer live DailyAttendance; fall back to saved period grade when no daily records exist
             st_atts = att_map.get(st.id, [])
-            unexcused = sum(1 for r in st_atts if r.status == AttendanceStatusEnum.ABSENT)
-            excused = sum(1 for r in st_atts if r.status == AttendanceStatusEnum.EXCUSED)
-            total_absences = unexcused + excused
+            if st_atts:
+                unexcused = sum(1 for r in st_atts if r.status == AttendanceStatusEnum.ABSENT)
+                excused = sum(1 for r in st_atts if r.status == AttendanceStatusEnum.EXCUSED)
+                total_absences = unexcused + excused
+            elif existing_rec:
+                total_absences = existing_rec.total_absences
+                unexcused = existing_rec.unexcused_absences
+            else:
+                unexcused = 0
+                excused = 0
+                total_absences = 0
 
             # Invariant check
             if period.is_closed or (existing_rec and existing_rec.is_locked):
@@ -481,7 +563,7 @@ class AcademicCalculationService:
                 and existing_rec.final_score != existing_rec.calculated_score
             ):
                 final_score = existing_rec.final_score
-                calculated_score = computed_score
+                calculated_score = computed_score if total_weight > Decimal("0.00") else existing_rec.calculated_score
                 adjustment_reason = existing_rec.adjustment_reason
                 performance_level = self._siee_service.map_score_to_performance_level(final_score, policy)
                 is_locked = False

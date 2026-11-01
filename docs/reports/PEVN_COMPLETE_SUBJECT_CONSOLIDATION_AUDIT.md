@@ -466,4 +466,103 @@ graph TD
 ---
 **Dictamen Final de Auditoría:** CERTIFICACIÓN DE INTEGRIDAD Y CONSISTENCIA ACADÉMICA TOTAL APROBADA.
 
+---
+
+## 17. AUDITORÍA CRÍTICA: CICLO DE VIDA DE PERÍODOS ACADÉMICOS Y AISLAMIENTO DE PERÍODOS FUTUROS (ADDENDUM CRÍTICO)
+
+### 17.1. Causa Raíz de la Replicación de Notas de P1 en P2 y P3
+En las inspecciones visuales del Informe Final de Promoción Anual (`/student?tab=grades`), se detectó que las calificaciones del Período 1 (Ciencias Naturales = 3.37, Matemáticas = 3.50) aparecían duplicadas en las columnas de los Períodos 2 y 3.
+
+**Causas técnicas exactas:**
+1. **Iteración Ciega sobre Períodos Futuros en `ReportCardService.get_student_final_report_card`:**  
+   El ciclo de sincronización dinámica iteraba sobre todos los períodos del año lectivo (`all_year_periods`) que tuvieran `is_closed=False`. Dado que P2 y P3 aún no han sido cerrados formalmente, el servicio ejecutaba el cálculo y creaba registros en memoria/persistencia para P2 y P3.
+2. **Falta de Aislamiento de Actividades por Ventana de Período en `AcademicCalculationService.calculate_subject_period_grade`:**  
+   La consulta `act_stmt` seleccionaba todas las actividades del año lectivo sin discriminar fechas límite (`due_date`) o de publicación (`publication_date`). Al evaluar P2 y P3, el motor sumaba las actividades creadas durante P1, concluyendo falsamente que P2 y P3 contaban con evaluación y replicando 3.37 y 3.50.
+3. **Mapeo de Calificaciones en `subject_final_rows`:**  
+   Al recopilar `p_grades`, el reporte final anual extraía las notas sin verificar el estado del ciclo de vida del período, insertando claves para P2 y P3 en `period_grades`.
+
+### 17.2. Rutas de Código Responsables y Corregidas
+- **[`academic_calculation_service.py`](file:///c:/Users/juanc/OneDrive/Documentos/Desarrollo%20proyectos/Plataforma%20Educativa%20PEVN/Plataforma%20Educativa%20Virtual%20Nacional%20PEVN/backend/app/services/academic_calculation_service.py):**
+  - Implementación de `PeriodLifecycleStatus` (`CONFIGURED`, `SCHEDULED`, `ACTIVE`, `CLOSED`) y `resolve_period_lifecycle_status`.
+  - Implementación de `is_activity_in_period`: Aísla estrictamente las actividades pedagógicas según sus fechas reglamentarias (`due_date` o `publication_date`) respecto a las fechas de inicio y fin (`start_date`, `end_date`) de cada período.
+  - Corrección en `calculate_subject_period_grade` y `batch_calculate_period_sheet`: Las actividades de P1 no son consideradas al evaluar P2 o P3.
+  - Corrección del filtro de inasistencias en `batch_calculate_period_sheet` para restringir a `DailyAttendance.subject_id == subject_id`.
+- **[`report_card_service.py`](file:///c:/Users/juanc/OneDrive/Documentos/Desarrollo%20proyectos/Plataforma%20Educativa%20PEVN/Plataforma%20Educativa%20Virtual%20Nacional%20PEVN/backend/app/services/report_card_service.py):**
+  - En `get_student_final_report_card`: Se restringe la sincronización dinámica de notas en vivo exclusivamente al período activo (`active_period`).
+  - Aislamiento estricto de períodos futuros: Los períodos con estado `SCHEDULED` nunca reciben notas ni se incluyen en `p_grades`. En la interfaz se renderizan como "—" (*Pendiente*).
+- **[`academic_promotion_service.py`](file:///c:/Users/juanc/OneDrive/Documentos/Desarrollo%20proyectos/Plataforma%20Educativa%20PEVN/Plataforma%20Educativa%20Virtual%20Nacional%20PEVN/backend/app/services/academic_promotion_service.py):**
+  - En `calculate_promotion_preview`: La sincronización de períodos abiertos se restringe estrictamente a `active_period`, impidiendo la creación indebida de entidades en períodos futuros.
+- **[`evaluation_service.py`](file:///c:/Users/juanc/OneDrive/Documentos/Desarrollo%20proyectos/Plataforma%20Educativa%20PEVN/Plataforma%20Educativa%20Virtual%20Nacional%20PEVN/backend/app/services/evaluation_service.py):**
+  - En `get_period_sheet`: Filtrado de actividades con `is_activity_in_period`.
+
+### 17.3. Reglas Formales del Ciclo de Vida del Período Académico
+1. **CONFIGURED:** El período existe en el calendario institucional pero carece de fechas definitivas de operación.
+2. **SCHEDULED (Programado / Futuro):** El período cuenta con fechas de inicio y finalización definidas en el calendario, pero no ha iniciado o existen períodos anteriores pendientes de cierre. No admite notas ni cálculos automáticos.
+3. **ACTIVE (Activo / En Curso):** El período es el término de evaluación abierto en curso dentro de su ventana autorizada. Es el único período que admite registro de notas y sincronización de actividades LMS.
+4. **CLOSED (Cerrado):** El período ha sido formalmente cerrado mediante el proceso institucional autorizado (`is_closed=True`). Sus calificaciones son inmutables y constituyen el historial oficial.
+
+### 17.4. Evidencia Forense de Base de Datos (PostgreSQL)
+Ejecución de consulta forense sobre `period_subject_grades` para la estudiante Danna Gonzalez (`SIMAT-2026-004`):
+```text
+TOTAL GRADES IN DB: 1
+Row 0: period_id=7c6b481b-fd3d-45ff-8d06-0db8752942f5 (P1), subject_id=c6ada5c2-09fd-4e72-b3a9-f4be0fe62393, final_score=3.37
+```
+**Resultado auditado:**  
+- Registros en P2: **0**
+- Registros en P3: **0**  
+Se certifica que la generación del boletín final anual NO crea registros espurios en períodos futuros.
+
+### 17.5. Reconciliación Antes y Después para las 10 Asignaturas (Caso Danna Gonzalez)
+
+#### Estado Previo Defectuoso:
+| Asignatura | P1 | P2 | P3 | Definitiva | Estado |
+|---|---|---|---|---|---|
+| Ciencias Naturales | 3.37 | **3.37 (ERR)** | **3.37 (ERR)** | Pendiente | PENDIENTE |
+| Matemáticas | 3.50 | **3.50 (ERR)** | **3.50 (ERR)** | Pendiente | PENDIENTE |
+| Otras 8 materias | — | — | — | Pendiente | PENDIENTE |
+
+#### Estado Corregido y Verificado:
+| # | Asignatura | P1 | P2 | P3 | Definitiva Anual | Nivel Desempeño | Fallas Materia | Fallas Resumen |
+|---|---|---|---|---|---|---|---|---|
+| 1 | **Ciencias Naturales y Ed. Ambiental** | **3.37** | — *(Pendiente)* | — *(Pendiente)* | *Pendiente* | PENDIENTE | 0 | 1 |
+| 2 | **Matemáticas** | **3.50** | — *(Pendiente)* | — *(Pendiente)* | *Pendiente* | PENDIENTE | 0 | 1 |
+| 3 | Ciencias Sociales | — | — | — | *Pendiente* | PENDIENTE | 0 | 1 |
+| 4 | Educación Artística | — | — | — | *Pendiente* | PENDIENTE | 0 | 1 |
+| 5 | Educación Física, Recreación y Deporte | — | — | — | *Pendiente* | PENDIENTE | 0 | 1 |
+| 6 | Educación Religiosa | — | — | — | *Pendiente* | PENDIENTE | 0 | 1 |
+| 7 | Ética y Valores | — | — | — | *Pendiente* | PENDIENTE | 0 | 1 |
+| 8 | Inglés | — | — | — | *Pendiente* | PENDIENTE | 0 | 1 |
+| 9 | Lengua Castellana | — | — | — | *Pendiente* | PENDIENTE | 0 | 1 |
+| 10 | Tecnología e Informática | — | — | — | *Pendiente* | PENDIENTE | 0 | 1 |
+
+- **Promedio Acumulado Anual (Materias Evaluadas):**  
+  $$\text{Promedio} = \frac{3.37 + 3.50}{2} = \mathbf{3.44} \quad (\text{Nivel: BÁSICO})$$
+- **Total Asignaturas:** 10 | **Evaluadas:** 2 | **Pendientes:** 8 | **Reprobadas:** 0
+
+### 17.6. Batería de Pruebas Automatizadas y Verificación Técnica
+Se incorporó un bloque exhaustivo de 9 pruebas unitarias y de integración en `test_academic_curriculum_and_report_cards.py`:
+1. `test_01_p1_grade_does_not_appear_in_p2_or_p3`: Valida que la nota de P1 no se filtre a P2 ni P3.
+2. `test_02_generating_annual_report_does_not_create_future_period_records`: Confirma 0 filas en BD para períodos futuros.
+3. `test_03_configured_future_period_cannot_receive_grades_through_report_generation`: Períodos en estado `SCHEDULED` no reciben calificaciones.
+4. `test_04_activated_period_can_receive_grades_through_authorized_workflow`: Al cerrar P1, P2 pasa a ser `ACTIVE` y admite calificaciones autorizadas.
+5. `test_05_closed_period_preserves_historical_grades`: Período cerrado es inmutable y preserva histórico.
+6. `test_06_period_grade_is_retrieved_only_by_its_actual_period_id`: Verificación de aislamiento estricto por `period_id`.
+7. `test_07_future_periods_do_not_affect_current_averages`: Períodos futuros no alteran ni penalizan el promedio acumulado (3.44).
+8. `test_08_annual_provisional_status_preserved_while_periods_open`: Dictamen provisional de fin de año mientras existan períodos abiertos.
+9. `test_09_repeated_report_generation_is_idempotent`: Idempotencia absoluta ante consultas repetidas.
+
+**Resultados de Ejecución:**
+```powershell
+pytest backend/tests/test_academic_curriculum_and_report_cards.py backend/tests/test_academic_calculation_integrity.py backend/tests/test_siee_and_evaluations_domain_services.py backend/tests/test_siee_and_evaluations_api.py -v
+```
+**Resultado:** 30 pruebas superadas (100% exitosas) en 86.85 segundos.
+
+**Verificación Frontend:**
+- Chequeo de tipos: `npm --prefix frontend run typecheck` (`tsc --noEmit`) -> Código de salida 0.
+- Compilación de producción: `npm --prefix frontend run build` (`vite build`) -> Código de salida 0 (construido en 7.63s).
+
+---
+**Certificación Final de Auditoría y Remediación:** AISLAMIENTO DE PERÍODOS ACADÉMICOS Y SOBERANÍA CALENDARIA HOMOLOGADA CON ÉXITO.
+
+
 

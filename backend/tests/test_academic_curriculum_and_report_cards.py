@@ -17,6 +17,7 @@ from decimal import Decimal
 from typing import Any
 
 import pytest
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import CrossTenantMismatchError, ReportCardAccessDeniedError
@@ -536,3 +537,344 @@ async def test_report_cards_multi_tenant_and_anti_idor(
             student_id=f["student"].id,
             academic_year_id=f["academic_year"].id,
         )
+
+
+# ===========================================================================
+# 6. Focused Future Period Grade Isolation & Period Lifecycle Tests
+# ===========================================================================
+
+
+@pytest.mark.anyio
+async def test_01_p1_grade_does_not_appear_in_p2_or_p3(
+    db_session: AsyncSession,
+    curriculum_fixture: dict[str, Any],
+) -> None:
+    """1. Prove that a grade recorded in Period 1 never leaks into P2 or P3."""
+    f = curriculum_fixture
+    p1 = f["periods"][0]
+    p2 = f["periods"][1]
+    p3 = f["periods"][2]
+
+    # Math evaluated in P1 with 3.50
+    db_session.add(
+        PeriodSubjectGrade(
+            institution_id=f["institution"].id,
+            academic_period_id=p1.id,
+            enrollment_id=f["enrollment"].id,
+            student_id=f["student"].id,
+            subject_id=f["subjects"]["math"].id,
+            calculated_score=Decimal("3.50"),
+            final_score=Decimal("3.50"),
+            performance_level=PerformanceLevelEnum.BASICO,
+            total_absences=0,
+            unexcused_absences=0,
+        )
+    )
+    await db_session.flush()
+
+    rc_service = ReportCardService(session=db_session)
+    report = await rc_service.get_student_final_report_card(
+        institution_id=f["institution"].id,
+        student_id=f["student"].id,
+        academic_year_id=f["academic_year"].id,
+    )
+
+    math_row = next(s for s in report["subjects"] if s["subject_id"] == str(f["subjects"]["math"].id))
+    assert 1 in math_row["period_grades"]
+    assert math_row["period_grades"][1]["score"] == 3.50
+    assert 2 not in math_row["period_grades"]
+    assert 3 not in math_row["period_grades"]
+
+
+@pytest.mark.anyio
+async def test_02_generating_annual_report_does_not_create_future_period_records(
+    db_session: AsyncSession,
+    curriculum_fixture: dict[str, Any],
+) -> None:
+    """2. Generating an annual report must not create PeriodSubjectGrade records for future periods."""
+    f = curriculum_fixture
+    p2 = f["periods"][1]
+    p3 = f["periods"][2]
+
+    rc_service = ReportCardService(session=db_session)
+    await rc_service.get_student_final_report_card(
+        institution_id=f["institution"].id,
+        student_id=f["student"].id,
+        academic_year_id=f["academic_year"].id,
+    )
+
+    # Check database: no rows for future periods
+    stmt = select(PeriodSubjectGrade).where(
+        PeriodSubjectGrade.institution_id == f["institution"].id,
+        PeriodSubjectGrade.student_id == f["student"].id,
+        PeriodSubjectGrade.academic_period_id.in_([p2.id, p3.id]),
+    )
+    future_records = list((await db_session.execute(stmt)).scalars().all())
+    assert len(future_records) == 0
+
+
+@pytest.mark.anyio
+async def test_03_configured_future_period_cannot_receive_grades_through_report_generation(
+    db_session: AsyncSession,
+    curriculum_fixture: dict[str, Any],
+) -> None:
+    """3. Configured but future periods cannot receive grades via report card generation."""
+    f = curriculum_fixture
+    rc_service = ReportCardService(session=db_session)
+    report = await rc_service.get_student_final_report_card(
+        institution_id=f["institution"].id,
+        student_id=f["student"].id,
+        academic_year_id=f["academic_year"].id,
+    )
+
+    for s in report["subjects"]:
+        assert 2 not in s["period_grades"]
+        assert 3 not in s["period_grades"]
+
+
+@pytest.mark.anyio
+async def test_04_activated_period_can_receive_grades_through_authorized_workflow(
+    db_session: AsyncSession,
+    curriculum_fixture: dict[str, Any],
+) -> None:
+    """4. An activated period can receive grades through the authorized evaluation workflow."""
+    f = curriculum_fixture
+    p1 = f["periods"][0]
+    p2 = f["periods"][1]
+
+    # Formally close P1 -> P2 becomes ACTIVE
+    p1.is_closed = True
+    db_session.add(p1)
+    await db_session.flush()
+
+    # Teacher records grade in P2 through evaluation workflow
+    db_session.add(
+        PeriodSubjectGrade(
+            institution_id=f["institution"].id,
+            academic_period_id=p2.id,
+            enrollment_id=f["enrollment"].id,
+            student_id=f["student"].id,
+            subject_id=f["subjects"]["math"].id,
+            calculated_score=Decimal("4.00"),
+            final_score=Decimal("4.00"),
+            performance_level=PerformanceLevelEnum.ALTO,
+            total_absences=0,
+            unexcused_absences=0,
+        )
+    )
+    await db_session.flush()
+
+    rc_service = ReportCardService(session=db_session)
+    report = await rc_service.get_student_final_report_card(
+        institution_id=f["institution"].id,
+        student_id=f["student"].id,
+        academic_year_id=f["academic_year"].id,
+    )
+
+    math_row = next(s for s in report["subjects"] if s["subject_id"] == str(f["subjects"]["math"].id))
+    assert 2 in math_row["period_grades"]
+    assert math_row["period_grades"][2]["score"] == 4.00
+    assert 3 not in math_row["period_grades"]
+
+
+@pytest.mark.anyio
+async def test_05_closed_period_preserves_historical_grades(
+    db_session: AsyncSession,
+    curriculum_fixture: dict[str, Any],
+) -> None:
+    """5. A closed period preserves its historical grades without mutation."""
+    f = curriculum_fixture
+    p1 = f["periods"][0]
+    p1.is_closed = True
+    db_session.add(p1)
+
+    db_session.add(
+        PeriodSubjectGrade(
+            institution_id=f["institution"].id,
+            academic_period_id=p1.id,
+            enrollment_id=f["enrollment"].id,
+            student_id=f["student"].id,
+            subject_id=f["subjects"]["math"].id,
+            calculated_score=Decimal("3.80"),
+            final_score=Decimal("3.80"),
+            performance_level=PerformanceLevelEnum.BASICO,
+            total_absences=0,
+            unexcused_absences=0,
+        )
+    )
+    await db_session.flush()
+
+    rc_service = ReportCardService(session=db_session)
+    card = await rc_service.get_student_report_card(
+        institution_id=f["institution"].id,
+        student_id=f["student"].id,
+        period_id=p1.id,
+    )
+    math_row = next(s for s in card["subjects"] if s["subject_id"] == str(f["subjects"]["math"].id))
+    assert math_row["final_score"] == 3.80
+
+
+@pytest.mark.anyio
+async def test_06_period_grade_is_retrieved_only_by_its_actual_period_id(
+    db_session: AsyncSession,
+    curriculum_fixture: dict[str, Any],
+) -> None:
+    """6. A period grade is retrieved only by its actual period ID and never leaks across periods."""
+    f = curriculum_fixture
+    p1 = f["periods"][0]
+    p2 = f["periods"][1]
+
+    db_session.add(
+        PeriodSubjectGrade(
+            institution_id=f["institution"].id,
+            academic_period_id=p1.id,
+            enrollment_id=f["enrollment"].id,
+            student_id=f["student"].id,
+            subject_id=f["subjects"]["math"].id,
+            calculated_score=Decimal("4.50"),
+            final_score=Decimal("4.50"),
+            performance_level=PerformanceLevelEnum.SUPERIOR,
+            total_absences=0,
+            unexcused_absences=0,
+        )
+    )
+    await db_session.flush()
+
+    rc_service = ReportCardService(session=db_session)
+    p1_card = await rc_service.get_student_report_card(
+        institution_id=f["institution"].id,
+        student_id=f["student"].id,
+        period_id=p1.id,
+    )
+    p2_card = await rc_service.get_student_report_card(
+        institution_id=f["institution"].id,
+        student_id=f["student"].id,
+        period_id=p2.id,
+    )
+
+    math_p1 = next(s for s in p1_card["subjects"] if s["subject_id"] == str(f["subjects"]["math"].id))
+    math_p2 = next(s for s in p2_card["subjects"] if s["subject_id"] == str(f["subjects"]["math"].id))
+
+    assert math_p1["final_score"] == 4.50
+    assert math_p2["final_score"] is None
+
+
+@pytest.mark.anyio
+async def test_07_future_periods_do_not_affect_current_averages(
+    db_session: AsyncSession,
+    curriculum_fixture: dict[str, Any],
+) -> None:
+    """7. Future periods do not dilute, penalize, or alter current period or cumulative averages."""
+    f = curriculum_fixture
+    p1 = f["periods"][0]
+
+    # Math: 3.50, Science: 3.37 in P1
+    db_session.add_all([
+        PeriodSubjectGrade(
+            institution_id=f["institution"].id,
+            academic_period_id=p1.id,
+            enrollment_id=f["enrollment"].id,
+            student_id=f["student"].id,
+            subject_id=f["subjects"]["math"].id,
+            calculated_score=Decimal("3.50"),
+            final_score=Decimal("3.50"),
+            performance_level=PerformanceLevelEnum.BASICO,
+            total_absences=0,
+            unexcused_absences=0,
+        ),
+        PeriodSubjectGrade(
+            institution_id=f["institution"].id,
+            academic_period_id=p1.id,
+            enrollment_id=f["enrollment"].id,
+            student_id=f["student"].id,
+            subject_id=f["subjects"]["sci"].id,
+            calculated_score=Decimal("3.37"),
+            final_score=Decimal("3.37"),
+            performance_level=PerformanceLevelEnum.BASICO,
+            total_absences=0,
+            unexcused_absences=0,
+        ),
+    ])
+    await db_session.flush()
+
+    rc_service = ReportCardService(session=db_session)
+    report = await rc_service.get_student_final_report_card(
+        institution_id=f["institution"].id,
+        student_id=f["student"].id,
+        academic_year_id=f["academic_year"].id,
+    )
+
+    # Average of 3.50 and 3.37 is 3.44
+    assert report["summary"]["cumulative_average"] == 3.44
+    assert report["summary"]["performance_level"] == "BASICO"
+    assert report["summary"]["failed_subjects_count"] == 0
+    assert report["summary"]["pending_subjects_count"] == 2  # 2 of 4 evaluated, 2 pending
+
+
+@pytest.mark.anyio
+async def test_08_annual_provisional_status_preserved_while_periods_open(
+    db_session: AsyncSession,
+    curriculum_fixture: dict[str, Any],
+) -> None:
+    """8. Annual provisional status is preserved while the academic year has open periods."""
+    f = curriculum_fixture
+    rc_service = ReportCardService(session=db_session)
+    report = await rc_service.get_student_final_report_card(
+        institution_id=f["institution"].id,
+        student_id=f["student"].id,
+        academic_year_id=f["academic_year"].id,
+    )
+
+    assert report["summary"]["is_provisional"] is True
+    assert report["promotion"]["status"] == "PENDIENTE"
+    assert report["promotion"]["is_provisional"] is True
+    assert "curso" in report["promotion"]["observations"].lower()
+
+    for s in report["subjects"]:
+        assert s["final_annual_score"] is None
+        assert s["performance_level"] == "PENDIENTE"
+
+
+@pytest.mark.anyio
+async def test_09_repeated_report_generation_is_idempotent(
+    db_session: AsyncSession,
+    curriculum_fixture: dict[str, Any],
+) -> None:
+    """9. Repeated report generation is idempotent and does not duplicate or mutate records."""
+    f = curriculum_fixture
+    p1 = f["periods"][0]
+
+    db_session.add(
+        PeriodSubjectGrade(
+            institution_id=f["institution"].id,
+            academic_period_id=p1.id,
+            enrollment_id=f["enrollment"].id,
+            student_id=f["student"].id,
+            subject_id=f["subjects"]["math"].id,
+            calculated_score=Decimal("3.50"),
+            final_score=Decimal("3.50"),
+            performance_level=PerformanceLevelEnum.BASICO,
+            total_absences=0,
+            unexcused_absences=0,
+        )
+    )
+    await db_session.flush()
+
+    rc_service = ReportCardService(session=db_session)
+
+    # Call 1
+    rep1 = await rc_service.get_student_final_report_card(
+        institution_id=f["institution"].id,
+        student_id=f["student"].id,
+        academic_year_id=f["academic_year"].id,
+    )
+    # Call 2
+    rep2 = await rc_service.get_student_final_report_card(
+        institution_id=f["institution"].id,
+        student_id=f["student"].id,
+        academic_year_id=f["academic_year"].id,
+    )
+
+    assert rep1["summary"]["cumulative_average"] == rep2["summary"]["cumulative_average"]
+    assert rep1["summary"]["pending_subjects_count"] == rep2["summary"]["pending_subjects_count"]
+    assert len(rep1["subjects"]) == len(rep2["subjects"])

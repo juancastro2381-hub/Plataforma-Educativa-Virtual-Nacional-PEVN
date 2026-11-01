@@ -43,7 +43,10 @@ from app.models.group import Group
 from app.models.student import Student
 from app.models.subject import Subject
 from app.models.teacher import Teacher
-from app.services.academic_calculation_service import AcademicCalculationService
+from app.services.academic_calculation_service import (
+    AcademicCalculationService,
+    is_activity_in_period,
+)
 from app.services.siee_policy_service import SieePolicyService
 
 
@@ -174,7 +177,8 @@ class EvaluationService:
             )
             .order_by(AcademicActivity.created_at.asc())
         )
-        activities = list((await self._session.execute(act_stmt)).scalars().all())
+        all_activities = list((await self._session.execute(act_stmt)).scalars().all())
+        activities = [a for a in all_activities if is_activity_in_period(a, period)]
 
         # 9. Fetch Achievements / Descriptors
         ach_stmt = select(AcademicAchievement).where(

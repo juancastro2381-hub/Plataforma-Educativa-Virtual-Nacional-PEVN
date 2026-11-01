@@ -169,22 +169,25 @@ class AcademicPromotionService:
         all_grades = list((await self._session.execute(grades_stmt)).scalars().all()) if enrollments else []
 
         # Dynamic synchronization of open period grades for all enrolled students
+        # SIEE Rule: ONLY the current ACTIVE period may synchronize live unpersisted LMS activities.
+        # Future/SCHEDULED periods must NEVER receive evaluations from promotion previews.
         p_stmt = (
             select(AcademicPeriod)
             .where(AcademicPeriod.academic_year_id == academic_year_id, AcademicPeriod.is_closed.is_(False))
             .order_by(AcademicPeriod.period_number.asc())
         )
         open_periods = list((await self._session.execute(p_stmt)).scalars().all())
+        active_p = open_periods[0] if open_periods else None
 
         existing_grades_idx = {
             (g.student_id, g.academic_period_id, g.subject_id): g for g in all_grades
         }
 
         has_new_grades = False
-        for enr in enrollments:
-            for p in open_periods:
+        if active_p:
+            for enr in enrollments:
                 for cur_sub in curriculum_subjects:
-                    key = (enr.student_id, p.id, cur_sub.subject_id)
+                    key = (enr.student_id, active_p.id, cur_sub.subject_id)
                     g = existing_grades_idx.get(key)
                     if g is None:
                         calc = await self._calc_service.calculate_subject_period_grade(
@@ -193,14 +196,14 @@ class AcademicPromotionService:
                             group_id=group_id,
                             subject_id=cur_sub.subject_id,
                             academic_year_id=academic_year_id,
-                            period=p,
+                            period=active_p,
                             policy=policy,
                             existing_grade=None,
                         )
                         if calc.has_evaluation:
                             new_g = PeriodSubjectGrade(
                                 institution_id=institution_id,
-                                academic_period_id=p.id,
+                                academic_period_id=active_p.id,
                                 enrollment_id=enr.id,
                                 student_id=enr.student_id,
                                 subject_id=cur_sub.subject_id,
