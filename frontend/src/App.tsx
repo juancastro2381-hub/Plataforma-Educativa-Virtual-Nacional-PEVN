@@ -220,7 +220,11 @@ const router = createBrowserRouter([
       {
         path: 'virtual-classrooms',
         element: (
-          <RequireAuth permissions={['virtual_classrooms:read']} requireInstitutionContext>
+          <RequireAuth
+            permissions={['virtual_classrooms:read']}
+            denyRoles={['national_admin', 'department_admin', 'municipality_admin']}
+            requireInstitutionContext
+          >
             <VirtualClassroomsView />
           </RequireAuth>
         ),
@@ -236,7 +240,10 @@ const router = createBrowserRouter([
       {
         path: 'communications',
         element: (
-          <RequireAuth permissions={['communications:read']}>
+          <RequireAuth
+            permissions={['communications:read']}
+            denyRoles={['national_admin', 'department_admin', 'municipality_admin']}
+          >
             <CommunicationsView />
           </RequireAuth>
         ),
@@ -244,7 +251,10 @@ const router = createBrowserRouter([
       {
         path: 'news',
         element: (
-          <RequireAuth permissions={['news:read']}>
+          <RequireAuth
+            permissions={['news:read']}
+            denyRoles={['national_admin', 'department_admin', 'municipality_admin']}
+          >
             <NewsView />
           </RequireAuth>
         ),
@@ -252,7 +262,10 @@ const router = createBrowserRouter([
       {
         path: 'incidents',
         element: (
-          <RequireAuth permissions={['incidents:read']}>
+          <RequireAuth
+            permissions={['incidents:read']}
+            denyRoles={['national_admin', 'department_admin', 'municipality_admin']}
+          >
             <IncidentsView />
           </RequireAuth>
         ),

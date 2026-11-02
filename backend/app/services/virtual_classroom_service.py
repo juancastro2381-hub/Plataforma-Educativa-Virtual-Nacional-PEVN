@@ -34,6 +34,14 @@ from app.core.meeting import (
     MeetingCreateOptions,
     get_meeting_provider,
 )
+from app.core.meeting.exceptions import (
+    BBBNotConfiguredError,
+    MeetingProviderConnectionError,
+)
+from app.core.meeting.factory import (
+    MeetingProviderStatus,
+    check_meeting_provider_status,
+)
 from app.models.academic_assignment import AcademicAssignment
 from app.models.enrollment import Enrollment, EnrollmentStatus
 from app.models.group import Group
@@ -116,19 +124,31 @@ class VirtualClassroomService:
         mod_password = secrets.token_urlsafe(16)
         att_password = secrets.token_urlsafe(16)
 
-        # Provision meeting on external provider
-        create_options = MeetingCreateOptions(
-            meeting_id=external_meeting_id,
-            title=title,
-            moderator_password=mod_password,
-            attendee_password=att_password,
-            is_recording_enabled=is_recording_enabled,
-            is_breakout_enabled=is_breakout_enabled,
-            max_participants=max_participants,
-            welcome_message=f"Bienvenido a la sesión: {title}",
-            metadata={"institution_id": str(institution_id)},
-        )
-        await self._provider.create_meeting(create_options)
+        # Provision meeting on external provider if configured and available
+        prov_status, _ = check_meeting_provider_status()
+        if prov_status not in (MeetingProviderStatus.NOT_CONFIGURED,):
+            try:
+                create_options = MeetingCreateOptions(
+                    meeting_id=external_meeting_id,
+                    title=title,
+                    moderator_password=mod_password,
+                    attendee_password=att_password,
+                    is_recording_enabled=is_recording_enabled,
+                    is_breakout_enabled=is_breakout_enabled,
+                    max_participants=max_participants,
+                    welcome_message=f"Bienvenido a la sesión: {title}",
+                    metadata={"institution_id": str(institution_id)},
+                )
+                await self._provider.create_meeting(create_options)
+            except (BBBNotConfiguredError, MeetingProviderConnectionError) as prov_err:
+                _logger.warning(
+                    "Virtual classroom meeting pre-provisioning skipped: %s",
+                    prov_err.message,
+                )
+        else:
+            _logger.info(
+                "Virtual classroom scheduled in database without remote meeting creation (provider unconfigured)."
+            )
 
         # Persist virtual classroom entity
         classroom = VirtualClassroom(
@@ -212,6 +232,14 @@ class VirtualClassroomService:
         ):
             raise VirtualClassroomLifecycleError(
                 f"No se puede iniciar un aula en estado {classroom.status.value}."
+            )
+
+        # Enforce provider configuration check before launching live meeting
+        prov_status, _ = check_meeting_provider_status()
+        if prov_status == MeetingProviderStatus.NOT_CONFIGURED:
+            raise BBBNotConfiguredError(
+                "El servicio de videoconferencias BigBlueButton no se encuentra configurado en la plataforma. "
+                "La reunión no puede ser iniciada."
             )
 
         # Check provider state and create meeting if not active
@@ -328,6 +356,14 @@ class VirtualClassroomService:
             role = MeetingParticipantRole.VIEWER
             password = classroom.attendee_password_hash
 
+        # Enforce provider configuration check before attempting live join
+        prov_status, _ = check_meeting_provider_status()
+        if prov_status == MeetingProviderStatus.NOT_CONFIGURED:
+            raise BBBNotConfiguredError(
+                "El servicio de videoconferencias BigBlueButton no se encuentra configurado en la plataforma. "
+                "La reunión no puede ser accedida."
+            )
+
         # Construct signed join URL via provider
         user_full_name = f"{user.first_name} {user.last_name}".strip() or user.username
         join_options = JoinMeetingOptions(
@@ -398,12 +434,17 @@ class VirtualClassroomService:
                 "Solo el docente anfitrión o un directivo pueden finalizar la clase."
             )
 
-        # Call provider termination
-        end_options = EndMeetingOptions(
-            meeting_id=classroom.bbb_meeting_id,
-            moderator_password=classroom.moderator_password_hash,
-        )
-        await self._provider.end_meeting(end_options)
+        # Call provider termination if configured
+        prov_status, _ = check_meeting_provider_status()
+        if prov_status not in (MeetingProviderStatus.NOT_CONFIGURED,):
+            try:
+                end_options = EndMeetingOptions(
+                    meeting_id=classroom.bbb_meeting_id,
+                    moderator_password=classroom.moderator_password_hash,
+                )
+                await self._provider.end_meeting(end_options)
+            except (BBBNotConfiguredError, MeetingProviderConnectionError) as prov_err:
+                _logger.warning("Remote end_meeting skipped: %s", prov_err.message)
 
         classroom.status = VirtualClassroomStatus.ENDED
         classroom.actual_end_time = datetime.now(tz=UTC)

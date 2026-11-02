@@ -50,6 +50,9 @@ export interface VirtualClassroomListResponse {
   total: number
   skip: number
   limit: number
+  provider_configured?: boolean
+  provider_status?: string
+  provider_message?: string
 }
 
 export interface JoinMeetingResponse {

@@ -30,6 +30,23 @@ class MeetingProviderError(PEVNException):
         )
 
 
+class BBBNotConfiguredError(MeetingProviderError):
+    """Raised when BigBlueButton infrastructure is uncommissioned or missing configuration."""
+
+    default_code = "BBB_NOT_CONFIGURED"
+    default_status = HTTPStatus.SERVICE_UNAVAILABLE
+
+    def __init__(
+        self,
+        message: str = "El servicio de videoconferencias BigBlueButton no se encuentra configurado en la plataforma.",
+    ) -> None:
+        super().__init__(
+            message=message,
+            code=self.default_code,
+            status_code=self.default_status,
+        )
+
+
 class MeetingProviderConfigError(MeetingProviderError):
     """Raised when meeting provider is misconfigured or missing credentials."""
 

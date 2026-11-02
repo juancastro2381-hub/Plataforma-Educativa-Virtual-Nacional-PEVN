@@ -260,22 +260,6 @@ ROLE_PERMISSIONS_CONFIG: dict[str, list[str]] = {
         # Curricular Grades Catalog
         "grades:read",
         "grades:manage",
-        # Virtual Classrooms Telemetry & Audit
-        "virtual_classrooms:read",
-        "recordings:read",
-        # National Communications & Community News Desks
-        "communications:read",
-        "communications:create",
-        "communications:update",
-        "communications:publish",
-        "communications:delete",
-        "news:read",
-        "news:create",
-        "news:update",
-        "news:publish",
-        "news:delete",
-        # Coexistence Macro Oversight
-        "incidents:read",
     ],
     SystemRole.DEPARTMENT_ADMIN.value: [
         "institutions:read",
@@ -286,11 +270,6 @@ ROLE_PERMISSIONS_CONFIG: dict[str, list[str]] = {
         "municipality_admins:create",
         "municipality_admins:update",
         "grades:read",
-        "virtual_classrooms:read",
-        "recordings:read",
-        "communications:read",
-        "news:read",
-        "incidents:read",
     ],
     SystemRole.MUNICIPALITY_ADMIN.value: [
         "institutions:read",
@@ -298,11 +277,6 @@ ROLE_PERMISSIONS_CONFIG: dict[str, list[str]] = {
         "users:create_rector",
         "municipality_admins:read",
         "grades:read",
-        "virtual_classrooms:read",
-        "recordings:read",
-        "communications:read",
-        "news:read",
-        "incidents:read",
     ],
     SystemRole.RECTOR.value: [
         "institutions:read",

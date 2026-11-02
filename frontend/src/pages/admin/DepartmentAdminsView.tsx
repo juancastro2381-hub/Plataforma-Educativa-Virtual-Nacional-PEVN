@@ -594,16 +594,16 @@ export const DepartmentAdminsView: React.FC = () => {
             />
           </div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+          <div style={{ overflowX: 'auto', width: '100%' }}>
+            <table style={{ width: '100%', minWidth: '1050px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
               <thead>
                 <tr style={{ backgroundColor: '#F1F5F9', borderBottom: '1px solid #E2E8F0', color: '#475569' }}>
-                  <th style={{ padding: '0.875rem 1rem', fontWeight: 600 }}>Nombre Completo</th>
-                  <th style={{ padding: '0.875rem 1rem', fontWeight: 600 }}>Usuario</th>
-                  <th style={{ padding: '0.875rem 1rem', fontWeight: 600 }}>Correo Institucional</th>
-                  <th style={{ padding: '0.875rem 1rem', fontWeight: 600 }}>Departamento (DANE)</th>
-                  <th style={{ padding: '0.875rem 1rem', fontWeight: 600 }}>Estado</th>
-                  <th style={{ padding: '0.875rem 1rem', fontWeight: 600, textAlign: 'right' }}>Acciones</th>
+                  <th style={{ padding: '0.875rem 1rem', fontWeight: 600, minWidth: '180px' }}>Nombre Completo</th>
+                  <th style={{ padding: '0.875rem 1rem', fontWeight: 600, minWidth: '130px' }}>Usuario</th>
+                  <th style={{ padding: '0.875rem 1rem', fontWeight: 600, minWidth: '200px' }}>Correo Institucional</th>
+                  <th style={{ padding: '0.875rem 1rem', fontWeight: 600, minWidth: '160px' }}>Departamento (DANE)</th>
+                  <th style={{ padding: '0.875rem 1rem', fontWeight: 600, width: '100px' }}>Estado</th>
+                  <th style={{ padding: '0.875rem 1rem', fontWeight: 600, textAlign: 'right', width: '280px', minWidth: '280px', whiteSpace: 'nowrap' }}>Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -649,14 +649,14 @@ export const DepartmentAdminsView: React.FC = () => {
                         {adm.is_active ? 'Activo' : 'Inactivo'}
                       </Badge>
                     </td>
-                    <td style={{ padding: '1rem', textAlign: 'right' }}>
-                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                    <td style={{ padding: '0.875rem 1rem', textAlign: 'right', width: '280px', minWidth: '280px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.4rem', alignItems: 'center', whiteSpace: 'nowrap' }}>
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => handleOpenEdit(adm)}
                           title="Editar información de perfil"
-                          style={{ fontSize: '0.8rem', padding: '0.25rem 0.5rem' }}
+                          style={{ fontSize: '0.8rem', padding: '0.25rem 0.5rem', whiteSpace: 'nowrap' }}
                         >
                           ✏️ Editar
                         </Button>
@@ -665,7 +665,7 @@ export const DepartmentAdminsView: React.FC = () => {
                           size="sm"
                           onClick={() => handleOpenReassign(adm)}
                           title="Reasignar departamento territorial"
-                          style={{ fontSize: '0.8rem', padding: '0.25rem 0.5rem', color: '#D97706' }}
+                          style={{ fontSize: '0.8rem', padding: '0.25rem 0.5rem', color: '#D97706', whiteSpace: 'nowrap' }}
                         >
                           🔄 Reasignar
                         </Button>
@@ -675,7 +675,7 @@ export const DepartmentAdminsView: React.FC = () => {
                             size="sm"
                             onClick={() => handleResendInvitation(adm)}
                             title="Reenviar invitación de activación al correo"
-                            style={{ fontSize: '0.8rem', padding: '0.25rem 0.5rem', color: '#2563EB' }}
+                            style={{ fontSize: '0.8rem', padding: '0.25rem 0.5rem', color: '#2563EB', whiteSpace: 'nowrap' }}
                           >
                             ✉️ Reenviar invitación
                           </Button>
@@ -689,6 +689,7 @@ export const DepartmentAdminsView: React.FC = () => {
                             fontSize: '0.8rem',
                             padding: '0.25rem 0.5rem',
                             color: adm.is_active ? '#DC2626' : '#16A34A',
+                            whiteSpace: 'nowrap',
                           }}
                         >
                           {adm.is_active ? '⛔ Desactivar' : '✅ Activar'}

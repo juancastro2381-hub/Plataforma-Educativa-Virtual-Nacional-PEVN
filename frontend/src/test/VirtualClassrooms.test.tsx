@@ -157,8 +157,9 @@ describe('Virtual Classrooms View & Actions', () => {
     )
 
     await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 3, name: 'Aulas Virtuales' })).toBeInTheDocument()
       expect(
-        screen.getByText('No hay aulas virtuales disponibles')
+        screen.getByText(/Todavía no hay clases virtuales programadas para tu institución/i)
       ).toBeInTheDocument()
     })
   })

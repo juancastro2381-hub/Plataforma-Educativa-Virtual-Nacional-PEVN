@@ -18,6 +18,7 @@ from typing import Any
 import httpx
 
 from app.core.meeting.exceptions import (
+    BBBNotConfiguredError,
     MeetingNotFoundError,
     MeetingProviderAuthError,
     MeetingProviderConfigError,
@@ -92,9 +93,8 @@ class BBBAdapter(IMeetingProvider):
         checksum = HASH(call_name + query_string + shared_secret)
         """
         if not self._shared_secret:
-            raise MeetingProviderConfigError(
-                "BBB_SHARED_SECRET no está configurado. "
-                "Verifique las variables de entorno."
+            raise BBBNotConfiguredError(
+                "El servicio de videoconferencias BigBlueButton no se encuentra configurado en la plataforma."
             )
 
         payload = f"{call_name}{query_string}{self._shared_secret}".encode()

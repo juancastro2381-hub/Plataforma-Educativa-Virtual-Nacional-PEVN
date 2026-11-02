@@ -552,17 +552,17 @@ export const MunicipalityAdminsView: React.FC = () => {
         </Card>
       ) : (
         <Card style={{ backgroundColor: '#FFFFFF', overflow: 'hidden' }}>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.8125rem' }}>
+          <div style={{ overflowX: 'auto', width: '100%' }}>
+            <table style={{ width: '100%', minWidth: '1150px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.8125rem' }}>
               <thead>
                 <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0', color: '#475569', fontWeight: 700 }}>
-                  <th style={{ padding: '0.75rem 1rem' }}>ADMINISTRADOR</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>MUNICIPIO</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>DEPARTAMENTO</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>DOCUMENTO</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>CORREO INSTITUCIONAL</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>ESTADO</th>
-                  <th style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>ACCIONES</th>
+                  <th style={{ padding: '0.75rem 1rem', minWidth: '170px' }}>ADMINISTRADOR</th>
+                  <th style={{ padding: '0.75rem 1rem', minWidth: '130px' }}>MUNICIPIO</th>
+                  <th style={{ padding: '0.75rem 1rem', minWidth: '140px' }}>DEPARTAMENTO</th>
+                  <th style={{ padding: '0.75rem 1rem', minWidth: '130px' }}>DOCUMENTO</th>
+                  <th style={{ padding: '0.75rem 1rem', minWidth: '180px' }}>CORREO INSTITUCIONAL</th>
+                  <th style={{ padding: '0.75rem 1rem', width: '120px' }}>ESTADO</th>
+                  <th style={{ padding: '0.75rem 1rem', textAlign: 'right', width: '280px', minWidth: '280px', whiteSpace: 'nowrap' }}>ACCIONES</th>
                 </tr>
               </thead>
               <tbody>
@@ -601,9 +601,9 @@ export const MunicipalityAdminsView: React.FC = () => {
                           : 'Inactivo / Pendiente de activación'}
                       </Badge>
                     </td>
-                    <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
+                    <td style={{ padding: '0.75rem 1rem', textAlign: 'right', width: '280px', minWidth: '280px' }}>
                       {canUpdate && (
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.4rem', alignItems: 'center', whiteSpace: 'nowrap' }}>
                           {admin.is_active || admin.is_verified ? (
                             <Button
                               variant="ghost"
@@ -613,6 +613,7 @@ export const MunicipalityAdminsView: React.FC = () => {
                                 setStatusReason('')
                               }}
                               title={admin.is_active ? 'Desactivar cuenta' : 'Activar cuenta'}
+                              style={{ whiteSpace: 'nowrap' }}
                             >
                               {admin.is_active ? '🔴 Desactivar' : '🟢 Activar'}
                             </Button>
@@ -622,6 +623,7 @@ export const MunicipalityAdminsView: React.FC = () => {
                               size="sm"
                               onClick={() => setResendTarget(admin)}
                               title="Regenerar invitación (invalida la anterior)"
+                              style={{ whiteSpace: 'nowrap' }}
                             >
                               ✉️ Regenerar invitación
                             </Button>
@@ -636,6 +638,7 @@ export const MunicipalityAdminsView: React.FC = () => {
                               setReassignError(null)
                             }}
                             title="Reasignar a otro municipio"
+                            style={{ whiteSpace: 'nowrap' }}
                           >
                             🔄 Reasignar
                           </Button>

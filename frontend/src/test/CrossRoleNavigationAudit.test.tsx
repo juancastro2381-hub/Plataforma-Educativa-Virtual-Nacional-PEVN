@@ -193,7 +193,7 @@ describe('RBAC-AUDIT-02: Cross-Role Navigation & Context Protection Suites', () 
     })
   })
 
-  it('2. DEPARTMENT_ADMIN navigating to /virtual-classrooms without context is redirected preserving returnTo', async () => {
+  it('2. DEPARTMENT_ADMIN navigating to /virtual-classrooms is denied access with 403', async () => {
     setActiveMockUser(createTerritorialUser('department_admin'))
 
     render(
@@ -203,7 +203,11 @@ describe('RBAC-AUDIT-02: Cross-Role Navigation & Context Protection Suites', () 
             <Route
               path="/virtual-classrooms"
               element={
-                <RequireAuth permissions={['virtual_classrooms:read']} requireInstitutionContext>
+                <RequireAuth
+                  permissions={['virtual_classrooms:read']}
+                  denyRoles={['national_admin', 'department_admin', 'municipality_admin']}
+                  requireInstitutionContext
+                >
                   <div>Aulas Virtuales</div>
                 </RequireAuth>
               }
@@ -218,8 +222,9 @@ describe('RBAC-AUDIT-02: Cross-Role Navigation & Context Protection Suites', () 
     )
 
     await waitFor(() => {
-      expect(screen.getByText(/Selección de Contexto Requerida/i)).toBeInTheDocument()
-      expect(screen.getByText(/\/virtual-classrooms/i)).toBeInTheDocument()
+      expect(screen.getByText(/Acceso Restringido \(403\)/i)).toBeInTheDocument()
+      expect(screen.getByText(/Este módulo corresponde a operaciones educativas institucionales/i)).toBeInTheDocument()
+      expect(screen.queryByText('Aulas Virtuales')).not.toBeInTheDocument()
     })
   })
 

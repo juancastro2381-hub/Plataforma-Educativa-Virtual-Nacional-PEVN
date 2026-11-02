@@ -32,6 +32,8 @@ export const Dashboard: React.FC = () => {
     setActiveInstitutionContext,
   } = useAuth()
 
+  const isTerritorialAdmin = hasRole(['national_admin', 'department_admin', 'municipality_admin'])
+
   // Change password modal / state
   const [showPasswordModal, setShowPasswordModal] = useState(
     user?.must_change_password ?? false
@@ -1105,7 +1107,7 @@ export const Dashboard: React.FC = () => {
       )}
 
       {/* Communications & News Access Card */}
-      {!hasRole('superadmin') && (hasPermission('communications:read') || hasPermission('news:read')) && (
+      {!hasRole('superadmin') && !isTerritorialAdmin && (hasPermission('communications:read') || hasPermission('news:read')) && (
         <div
           style={{
             marginTop: '2rem',
@@ -1193,7 +1195,7 @@ export const Dashboard: React.FC = () => {
       )}
 
       {/* Incidents & School Climate Access Card */}
-      {!hasRole('superadmin') && hasPermission('incidents:read') && (
+      {!hasRole('superadmin') && !isTerritorialAdmin && hasPermission('incidents:read') && (
         <div
           style={{
             marginTop: '2rem',
@@ -1272,13 +1274,13 @@ export const Dashboard: React.FC = () => {
                   marginBottom: '0.5rem',
                 }}
               >
-                Inspección Curricular y Aulas Virtuales
+                Inspección y Acompañamiento Institucional
               </div>
               <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#1E3A8A', margin: '0 0 0.25rem 0' }}>
                 Selección de Contexto Institucional
               </h2>
               <p style={{ fontSize: '0.875rem', color: '#1E40AF', margin: 0 }}>
-                Para inspeccionar el plan de estudios, salones, matrículas, planta docente y aulas virtuales de una institución específica, seleccione la institución en el catálogo.
+                Para inspeccionar el plan de estudios, salones, matrículas, sedes y planta docente de una institución específica, seleccione la institución en el catálogo.
               </p>
             </div>
             <Link to="/admin/institutions" style={{ textDecoration: 'none' }}>
@@ -1483,7 +1485,7 @@ export const Dashboard: React.FC = () => {
       )}
 
       {/* Virtual Classrooms & Real-Time Collaboration Access Card (Phase 4) */}
-      {!hasRole('superadmin') && hasPermission('virtual_classrooms:read') && (
+      {!hasRole('superadmin') && !isTerritorialAdmin && hasPermission('virtual_classrooms:read') && (
         <div
           style={{
             marginTop: '2rem',

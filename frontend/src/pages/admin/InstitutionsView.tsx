@@ -1236,47 +1236,36 @@ export const InstitutionsView: React.FC = () => {
         {isNationalAdmin && (
           <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
             <Button
-              variant="secondary"
+              variant="outline-light"
               disabled={isSyncingCatalog}
+              isLoading={isSyncingCatalog}
               onClick={handleSyncCatalog}
               style={{
-                borderColor: '#475569',
-                color: '#E2E8F0',
                 fontWeight: 600,
                 padding: '0.75rem 1.25rem',
               }}
             >
-              {isSyncingCatalog ? '⏳ Sincronizando Catálogo...' : '🔄 Sincronizar Catálogo'}
+              {isSyncingCatalog ? 'Sincronizando Catálogo...' : '🔄 Sincronizar Catálogo'}
             </Button>
 
-            <Button
-              variant="secondary"
+            <button
+              type="button"
               onClick={() => (window.location.href = '/admin/onboarding')}
-              style={{
-                borderColor: '#059669',
-                color: '#34D399',
-                fontWeight: 600,
-                padding: '0.75rem 1.25rem',
-              }}
+              className="border border-emerald-500/80 text-emerald-300 bg-emerald-950/40 hover:bg-emerald-800 hover:text-white hover:border-emerald-400 active:bg-emerald-900 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 focus:ring-offset-slate-900 font-semibold text-sm px-5 py-3 rounded-lg transition-all duration-200 cursor-pointer shadow-sm inline-flex items-center gap-2"
             >
               📋 Flujo de Incorporación NTA-04
-            </Button>
+            </button>
 
-            <Button
-              variant="primary"
+            <button
+              type="button"
               onClick={() => {
                 setCreateError(null)
                 setIsCreateOpen(true)
               }}
-              style={{
-                backgroundColor: '#2563EB',
-                fontWeight: 700,
-                padding: '0.75rem 1.5rem',
-                boxShadow: '0 4px 6px -1px rgba(37, 99, 235, 0.4)',
-              }}
+              className="bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-slate-900 shadow-md shadow-blue-900/40 font-bold text-sm px-6 py-3 rounded-lg transition-all duration-200 cursor-pointer inline-flex items-center gap-2"
             >
               + Aprovisionar Institución
-            </Button>
+            </button>
           </div>
         )}
       </div>
@@ -1559,10 +1548,11 @@ export const InstitutionsView: React.FC = () => {
                 />
               </div>
             ) : (
-              <div style={{ overflowX: 'auto' }}>
+              <div style={{ overflowX: 'auto', width: '100%' }}>
                 <table
                   style={{
                     width: '100%',
+                    minWidth: '1050px',
                     borderCollapse: 'collapse',
                     textAlign: 'left',
                     fontSize: '0.875rem',
@@ -1570,12 +1560,12 @@ export const InstitutionsView: React.FC = () => {
                 >
                   <thead>
                     <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0', color: '#475569' }}>
-                      <th style={{ padding: '1rem', fontWeight: 700 }}>Código DANE</th>
-                      <th style={{ padding: '1rem', fontWeight: 700 }}>Establecimiento Educativo Oficial</th>
-                      <th style={{ padding: '1rem', fontWeight: 700 }}>Sedes Registradas</th>
-                      <th style={{ padding: '1rem', fontWeight: 700 }}>Jurisdicción</th>
-                      <th style={{ padding: '1rem', fontWeight: 700, textAlign: 'center' }}>Estado PEVN / Rector</th>
-                      <th style={{ padding: '1rem', fontWeight: 700, textAlign: 'right' }}>Acciones</th>
+                      <th style={{ padding: '1rem', fontWeight: 700, width: '140px', minWidth: '140px' }}>Código DANE</th>
+                      <th style={{ padding: '1rem', fontWeight: 700, minWidth: '220px' }}>Establecimiento Educativo Oficial</th>
+                      <th style={{ padding: '1rem', fontWeight: 700, minWidth: '150px' }}>Sedes Registradas</th>
+                      <th style={{ padding: '1rem', fontWeight: 700, minWidth: '160px' }}>Jurisdicción</th>
+                      <th style={{ padding: '1rem', fontWeight: 700, textAlign: 'center', minWidth: '160px' }}>Estado PEVN / Rector</th>
+                      <th style={{ padding: '1rem', fontWeight: 700, textAlign: 'right', width: '250px', minWidth: '250px', whiteSpace: 'nowrap' }}>Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1589,7 +1579,7 @@ export const InstitutionsView: React.FC = () => {
                         onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#F8FAFC')}
                         onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                       >
-                        <td style={{ padding: '1rem' }}>
+                        <td style={{ padding: '1rem', width: '140px', minWidth: '140px' }}>
                           <span
                             style={{
                               fontFamily: 'monospace',
@@ -1657,8 +1647,8 @@ export const InstitutionsView: React.FC = () => {
                             <Badge variant="neutral">Inactiva</Badge>
                           )}
                         </td>
-                        <td style={{ padding: '1rem', textAlign: 'right' }}>
-                          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', alignItems: 'center' }}>
+                        <td style={{ padding: '1rem', textAlign: 'right', width: '250px', minWidth: '250px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.4rem', alignItems: 'center', whiteSpace: 'nowrap' }}>
                             {item.lifecycle_status === 'DISPONIBLE_PARA_APROVISIONAR' && (
                               <Button
                                 variant="primary"
@@ -1866,10 +1856,11 @@ export const InstitutionsView: React.FC = () => {
                 />
               </div>
             ) : (
-              <div style={{ overflowX: 'auto' }}>
+              <div style={{ overflowX: 'auto', width: '100%' }}>
                 <table
                   style={{
                     width: '100%',
+                    minWidth: '1150px',
                     borderCollapse: 'collapse',
                     textAlign: 'left',
                     fontSize: '0.875rem',
@@ -1877,13 +1868,13 @@ export const InstitutionsView: React.FC = () => {
                 >
                   <thead>
                     <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0', color: '#475569' }}>
-                      <th style={{ padding: '1rem', fontWeight: 700 }}>Código DANE</th>
-                      <th style={{ padding: '1rem', fontWeight: 700 }}>Institución Educativa</th>
-                      <th style={{ padding: '1rem', fontWeight: 700 }}>Sede Principal</th>
-                      <th style={{ padding: '1rem', fontWeight: 700 }}>Contacto</th>
-                      <th style={{ padding: '1rem', fontWeight: 700 }}>Rector</th>
-                      <th style={{ padding: '1rem', fontWeight: 700, textAlign: 'center' }}>Estado</th>
-                      <th style={{ padding: '1rem', fontWeight: 700, textAlign: 'right' }}>Acciones</th>
+                      <th style={{ padding: '1rem', fontWeight: 700, width: '140px', minWidth: '140px' }}>Código DANE</th>
+                      <th style={{ padding: '1rem', fontWeight: 700, minWidth: '220px' }}>Institución Educativa</th>
+                      <th style={{ padding: '1rem', fontWeight: 700, minWidth: '150px' }}>Sede Principal</th>
+                      <th style={{ padding: '1rem', fontWeight: 700, minWidth: '150px' }}>Contacto</th>
+                      <th style={{ padding: '1rem', fontWeight: 700, minWidth: '160px' }}>Rector</th>
+                      <th style={{ padding: '1rem', fontWeight: 700, textAlign: 'center', width: '110px' }}>Estado</th>
+                      <th style={{ padding: '1rem', fontWeight: 700, textAlign: 'right', width: '270px', minWidth: '270px', whiteSpace: 'nowrap' }}>Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1899,7 +1890,7 @@ export const InstitutionsView: React.FC = () => {
                           onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#F8FAFC')}
                           onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                         >
-                          <td style={{ padding: '1rem' }}>
+                          <td style={{ padding: '1rem', width: '140px', minWidth: '140px' }}>
                             <span
                               style={{
                                 fontFamily: 'monospace',
@@ -1960,8 +1951,8 @@ export const InstitutionsView: React.FC = () => {
                               {inst.is_active ? 'Activa' : 'Suspendida'}
                             </Badge>
                           </td>
-                          <td style={{ padding: '1rem', textAlign: 'right' }}>
-                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', alignItems: 'center' }}>
+                          <td style={{ padding: '1rem', textAlign: 'right', width: '270px', minWidth: '270px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.4rem', alignItems: 'center', whiteSpace: 'nowrap' }}>
                               {canSetContext && inst.is_active && (
                                 activeInstitutionId === inst.id ? (
                                   <Button
@@ -1972,7 +1963,7 @@ export const InstitutionsView: React.FC = () => {
                                       setSuccessMsg(`Contexto institucional removido.`)
                                     }}
                                     title="Desmarcar contexto institucional"
-                                    style={{ backgroundColor: '#FEF08A', color: '#854D0E', borderColor: '#FACC15', fontWeight: 600 }}
+                                    style={{ backgroundColor: '#FEF08A', color: '#854D0E', borderColor: '#FACC15', fontWeight: 600, whiteSpace: 'nowrap' }}
                                   >
                                     ✓ Activo
                                   </Button>
@@ -1988,6 +1979,7 @@ export const InstitutionsView: React.FC = () => {
                                       }
                                     }}
                                     title="Seleccionar esta institución como contexto de trabajo para inspección"
+                                    style={{ whiteSpace: 'nowrap' }}
                                   >
                                     🏛️ Contexto
                                   </Button>
@@ -2005,6 +1997,7 @@ export const InstitutionsView: React.FC = () => {
                                         setIsInviteOpen(true)
                                       }}
                                       title="Generar invitación criptográfica para el Rector"
+                                      style={{ whiteSpace: 'nowrap' }}
                                     >
                                       ✉️ Invitar Rector
                                     </Button>
@@ -2016,7 +2009,7 @@ export const InstitutionsView: React.FC = () => {
                                       disabled={isInviting}
                                       onClick={() => void handleResendInvite(inst)}
                                       title="Reenviar enlace de activación al Rector pendiente"
-                                      style={{ color: '#92400E', borderColor: '#FDE68A' }}
+                                      style={{ color: '#92400E', borderColor: '#FDE68A', whiteSpace: 'nowrap' }}
                                     >
                                       🔄 Reenviar
                                     </Button>
@@ -2030,6 +2023,7 @@ export const InstitutionsView: React.FC = () => {
                                         padding: '0.25rem 0.5rem',
                                         backgroundColor: '#DCFCE7',
                                         borderRadius: '4px',
+                                        whiteSpace: 'nowrap',
                                       }}
                                       title="La institución ya cuenta con un Rector titular activo"
                                     >
@@ -2039,19 +2033,37 @@ export const InstitutionsView: React.FC = () => {
                                 </>
                               )}
                               {isNationalAdmin && (
-                                <Button
-                                  variant={inst.is_active ? 'ghost' : 'secondary'}
-                                  size="sm"
-                                  onClick={() =>
-                                    setStatusConfirmModal({
-                                      isOpen: true,
-                                      institution: inst,
-                                      newStatus: !inst.is_active,
-                                    })
-                                  }
-                                >
-                                  {inst.is_active ? 'Suspender' : 'Reactivar'}
-                                </Button>
+                                inst.is_active ? (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setStatusConfirmModal({
+                                        isOpen: true,
+                                        institution: inst,
+                                        newStatus: !inst.is_active,
+                                      })
+                                    }
+                                    className="border border-red-300 text-red-600 bg-red-50 hover:bg-red-600 hover:text-white hover:border-red-600 active:bg-red-700 font-semibold text-xs px-2.5 py-1.5 rounded-md transition-colors whitespace-nowrap cursor-pointer"
+                                    title="Suspender operatividad institucional"
+                                  >
+                                    ⛔ Suspender
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setStatusConfirmModal({
+                                        isOpen: true,
+                                        institution: inst,
+                                        newStatus: !inst.is_active,
+                                      })
+                                    }
+                                    className="border border-emerald-300 text-emerald-700 bg-emerald-50 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 active:bg-emerald-700 font-semibold text-xs px-2.5 py-1.5 rounded-md transition-colors whitespace-nowrap cursor-pointer"
+                                    title="Reactivar operatividad institucional"
+                                  >
+                                    ✅ Reactivar
+                                  </button>
+                                )
                               )}
                             </div>
                           </td>

@@ -26,6 +26,7 @@ export function RootLayout() {
   } = useAuth()
 
   const isSuperAdmin = hasRole(['superadmin', 'super_admin'])
+  const isTerritorialAdmin = hasRole(['national_admin', 'department_admin', 'municipality_admin'])
 
   const isInstitutionalDirective = hasRole([
     'rector',
@@ -49,16 +50,16 @@ export function RootLayout() {
   const canAccessAcademic = !isSuperAdmin && isInstitutionalDirective
 
   const canAccessVirtualClassrooms =
-    !isSuperAdmin && hasPermission('virtual_classrooms:read')
+    !isSuperAdmin && !isTerritorialAdmin && hasPermission('virtual_classrooms:read')
 
   const canAccessCommunications =
-    !isSuperAdmin && hasPermission('communications:read')
+    !isSuperAdmin && !isTerritorialAdmin && hasPermission('communications:read')
 
   const canAccessNews =
-    !isSuperAdmin && hasPermission('news:read')
+    !isSuperAdmin && !isTerritorialAdmin && hasPermission('news:read')
 
   const canAccessIncidents =
-    !isSuperAdmin && hasPermission('incidents:read')
+    !isSuperAdmin && !isTerritorialAdmin && hasPermission('incidents:read')
 
   const canAccessTerritorial =
     !isSuperAdmin && hasRole(['national_admin', 'department_admin', 'municipality_admin'])

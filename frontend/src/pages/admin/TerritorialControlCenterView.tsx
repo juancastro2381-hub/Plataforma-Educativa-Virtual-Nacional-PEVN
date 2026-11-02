@@ -564,19 +564,19 @@ export const TerritorialControlCenterView: React.FC = () => {
         </div>
 
         {/* Table Content */}
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
+        <div style={{ overflowX: 'auto', width: '100%' }}>
+          <table style={{ width: '100%', minWidth: '1080px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
             <thead>
               <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0', color: '#475569' }}>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>CÓDIGO</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>DEPARTAMENTO</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>CATÁLOGO MEN</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>TENANCY PEVN</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>PIPELINE</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>GOBERNANZA SED</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>ADMINISTRADOR</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>TASA</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'center' }}>ACCIONES</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 600, width: '80px' }}>CÓDIGO</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 600, minWidth: '150px' }}>DEPARTAMENTO</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 600, minWidth: '130px' }}>CATÁLOGO MEN</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 600, minWidth: '110px' }}>TENANCY PEVN</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 600, minWidth: '110px' }}>PIPELINE</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 600, minWidth: '120px' }}>GOBERNANZA SED</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 600, minWidth: '160px' }}>ADMINISTRADOR</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 600, width: '70px' }}>TASA</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'center', width: '230px', minWidth: '230px', whiteSpace: 'nowrap' }}>ACCIONES</th>
               </tr>
             </thead>
             <tbody>
@@ -663,13 +663,14 @@ export const TerritorialControlCenterView: React.FC = () => {
                     <td style={{ padding: '0.85rem 1rem', fontWeight: 600, color: '#334155' }}>
                       {dept.provisioning_rate_percent}%
                     </td>
-                    <td style={{ padding: '0.85rem 1rem', textAlign: 'center' }}>
-                      <div style={{ display: 'flex', justifyContent: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                    <td style={{ padding: '0.85rem 1rem', textAlign: 'center', width: '230px', minWidth: '230px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'center', gap: '0.35rem', alignItems: 'center', whiteSpace: 'nowrap' }}>
                         <Button
                           variant="secondary"
                           size="sm"
                           onClick={() => handleOpenDetail(dept.department_code)}
                           title="Ver desglose municipal y analítica"
+                          style={{ padding: '0.35rem 0.6rem', fontSize: '0.75rem', whiteSpace: 'nowrap' }}
                         >
                           Detalle
                         </Button>
@@ -678,6 +679,7 @@ export const TerritorialControlCenterView: React.FC = () => {
                           size="sm"
                           onClick={() => navigate(`/admin/onboarding?department_code=${dept.department_code}`)}
                           title="Radicar adopción en este departamento"
+                          style={{ padding: '0.35rem 0.6rem', fontSize: '0.75rem', whiteSpace: 'nowrap' }}
                         >
                           Radicar
                         </Button>
@@ -687,6 +689,7 @@ export const TerritorialControlCenterView: React.FC = () => {
                             size="sm"
                             onClick={() => navigate(`/admin/department-admins?department_code=${dept.department_code}`)}
                             title="Gestionar administrador SED"
+                            style={{ padding: '0.35rem 0.6rem', fontSize: '0.75rem', color: '#2563EB', whiteSpace: 'nowrap' }}
                           >
                             SED
                           </Button>

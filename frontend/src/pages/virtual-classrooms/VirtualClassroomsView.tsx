@@ -35,6 +35,8 @@ export const VirtualClassroomsView: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<VirtualClassroomStatus | 'ALL'>('ALL')
   const [error, setError] = useState<ApiError | Error | null>(null)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
+  const [isProviderConfigured, setIsProviderConfigured] = useState<boolean>(true)
+  const [providerMessage, setProviderMessage] = useState<string | null>(null)
 
   // Creation Modal State
   const [isCreateOpen, setIsCreateOpen] = useState<boolean>(false)
@@ -69,6 +71,12 @@ export const VirtualClassroomsView: React.FC = () => {
       })
       setClassrooms(res.items)
       setTotal(res.total)
+      if (res.provider_configured !== undefined) {
+        setIsProviderConfigured(res.provider_configured)
+      }
+      if (res.provider_message) {
+        setProviderMessage(res.provider_message)
+      }
     } catch (err: unknown) {
       setError(err as ApiError)
     } finally {
@@ -109,17 +117,42 @@ export const VirtualClassroomsView: React.FC = () => {
   }
 
   const handleLaunch = async (classroomId: string) => {
+    if (!isProviderConfigured) {
+      notifyError(
+        'El servicio de videoconferencias BigBlueButton no está habilitado actualmente.'
+      )
+      return
+    }
     setError(null)
     try {
       await virtualClassroomApi.launchVirtualClassroom(classroomId)
       setSuccessMsg('Sesión iniciada en el servidor.')
       void loadClassrooms()
     } catch (err: unknown) {
-      setError(err as ApiError)
+      const apiErr = err as ApiError
+      const anyErr = err as { code?: string; status?: number; statusCode?: number }
+      if (
+        apiErr?.code === 'BBB_NOT_CONFIGURED' ||
+        anyErr?.status === 503 ||
+        anyErr?.statusCode === 503
+      ) {
+        setIsProviderConfigured(false)
+        notifyError(
+          'Servicio de videoconferencias pendiente de habilitación. La infraestructura BigBlueButton aún no ha sido comisionada.'
+        )
+      } else {
+        setError(apiErr)
+      }
     }
   }
 
   const handleJoin = async (classroom: VirtualClassroomResponse) => {
+    if (!isProviderConfigured) {
+      notifyError(
+        'El servicio de videoconferencias BigBlueButton no está habilitado actualmente.'
+      )
+      return
+    }
     setJoiningId(classroom.id)
     setError(null)
     try {
@@ -129,7 +162,20 @@ export const VirtualClassroomsView: React.FC = () => {
       window.open(res.join_url, '_blank', 'noopener,noreferrer')
       void loadClassrooms()
     } catch (err: unknown) {
-      setError(err as ApiError)
+      const apiErr = err as ApiError
+      const anyErr = err as { code?: string; status?: number; statusCode?: number }
+      if (
+        apiErr?.code === 'BBB_NOT_CONFIGURED' ||
+        anyErr?.status === 503 ||
+        anyErr?.statusCode === 503
+      ) {
+        setIsProviderConfigured(false)
+        notifyError(
+          'Servicio de videoconferencias pendiente de habilitación. La infraestructura BigBlueButton aún no ha sido comisionada.'
+        )
+      } else {
+        setError(apiErr)
+      }
     } finally {
       setJoiningId(null)
     }
@@ -291,6 +337,34 @@ export const VirtualClassroomsView: React.FC = () => {
         )}
       </div>
 
+      {/* Informative notice when BBB is not configured */}
+      {!isProviderConfigured && (
+        <div
+          data-testid="bbb-notice"
+          style={{
+            backgroundColor: '#EFF6FF',
+            border: '1px solid #BFDBFE',
+            borderRadius: '10px',
+            padding: '1rem 1.25rem',
+            marginBottom: '1.5rem',
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '0.875rem',
+          }}
+        >
+          <span style={{ fontSize: '1.5rem', lineHeight: 1 }} aria-hidden="true">ℹ️</span>
+          <div>
+            <div style={{ fontWeight: 700, color: '#1E40AF', fontSize: '0.9375rem', marginBottom: '0.25rem' }}>
+              Estado: Servicio de videoconferencias pendiente de habilitación.
+            </div>
+            <div style={{ color: '#1E3A8A', fontSize: '0.875rem', lineHeight: 1.4 }}>
+              {providerMessage ||
+                'La programación y consulta de clases está disponible. La conexión mediante videoconferencia se habilitará cuando la infraestructura BBB esté configurada.'}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Alerts */}
       {error && (
         <div style={{ marginBottom: '1rem' }}>
@@ -359,8 +433,9 @@ export const VirtualClassroomsView: React.FC = () => {
         </div>
       ) : classrooms.length === 0 ? (
         <EmptyState
-          title="No hay aulas virtuales disponibles"
-          description="No se encontraron sesiones programadas o activas con el filtro actual."
+          icon="🏛️"
+          title="Aulas Virtuales"
+          description="Todavía no hay clases virtuales programadas para tu institución. Las clases programadas aparecerán aquí cuando estén disponibles."
           actionLabel={isStaff ? 'Programar Clase' : undefined}
           onAction={
             isStaff
@@ -427,6 +502,8 @@ export const VirtualClassroomsView: React.FC = () => {
                     <Button
                       variant="primary"
                       size="sm"
+                      disabled={!isProviderConfigured}
+                      title={!isProviderConfigured ? 'Videoconferencia pendiente de habilitación de infraestructura BBB' : undefined}
                       isLoading={joiningId === classroom.id}
                       onClick={() => {
                         void handleJoin(classroom)
@@ -441,6 +518,8 @@ export const VirtualClassroomsView: React.FC = () => {
                     <Button
                       variant="secondary"
                       size="sm"
+                      disabled={!isProviderConfigured}
+                      title={!isProviderConfigured ? 'Videoconferencia pendiente de habilitación de infraestructura BBB' : undefined}
                       onClick={() => {
                         void handleLaunch(classroom.id)
                       }}

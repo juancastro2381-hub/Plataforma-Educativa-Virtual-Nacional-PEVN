@@ -9,7 +9,7 @@ to VirtualClassroomService and AttendanceService.
 from __future__ import annotations
 
 import uuid
-from typing import Annotated
+from typing import Annotated, Any
 from urllib.parse import urlparse
 
 from fastapi import APIRouter, Depends, Query, status
@@ -23,9 +23,11 @@ from app.api.deps import (
     resolve_institution_id,
 )
 from app.core.config import settings
-
-from app.core.config import settings
 from app.core.logging import correlation_id_ctx
+from app.core.meeting.factory import (
+    MeetingProviderStatus,
+    check_meeting_provider_status,
+)
 from app.core.security.interfaces import SystemRole
 from app.exceptions.errors import AuthorizationError, UnprocessableEntityError
 from app.models.virtual_classroom import (
@@ -82,16 +84,6 @@ async def create_virtual_classroom(
     institution_id: Annotated[uuid.UUID | None, Query()] = None,
 ) -> VirtualClassroomResponse:
     """Create a virtual classroom session within tenant boundaries."""
-    # SEC-010: Validate that redirect_url does not point to an untrusted external origin
-    if redirect_url:
-        parsed_redir = urlparse(redirect_url)
-        allowed_netloc = urlparse(settings.public_frontend_url).netloc
-        if parsed_redir.netloc and parsed_redir.netloc != allowed_netloc:
-            raise UnprocessableEntityError(
-                "La URL de redirección no pertenece al dominio autorizado de la plataforma.",
-                code="UNAUTHORIZED_REDIRECT_URL",
-            )
-
     inst_id = await _resolve_institution_id(db, auth, current_user, institution_id)
     service = VirtualClassroomService(session=db)
 
@@ -108,7 +100,6 @@ async def create_virtual_classroom(
         max_participants=payload.max_participants,
         provider_metadata=payload.provider_metadata,
         actor_id=current_user.id,
-        user_roles=[r.value for r in auth.roles],
         actor_ip=client_ip,
         correlation_id=correlation_id_ctx.get(),
     )
@@ -136,16 +127,6 @@ async def list_virtual_classrooms(
     institution_id: Annotated[uuid.UUID | None, Query()] = None,
 ) -> VirtualClassroomListResponse:
     """List virtual classrooms within tenant scope."""
-    # SEC-010: Validate that redirect_url does not point to an untrusted external origin
-    if redirect_url:
-        parsed_redir = urlparse(redirect_url)
-        allowed_netloc = urlparse(settings.public_frontend_url).netloc
-        if parsed_redir.netloc and parsed_redir.netloc != allowed_netloc:
-            raise UnprocessableEntityError(
-                "La URL de redirección no pertenece al dominio autorizado de la plataforma.",
-                code="UNAUTHORIZED_REDIRECT_URL",
-            )
-
     inst_id = await _resolve_institution_id(db, auth, current_user, institution_id)
     service = VirtualClassroomService(session=db)
 
@@ -156,12 +137,34 @@ async def list_virtual_classrooms(
         skip=skip,
         limit=limit,
     )
+    prov_status, prov_msg = check_meeting_provider_status()
+    is_prov_configured = prov_status not in (MeetingProviderStatus.NOT_CONFIGURED,)
+
     return VirtualClassroomListResponse(
         items=[VirtualClassroomResponse.model_validate(c) for c in items],
         total=total,
         skip=skip,
         limit=limit,
+        provider_configured=is_prov_configured,
+        provider_status=prov_status.value,
+        provider_message=prov_msg,
     )
+
+
+@router.get(
+    "/provider-status",
+    summary="Consultar estado de infraestructura de videoconferencias",
+    description="Informa si la infraestructura BigBlueButton está configurada y lista.",
+    dependencies=[Depends(require_permission("virtual_classrooms", "read"))],
+)
+async def get_provider_status() -> dict[str, Any]:
+    """Inspect status of videoconferencing provider infrastructure."""
+    prov_status, prov_msg = check_meeting_provider_status()
+    return {
+        "provider_configured": prov_status != MeetingProviderStatus.NOT_CONFIGURED,
+        "provider_status": prov_status.value,
+        "message": prov_msg,
+    }
 
 
 @router.get(
@@ -179,16 +182,6 @@ async def get_virtual_classroom(
     institution_id: Annotated[uuid.UUID | None, Query()] = None,
 ) -> VirtualClassroomResponse:
     """Retrieve virtual classroom by ID with tenant isolation."""
-    # SEC-010: Validate that redirect_url does not point to an untrusted external origin
-    if redirect_url:
-        parsed_redir = urlparse(redirect_url)
-        allowed_netloc = urlparse(settings.public_frontend_url).netloc
-        if parsed_redir.netloc and parsed_redir.netloc != allowed_netloc:
-            raise UnprocessableEntityError(
-                "La URL de redirección no pertenece al dominio autorizado de la plataforma.",
-                code="UNAUTHORIZED_REDIRECT_URL",
-            )
-
     inst_id = await _resolve_institution_id(db, auth, current_user, institution_id)
     service = VirtualClassroomService(session=db)
 
@@ -215,16 +208,6 @@ async def launch_virtual_classroom(
     institution_id: Annotated[uuid.UUID | None, Query()] = None,
 ) -> VirtualClassroomResponse:
     """Launch scheduled virtual classroom session."""
-    # SEC-010: Validate that redirect_url does not point to an untrusted external origin
-    if redirect_url:
-        parsed_redir = urlparse(redirect_url)
-        allowed_netloc = urlparse(settings.public_frontend_url).netloc
-        if parsed_redir.netloc and parsed_redir.netloc != allowed_netloc:
-            raise UnprocessableEntityError(
-                "La URL de redirección no pertenece al dominio autorizado de la plataforma.",
-                code="UNAUTHORIZED_REDIRECT_URL",
-            )
-
     inst_id = await _resolve_institution_id(db, auth, current_user, institution_id)
     service = VirtualClassroomService(session=db)
 
@@ -232,7 +215,6 @@ async def launch_virtual_classroom(
         classroom_id=classroom_id,
         institution_id=inst_id,
         actor_id=current_user.id,
-        user_roles=[r.value for r in auth.roles],
         actor_ip=client_ip,
         correlation_id=correlation_id_ctx.get(),
     )
@@ -273,15 +255,6 @@ async def join_virtual_classroom(
     inst_id = await _resolve_institution_id(db, auth, current_user, institution_id)
     service = VirtualClassroomService(session=db)
 
-    if redirect_url:
-        parsed_redir = urlparse(redirect_url)
-        allowed_netloc = urlparse(settings.public_frontend_url).netloc
-        if parsed_redir.netloc and parsed_redir.netloc != allowed_netloc:
-            raise UnprocessableEntityError(
-                "La URL de redirección no pertenece al dominio autorizado de la plataforma.",
-                code="UNAUTHORIZED_REDIRECT_URL",
-            )
-
     roles = [r.value for r in auth.roles]
     join_url = await service.generate_join_url(
         classroom_id=classroom_id,
@@ -299,7 +272,10 @@ async def join_virtual_classroom(
         institution_id=inst_id,
     )
     is_host = current_user.id == classroom.host_user_id
-    is_admin = any(r in ("rector", "institution_admin", "academic_coordinator", "coordinator") for r in roles)
+    is_admin = any(
+        r in ("rector", "institution_admin", "academic_coordinator", "coordinator")
+        for r in roles
+    )
     resolved_role = (
         MeetingParticipantRole.MODERATOR
         if (is_host or is_admin)
@@ -330,16 +306,6 @@ async def end_virtual_classroom(
     institution_id: Annotated[uuid.UUID | None, Query()] = None,
 ) -> VirtualClassroomResponse:
     """Terminate active virtual classroom session."""
-    # SEC-010: Validate that redirect_url does not point to an untrusted external origin
-    if redirect_url:
-        parsed_redir = urlparse(redirect_url)
-        allowed_netloc = urlparse(settings.public_frontend_url).netloc
-        if parsed_redir.netloc and parsed_redir.netloc != allowed_netloc:
-            raise UnprocessableEntityError(
-                "La URL de redirección no pertenece al dominio autorizado de la plataforma.",
-                code="UNAUTHORIZED_REDIRECT_URL",
-            )
-
     inst_id = await _resolve_institution_id(db, auth, current_user, institution_id)
     service = VirtualClassroomService(session=db)
 
@@ -373,16 +339,6 @@ async def list_classroom_attendances(
     institution_id: Annotated[uuid.UUID | None, Query()] = None,
 ) -> MeetingAttendanceListResponse:
     """List attendance telemetry for a virtual classroom session."""
-    # SEC-010: Validate that redirect_url does not point to an untrusted external origin
-    if redirect_url:
-        parsed_redir = urlparse(redirect_url)
-        allowed_netloc = urlparse(settings.public_frontend_url).netloc
-        if parsed_redir.netloc and parsed_redir.netloc != allowed_netloc:
-            raise UnprocessableEntityError(
-                "La URL de redirección no pertenece al dominio autorizado de la plataforma.",
-                code="UNAUTHORIZED_REDIRECT_URL",
-            )
-
     inst_id = await _resolve_institution_id(db, auth, current_user, institution_id)
     att_service = AttendanceService(session=db)
 

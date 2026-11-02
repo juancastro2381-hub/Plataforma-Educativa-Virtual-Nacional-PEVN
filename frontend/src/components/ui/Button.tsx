@@ -19,7 +19,7 @@ import { cn } from '@utils/index'
 // Types
 // ---------------------------------------------------------------------------
 
-export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost' | 'link'
+export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost' | 'link' | 'outline-light'
 export type ButtonSize = 'sm' | 'md' | 'lg'
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -54,6 +54,8 @@ const VARIANT_STYLES: Record<ButtonVariant, string> = {
   ghost:
     'text-pevn-blue bg-transparent hover:bg-pevn-blue-50 active:bg-pevn-blue-100 focus:ring-pevn-blue disabled:text-slate-600',
   link: 'text-pevn-blue underline underline-offset-2 hover:text-pevn-blue-800 focus:ring-pevn-blue disabled:text-slate-600 min-h-0 min-w-0 p-0',
+  'outline-light':
+    'border border-slate-600 text-slate-100 bg-slate-800/80 hover:bg-slate-700 hover:text-white hover:border-slate-400 active:bg-slate-900 focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-slate-900 disabled:opacity-50 disabled:border-slate-700 disabled:text-slate-500 disabled:bg-slate-800/30',
 }
 
 const SIZE_STYLES: Record<ButtonSize, string> = {

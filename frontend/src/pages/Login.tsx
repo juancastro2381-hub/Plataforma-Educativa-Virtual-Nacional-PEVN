@@ -6,7 +6,7 @@
  */
 
 import React, { useState } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
@@ -16,7 +16,6 @@ import { AppApiError } from '@/services/api/client'
 export const Login: React.FC = () => {
   const { login, isAuthenticated } = useAuth()
   const navigate = useNavigate()
-  const location = useLocation()
 
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -24,16 +23,15 @@ export const Login: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Redirect destination after successful login
-  const locationState = location.state as { from?: { pathname?: string } } | null
-  const from = locationState?.from?.pathname ?? '/dashboard'
+  // Mandatory post-login welcome dashboard destination (ISSUE 1)
+  const DASHBOARD_PATH = '/dashboard'
 
-  // If already authenticated, redirect to destination
+  // If already authenticated, redirect directly to welcome dashboard
   React.useEffect(() => {
     if (isAuthenticated) {
-      navigate(from, { replace: true })
+      navigate(DASHBOARD_PATH, { replace: true })
     }
-  }, [isAuthenticated, navigate, from])
+  }, [isAuthenticated, navigate])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -56,7 +54,7 @@ export const Login: React.FC = () => {
         username: username.trim(),
         password,
       })
-      navigate(from, { replace: true })
+      navigate(DASHBOARD_PATH, { replace: true })
     } catch (err: unknown) {
       if (err instanceof AppApiError) {
         setErrorMessage(err.message)

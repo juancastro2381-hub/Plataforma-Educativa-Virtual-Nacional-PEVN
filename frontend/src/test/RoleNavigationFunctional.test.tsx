@@ -292,12 +292,46 @@ describe('Phase 10 — Role Navigation & UX Functional Validation', () => {
         expect(screen.getByText('Académica')).toBeInTheDocument()
       })
     })
+
+    it('hides institutional modules (Aulas Virtuales, Comunicaciones, Noticias, Convivencia) for territorial admins', async () => {
+      activeUser = createMockUser('national_admin', ['institutions:read', 'users:read'], true)
+      render(
+        <MemoryRouter initialEntries={['/']}>
+          <AuthProvider>
+            <RootLayout />
+          </AuthProvider>
+        </MemoryRouter>
+      )
+
+      await waitFor(() => {
+        expect(screen.queryByText('Aulas Virtuales')).not.toBeInTheDocument()
+        expect(screen.queryByText('Comunicaciones')).not.toBeInTheDocument()
+        expect(screen.queryByText('Noticias')).not.toBeInTheDocument()
+        expect(screen.queryByText('Convivencia')).not.toBeInTheDocument()
+      })
+    })
   })
 
   // -------------------------------------------------------------------------
   // 2. Dashboard View Content by Role
   // -------------------------------------------------------------------------
   describe('Dashboard Role-Specific Access Cards', () => {
+    it('does not render institutional cards (Aulas Virtuales, Comunicaciones, Noticias, Convivencia) for territorial admins', async () => {
+      activeUser = createMockUser('national_admin', ['institutions:read', 'users:read'], true)
+      render(
+        <MemoryRouter initialEntries={['/dashboard']}>
+          <AuthProvider>
+            <Dashboard />
+          </AuthProvider>
+        </MemoryRouter>
+      )
+
+      await waitFor(() => {
+        expect(screen.queryByText(/Aulas Virtuales y Clases en Vivo/i)).not.toBeInTheDocument()
+        expect(screen.queryByText(/Comunicaciones y Noticias/i)).not.toBeInTheDocument()
+        expect(screen.queryByText(/Comité de Convivencia e Incidentes/i)).not.toBeInTheDocument()
+      })
+    })
     it('renders National Catalog card for National Admin', async () => {
       activeUser = createMockUser('national_admin', ['institutions:read', 'institutions:create'], true)
       render(

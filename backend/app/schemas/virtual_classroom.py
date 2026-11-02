@@ -98,6 +98,9 @@ class VirtualClassroomListResponse(BaseModel):
     total: int
     skip: int
     limit: int
+    provider_configured: bool = True
+    provider_status: str = "CONFIGURED"
+    provider_message: str | None = None
 
 
 class JoinMeetingResponse(BaseModel):

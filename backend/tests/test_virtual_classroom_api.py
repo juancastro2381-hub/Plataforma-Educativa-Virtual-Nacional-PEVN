@@ -324,6 +324,7 @@ async def vc_api_fixture(  # noqa: PLR0915
         "inst1": inst1,
         "inst2": inst2,
         "assignment_11a": assignment_11a,
+        "teacher_user": teacher_user,
         "teacher_headers": {"Authorization": f"Bearer {teacher_token}"},
         "student_enr_headers": {"Authorization": f"Bearer {student_enr_token}"},
         "student_unenr_headers": {"Authorization": f"Bearer {student_unenr_token}"},

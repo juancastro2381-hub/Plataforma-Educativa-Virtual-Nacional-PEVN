@@ -48,6 +48,19 @@ export const virtualClassroomApi = {
     return res.data
   },
 
+  async getProviderStatus(): Promise<{
+    provider_configured: boolean
+    provider_status: string
+    message: string
+  }> {
+    const res = await apiClient.get<{
+      provider_configured: boolean
+      provider_status: string
+      message: string
+    }>('/api/v1/virtual-classrooms/provider-status')
+    return res.data
+  },
+
   async getVirtualClassroom(
     classroomId: string
   ): Promise<VirtualClassroomResponse> {
