@@ -5,7 +5,7 @@
 **Plataforma:** Plataforma Educativa Virtual Nacional (PEVN) — República de Colombia  
 **Fecha de Emisión:** 1 de Noviembre de 2026  
 **Clasificación:** Confidencial / Continuidad del Negocio & DevSecOps  
-**Estado:** *Diseñado, Documentado y Aprobado*
+**Estado:** *Diseñado y Estructurado / Pendiente de Implementación Operativa y Pruebas de Restauración en Frío en Infraestructura Real*
 
 ---
 
@@ -131,9 +131,25 @@ Un plan de contingencia carece de valor si sus respaldos no son probados periód
 
 ---
 
-## 5. DICTAMEN DE CONTINUIDAD OPERATIVA
+## 5. ACCIONES DE IMPLEMENTACIÓN OPERATIVA PENDIENTES (DESPLIEGUE REAL)
 
-El Plan de Respaldos y Recuperación ante Desastres de PEVN cumple con las mejores prácticas internacionales (ISO 22301 y estándares del MEN), salvaguardando la historia académica de las instituciones educativas frente a contingencias operativas o desastres de infraestructura.
+Aunque la arquitectura, topología 3-2-1 y runbooks de restauración están formalmente diseñados y documentados, la infraestructura actual del repositorio requiere que en el entorno de despliegue real de producción se configuren e implementen los siguientes componentes operativos:
 
-**Dictamen:** **PLAN DE DISASTER RECOVERY APROBADO PARA PRODUCCIÓN**
+1. **Scripts Automatizados de Respaldo (`scripts/ops/backup-db.sh`, `scripts/ops/restore-db.sh`)**:
+   - Automatización de `pg_dump` y snapshot con rotación de llaves y compresión `zstd`/`gzip`.
+   - Cifrado simétrico GPG / KMS antes de la transmisión externa.
+2. **Programadores de Tareas (Cron / Systemd Timers / Airflow)**:
+   - Configuración en el host anfitrión o contenedor de mantenimiento de las entradas periódicas (respaldos horarios, diarios y semanales).
+3. **Canal y Credenciales Seguras de S3 / Object Storage**:
+   - Configuración de buckets con `Object Lock` (WORM) para protección anti-ransomware.
+4. **Prueba de Restauración en Frío (Cold-Restore Drill)**:
+   - Verificación empírica documentada de restauración desde cero en un ambiente de staging o pre-producción antes de admitir tráfico de concurrencia nacional.
+
+---
+
+## 6. DICTAMEN DE CONTINUIDAD OPERATIVA
+
+El Plan de Respaldos y Recuperación ante Desastres de PEVN cumple con el diseño normativo requerido (ISO 22301 y lineamientos MEN). Sin embargo, su estatus operacional se califica como:
+
+**Dictamen:** **DISEÑADO Y ESTRUCTURADO — AUTORIZADO PARA FASE PILOTO CONTROLADO; REQUIERE AUTOMATIZACIÓN OPERATIVA Y PRUEBA DE RESTAURACIÓN EN FRÍO PREVIO A PRODUCCIÓN NACIONAL MASIVA.**
 

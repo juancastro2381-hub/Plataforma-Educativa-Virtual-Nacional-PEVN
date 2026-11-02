@@ -131,7 +131,7 @@ class Settings(BaseSettings):
     MEETING_PROVIDER_TYPE: str = "mock"  # "mock" or "bbb"
     BBB_API_URL: str = "http://localhost:8090/bigbluebutton/api"
     BBB_SHARED_SECRET: str = ""
-    BBB_SIGNING_ALGORITHM: str = "sha1"  # "sha1" or "sha256"
+    BBB_SIGNING_ALGORITHM: str = "sha256"  # "sha1" or "sha256"
     BBB_TIMEOUT_SECONDS: float = 10.0
 
     # ---- Secure File Storage (Phase B3-H11) --------------------------------
@@ -231,18 +231,30 @@ class Settings(BaseSettings):
 
     @field_validator("SECRET_KEY", mode="before")
     @classmethod
-    def ensure_secret_key(cls, v: str) -> str:
-        """Generate a random secret key if none is provided (development only)."""
-        if not v:
-            return secrets.token_hex(64)
-        return v
+    def ensure_secret_key(cls, v: str | None) -> str:
+        """Normalize SECRET_KEY string, preserving empty value for production validator."""
+        if not v or not str(v).strip():
+            return ""
+        return str(v).strip()
 
     @model_validator(mode="after")
     def validate_production_settings(self) -> Settings:
         """
-        Enforce production security constraints.
+        Enforce production and staging security constraints (SEC-007 / OPS-001).
         Fails fast at startup rather than silently running insecurely.
         """
+        if self.ENVIRONMENT in (Environment.PRODUCTION, Environment.STAGING):
+            if not self.SECRET_KEY or len(self.SECRET_KEY.strip()) < 64:
+                raise ValueError(
+                    f"SECURITY: Explicit SECRET_KEY (min 64 chars) required in {self.ENVIRONMENT.value}."
+                )
+            if "REPLACE_ME" in self.SECRET_KEY or "changeme" in self.SECRET_KEY.lower():
+                raise ValueError(
+                    f"SECURITY: Placeholder SECRET_KEY is not allowed in {self.ENVIRONMENT.value}."
+                )
+        elif not self.SECRET_KEY:
+            self.SECRET_KEY = secrets.token_hex(64)
+
         if self.ENVIRONMENT == Environment.PRODUCTION:
             if self.DEBUG:
                 raise ValueError(
@@ -387,3 +399,7 @@ def get_settings() -> Settings:
     Note: In tests, call get_settings.cache_clear() to reset between test cases.
     """
     return Settings()
+
+
+# Default cached settings singleton instance for direct access
+settings: Settings = get_settings()

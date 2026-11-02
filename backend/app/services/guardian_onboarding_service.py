@@ -129,6 +129,14 @@ class GuardianOnboardingService:
                     code="ACCOUNT_ALREADY_ACTIVATED",
                 )
 
+        # SEC-001: Enforce that if an institutional email was already registered for the guardian,
+        # the supplied email must match it to prevent arbitrary activation diversion.
+        if guardian.email and guardian.email.strip().lower() != cleaned_email.lower():
+            raise UnprocessableEntityError(
+                "El correo electrónico suministrado no coincide con el registrado institucionalmente.",
+                code="GUARDIAN_EMAIL_MISMATCH",
+            )
+
         # 5. Revoke any prior unredeemed invitations for this guardian
         await self._session.execute(
             update(GuardianInvitation)
@@ -369,9 +377,23 @@ class GuardianOnboardingService:
                 code="ACCOUNT_ALREADY_ACTIVATED",
             )
 
-        # Check if email is already taken by another User
+        # Check if email is already taken by another User (SEC-001 Account Takeover defense)
         email_stmt = select(User).where(User.email == invitation.email)
         existing_user = (await self._session.execute(email_stmt)).scalar_one_or_none()
+        if existing_user:
+            if (
+                existing_user.document_number != guardian.document_number
+                or existing_user.document_type != guardian.document_type
+            ):
+                raise ConflictError(
+                    "El correo electrónico ya se encuentra registrado por otro usuario en la plataforma.",
+                    code="EMAIL_ALREADY_IN_USE",
+                )
+            if existing_user.is_active and existing_user.hashed_password:
+                raise ConflictError(
+                    "El acudiente ya cuenta con credenciales activas. Utilice el inicio de sesión o recuperación de contraseña.",
+                    code="ACCOUNT_ALREADY_ACTIVE",
+                )
 
         # Check if canonical 'guardian' role exists
         role_stmt = select(Role).where(Role.name == "guardian")

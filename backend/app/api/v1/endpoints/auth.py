@@ -22,7 +22,8 @@ from app.api.deps import (
     SessionDep,
     SettingsDep,
 )
-from app.core.config import Environment, get_settings
+from app.core.config import Environment, get_settings, settings
+from app.core.security.tokens import token_service
 from app.exceptions.errors import AuthenticationError, NotFoundError
 from app.schemas.auth import (
     LoginRequest,
@@ -99,7 +100,7 @@ async def login(
         value=raw_refresh_token,
         max_age=REFRESH_MAX_AGE_SECONDS,
         httponly=True,
-        secure=settings.is_production,
+        secure=not settings.is_development,
         samesite="strict",
         path=REFRESH_COOKIE_PATH,
     )
@@ -155,7 +156,7 @@ async def refresh_token(
         value=new_raw_refresh_token,
         max_age=REFRESH_MAX_AGE_SECONDS,
         httponly=True,
-        secure=settings.is_production,
+        secure=not settings.is_development,
         samesite="strict",
         path=REFRESH_COOKIE_PATH,
     )
@@ -193,6 +194,11 @@ async def logout(
             client_ip=client_ip,
             correlation_id=correlation_id,
         )
+
+    # SEC-008: Immediate access token revocation
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        await token_service.revoke_token(auth_header[7:].strip())
 
     response.delete_cookie(
         key=REFRESH_COOKIE_NAME,
@@ -236,6 +242,11 @@ async def change_password(
     )
 
     # Invalidate session cookie on password change
+    # SEC-008: Immediate access token revocation
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        await token_service.revoke_token(auth_header[7:].strip())
+
     response.delete_cookie(
         key=REFRESH_COOKIE_NAME,
         path=REFRESH_COOKIE_PATH,
@@ -553,7 +564,7 @@ async def request_guardian_activation_endpoint(
 
     return GuardianActivationResponse(
         message="Solicitud de activación procesada exitosamente.",
-        raw_activation_token=raw_token,
+        raw_activation_token=raw_token if settings.is_development else None,
     )
 
 

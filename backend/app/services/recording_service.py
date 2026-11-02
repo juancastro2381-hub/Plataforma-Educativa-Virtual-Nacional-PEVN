@@ -17,6 +17,7 @@ from app.audit.interfaces import AuditEvent, AuditEventType, IAuditService
 from app.audit.service import audit_service
 from app.core.exceptions import (
     RecordingNotFoundError,
+    UnauthorizedMeetingAccessError,
     VirtualClassroomNotFoundError,
 )
 from app.core.logging import get_logger
@@ -121,6 +122,7 @@ class RecordingService:
         institution_id: uuid.UUID,
         is_published: bool,
         actor_id: uuid.UUID | str | None = None,
+        user_roles: list[str] | None = None,
         actor_ip: str = "0.0.0.0",  # noqa: S104
         correlation_id: str | None = None,
     ) -> MeetingRecording:
@@ -136,6 +138,22 @@ class RecordingService:
 
         if not recording:
             raise RecordingNotFoundError()
+
+        # SEC-005: Enforce authorization - only host teacher or school directors may publish/unpublish
+        if actor_id:
+            actor_uuid = uuid.UUID(str(actor_id)) if isinstance(actor_id, str) else actor_id
+            classroom = await self._session.get(VirtualClassroom, recording.virtual_classroom_id)
+            is_host = classroom and actor_uuid == classroom.host_user_id
+            is_admin = False
+            if user_roles:
+                is_admin = any(
+                    r.lower() in ("rector", "academic_coordinator", "coordinator", "superadmin", "national_admin")
+                    for r in user_roles
+                )
+            if classroom and not (is_host or is_admin):
+                raise UnauthorizedMeetingAccessError(
+                    "Solo el docente anfitrión de la clase o un directivo pueden modificar la visibilidad de la grabación."
+                )
 
         recording.is_published = is_published
         await self._session.flush()
@@ -162,6 +180,7 @@ class RecordingService:
         recording_id: uuid.UUID,
         institution_id: uuid.UUID,
         actor_id: uuid.UUID | str | None = None,
+        user_roles: list[str] | None = None,
         actor_ip: str = "0.0.0.0",  # noqa: S104
         correlation_id: str | None = None,
     ) -> bool:
@@ -177,6 +196,22 @@ class RecordingService:
 
         if not recording:
             raise RecordingNotFoundError()
+
+        # SEC-005: Enforce authorization - only host teacher or school directors may delete
+        if actor_id:
+            actor_uuid = uuid.UUID(str(actor_id)) if isinstance(actor_id, str) else actor_id
+            classroom = await self._session.get(VirtualClassroom, recording.virtual_classroom_id)
+            is_host = classroom and actor_uuid == classroom.host_user_id
+            is_admin = False
+            if user_roles:
+                is_admin = any(
+                    r.lower() in ("rector", "academic_coordinator", "coordinator", "superadmin", "national_admin")
+                    for r in user_roles
+                )
+            if classroom and not (is_host or is_admin):
+                raise UnauthorizedMeetingAccessError(
+                    "Solo el docente anfitrión de la clase o un directivo pueden eliminar la grabación."
+                )
 
         await self._session.delete(recording)
         await self._session.flush()

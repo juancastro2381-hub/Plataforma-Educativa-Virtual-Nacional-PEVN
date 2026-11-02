@@ -90,10 +90,22 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 )
             return await call_next(request)
 
-        # Rate limiting specifically targets the login endpoint
-        login_path = f"{settings.API_V1_PREFIX}/auth/login"
-        if request.url.path != login_path or request.method.upper() != "POST":
+        # SEC-003: Rate limiting targets all sensitive authentication and credential endpoints
+        auth_prefix = f"{settings.API_V1_PREFIX}/auth"
+        if request.method.upper() != "POST" or not request.url.path.startswith(auth_prefix):
             return await call_next(request)
+
+        # SEC-006: Enforce maximum request body size (64KB) on auth endpoints to prevent memory exhaustion DoS
+        content_length_hdr = request.headers.get("content-length")
+        if content_length_hdr:
+            try:
+                if int(content_length_hdr) > 65536:
+                    return JSONResponse(
+                        status_code=413,
+                        content={"error": {"code": "PAYLOAD_TOO_LARGE", "message": "El cuerpo de la solicitud excede el límite de 64 KB."}},
+                    )
+            except ValueError:
+                pass
 
         correlation_id = getattr(request.state, "correlation_id", str(uuid.uuid4()))
 
@@ -108,9 +120,15 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         if body_bytes:
             try:
                 payload = json.loads(body_bytes.decode("utf-8"))
-                raw_user = payload.get("username") or payload.get("email")
-                if raw_user and isinstance(raw_user, str):
-                    target_account = raw_user.lower().strip()
+                if isinstance(payload, dict):
+                    raw_user = (
+                        payload.get("username")
+                        or payload.get("email")
+                        or payload.get("student_code_simat")
+                        or payload.get("guardian_document_number")
+                    )
+                    if raw_user and isinstance(raw_user, str):
+                        target_account = raw_user.lower().strip()
             except (json.JSONDecodeError, UnicodeDecodeError):
                 pass
 

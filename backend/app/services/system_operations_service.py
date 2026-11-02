@@ -42,19 +42,8 @@ class SystemOperationsService:
         self._table_initialized = False
 
     async def ensure_incident_table_exists(self, session: AsyncSession) -> None:
-        """Ensure the technical_support_cases table exists in the active database."""
-        if self._table_initialized:
-            return
-
-        try:
-            engine = get_engine()
-            async with engine.begin() as conn:
-                await conn.run_sync(
-                    lambda sync_conn: TechnicalIncident.__table__.create(sync_conn, checkfirst=True)
-                )
-            self._table_initialized = True
-        except Exception:
-            self._table_initialized = True
+        """Ensure the technical_support_cases table exists (managed by migration 034)."""
+        self._table_initialized = True
 
     async def seed_initial_incidents_if_empty(self, session: AsyncSession) -> None:
         """Seed 2 baseline operational cases if the technical incident table is empty."""

@@ -23,6 +23,7 @@ from app.api.deps import (
     require_permission,
     resolve_institution_id,
 )
+from app.core.config import settings
 from app.core.logging import correlation_id_ctx
 from app.core.security.interfaces import SystemRole
 from app.exceptions.errors import AuthorizationError
@@ -156,7 +157,8 @@ async def create_teacher(
         )
 
     await db.commit()
-    return service.build_teacher_response(refreshed_teacher, reset_token=reset_token)
+    safe_reset_token = reset_token if settings.is_development else None
+    return service.build_teacher_response(refreshed_teacher, reset_token=safe_reset_token)
 
 
 @router.get(
@@ -308,7 +310,7 @@ async def provision_teacher_account(
         user_id=teacher.user_id,
         account_status=account_status,
         message=msg,
-        reset_token=reset_token,
+        reset_token=reset_token if settings.is_development else None,
     )
 
 
@@ -395,5 +397,5 @@ async def reset_teacher_password(
         user_id=teacher.user_id,
         account_status=account_status,
         message=msg,
-        reset_token=reset_token,
+        reset_token=reset_token if settings.is_development else None,
     )

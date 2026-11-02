@@ -179,6 +179,7 @@ class VirtualClassroomService:
         classroom_id: uuid.UUID,
         institution_id: uuid.UUID,
         actor_id: uuid.UUID | str | None = None,
+        user_roles: list[str] | None = None,
         actor_ip: str = "0.0.0.0",  # noqa: S104
         correlation_id: str | None = None,
     ) -> VirtualClassroom:
@@ -189,6 +190,21 @@ class VirtualClassroomService:
             classroom_id=classroom_id,
             institution_id=institution_id,
         )
+
+        # SEC-005: Enforce authorization to launch only by host teacher or administrative roles
+        if actor_id:
+            actor_uuid = uuid.UUID(str(actor_id)) if isinstance(actor_id, str) else actor_id
+            is_host = actor_uuid == classroom.host_user_id
+            is_admin = False
+            if user_roles:
+                is_admin = any(
+                    r.lower() in ("rector", "academic_coordinator", "coordinator", "superadmin", "national_admin")
+                    for r in user_roles
+                )
+            if not (is_host or is_admin):
+                raise UnauthorizedMeetingAccessError(
+                    "Solo el docente anfitrión o un directivo pueden iniciar la clase."
+                )
 
         if classroom.status in (
             VirtualClassroomStatus.ENDED,

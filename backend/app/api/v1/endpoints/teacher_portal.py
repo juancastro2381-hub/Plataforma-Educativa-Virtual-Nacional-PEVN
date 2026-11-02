@@ -459,7 +459,14 @@ async def create_teacher_activity_resource(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail="Se requiere adjuntar un archivo para recursos de tipo FILE",
             )
-        file_bytes = await file.read()
+        max_upload_bytes = 10 * 1024 * 1024
+        file_bytes = await file.read(max_upload_bytes + 1)
+        if len(file_bytes) > max_upload_bytes:
+            from fastapi import HTTPException
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="El archivo excede el límite máximo permitido de 10 MB.",
+            )
         resource = await service.create_file_resource(
             teacher=teacher,
             activity_id=activity_id,

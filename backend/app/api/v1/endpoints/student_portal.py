@@ -23,6 +23,8 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, File, Query, Request, Response, UploadFile, status
 from fastapi.responses import FileResponse
 
+from app.exceptions.errors import UnprocessableEntityError
+
 from app.api.deps import (
     ClientIpDep,
     CurrentUserDep,
@@ -292,7 +294,13 @@ async def upload_student_submission_file(
 ) -> SubmissionAttachmentItemResponse:
     service = StudentPortalService(session=db)
     student = await service.get_student_by_user_id(current_user.id, current_user.institution_id)
-    content = await file.read()
+    max_upload_bytes = 10 * 1024 * 1024
+    content = await file.read(max_upload_bytes + 1)
+    if len(content) > max_upload_bytes:
+        raise UnprocessableEntityError(
+            "El archivo excede el límite máximo permitido de 10 MB.",
+            code="FILE_TOO_LARGE",
+        )
     attachment = await service.upload_submission_file(
         student,
         activity_id,

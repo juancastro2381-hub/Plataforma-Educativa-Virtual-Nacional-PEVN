@@ -17,7 +17,8 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field
+from urllib.parse import urlparse
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.models.academic_activity import (
     AcademicPlanStatus,
@@ -152,6 +153,8 @@ class TeacherGroupRosterResponse(BaseModel):
 class AcademicActivityCreateRequest(BaseModel):
     """Payload to create a new academic activity."""
 
+    model_config = ConfigDict(extra="forbid")
+
     subject_id: uuid.UUID
     group_id: uuid.UUID
     academic_year_id: uuid.UUID
@@ -164,9 +167,21 @@ class AcademicActivityCreateRequest(BaseModel):
     instructions: str | None = None
     resource_url: str | None = None
 
+    @field_validator("resource_url")
+    @classmethod
+    def validate_resource_url(cls, v: str | None) -> str | None:
+        if not v or not str(v).strip():
+            return None
+        parsed = urlparse(str(v).strip())
+        if parsed.scheme.lower() not in ("http", "https") or not parsed.netloc:
+            raise ValueError("La URL debe ser un enlace HTTP o HTTPS válido.")
+        return str(v).strip()
+
 
 class AcademicActivityUpdateRequest(BaseModel):
     """Payload to update an existing academic activity."""
+
+    model_config = ConfigDict(extra="forbid")
 
     title: Annotated[str, Field(min_length=3, max_length=200)] | None = None
     description: str | None = None
@@ -176,6 +191,16 @@ class AcademicActivityUpdateRequest(BaseModel):
     max_score: Annotated[Decimal, Field(gt=0, le=100)] | None = None
     instructions: str | None = None
     resource_url: str | None = None
+
+    @field_validator("resource_url")
+    @classmethod
+    def validate_resource_url(cls, v: str | None) -> str | None:
+        if not v or not str(v).strip():
+            return None
+        parsed = urlparse(str(v).strip())
+        if parsed.scheme.lower() not in ("http", "https") or not parsed.netloc:
+            raise ValueError("La URL debe ser un enlace HTTP o HTTPS válido.")
+        return str(v).strip()
 
 
 class ActivityResourceResponse(BaseModel):
@@ -199,8 +224,20 @@ class ActivityResourceResponse(BaseModel):
 class ActivityResourceCreateUrlRequest(BaseModel):
     """Payload to add an external URL resource to an activity."""
 
+    model_config = ConfigDict(extra="forbid")
+
     title: Annotated[str, Field(min_length=1, max_length=200)]
     url: Annotated[str, Field(min_length=1, max_length=500)]
+
+    @field_validator("url")
+    @classmethod
+    def validate_url(cls, v: str) -> str:
+        if not v or not str(v).strip():
+            raise ValueError("La URL no puede estar vacía.")
+        parsed = urlparse(str(v).strip())
+        if parsed.scheme.lower() not in ("http", "https") or not parsed.netloc:
+            raise ValueError("La URL debe ser un enlace HTTP o HTTPS válido.")
+        return str(v).strip()
 
 
 class ActivityResourceListResponse(BaseModel):
@@ -312,6 +349,8 @@ class TeacherSubmissionsListResponse(BaseModel):
 class TeacherSubmissionReturnRequest(BaseModel):
     """Payload to return a submission attempt for pedagogical correction."""
 
+    model_config = ConfigDict(extra="forbid")
+
     return_feedback: Annotated[str, Field(min_length=3, max_length=2000)]
 
 
@@ -365,6 +404,8 @@ class ActivityGradesListResponse(BaseModel):
 class ActivityGradeEntry(BaseModel):
     """Single student grade payload."""
 
+    model_config = ConfigDict(extra="forbid")
+
     student_id: uuid.UUID
     score: Annotated[Decimal, Field(ge=0)] | None = None
     feedback: str | None = None
@@ -372,6 +413,8 @@ class ActivityGradeEntry(BaseModel):
 
 class ActivityGradeBatchUpdateRequest(BaseModel):
     """Batch grade update request for an activity."""
+
+    model_config = ConfigDict(extra="forbid")
 
     grades: list[ActivityGradeEntry]
 
@@ -407,6 +450,8 @@ class DailyAttendanceListResponse(BaseModel):
 class DailyAttendanceEntry(BaseModel):
     """Single student attendance mark."""
 
+    model_config = ConfigDict(extra="forbid")
+
     student_id: uuid.UUID
     status: AttendanceStatusEnum
     remarks: str | None = None
@@ -414,6 +459,8 @@ class DailyAttendanceEntry(BaseModel):
 
 class DailyAttendanceBatchRequest(BaseModel):
     """Batch attendance record submission."""
+
+    model_config = ConfigDict(extra="forbid")
 
     subject_id: uuid.UUID | None = None
     attendance_date: date
@@ -426,6 +473,8 @@ class DailyAttendanceBatchRequest(BaseModel):
 
 class AcademicPlanCreateRequest(BaseModel):
     """Payload to create a lesson / unit plan."""
+
+    model_config = ConfigDict(extra="forbid")
 
     subject_id: uuid.UUID
     group_id: uuid.UUID
@@ -443,6 +492,8 @@ class AcademicPlanCreateRequest(BaseModel):
 
 class AcademicPlanUpdateRequest(BaseModel):
     """Payload to update an existing plan."""
+
+    model_config = ConfigDict(extra="forbid")
 
     unit_name: Annotated[str, Field(min_length=3, max_length=200)] | None = None
     competencies: str | None = None

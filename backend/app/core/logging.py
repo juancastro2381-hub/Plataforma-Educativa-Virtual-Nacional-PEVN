@@ -75,14 +75,28 @@ def _sanitize_sensitive_fields(
     logger: Any, method: str, event_dict: EventDict
 ) -> EventDict:
     """
-    Redact known sensitive field names from log records.
-    This is a defense-in-depth measure — code should never pass these
-    fields to the logger in the first place.
+    Recursively redact sensitive field names and substring matches from log records (SEC-013).
     """
-    for key in _SENSITIVE_KEYS:
-        if key in event_dict:
-            event_dict[key] = "***REDACTED***"
-    return event_dict
+    def _sanitize_dict(d: dict[str, Any]) -> dict[str, Any]:
+        for k, v in list(d.items()):
+            lower_k = str(k).lower()
+            if any(s in lower_k for s in ("password", "passwd", "secret", "token", "credential", "auth_header", "cookie", "private_key")):
+                d[k] = "***REDACTED***"
+            elif isinstance(v, dict):
+                _sanitize_dict(v)
+            elif isinstance(v, list):
+                _sanitize_list(v)
+        return d
+
+    def _sanitize_list(lst: list[Any]) -> list[Any]:
+        for i, item in enumerate(lst):
+            if isinstance(item, dict):
+                _sanitize_dict(item)
+            elif isinstance(item, list):
+                _sanitize_list(item)
+        return lst
+
+    return _sanitize_dict(event_dict)
 
 
 # ---------------------------------------------------------------------------

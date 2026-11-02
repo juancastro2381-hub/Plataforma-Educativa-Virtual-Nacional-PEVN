@@ -21,6 +21,7 @@ from app.api.deps import (
     require_permission,
     resolve_institution_id,
 )
+from app.core.config import settings
 from app.core.logging import correlation_id_ctx
 from app.core.security.interfaces import SystemRole
 from app.exceptions.errors import AuthorizationError
@@ -228,7 +229,7 @@ async def provision_student_account(
         user_id=student.user_id,
         account_status=status_enum,
         message=message,
-        reset_token=reset_token,
+        reset_token=reset_token if settings.is_development else None,
     )
 
 
@@ -311,7 +312,7 @@ async def reset_student_password(
         user_id=student.user_id,
         account_status=status_enum,
         message=message,
-        reset_token=reset_token,
+        reset_token=reset_token if settings.is_development else None,
     )
 
 

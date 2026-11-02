@@ -203,6 +203,7 @@ async def publish_recording(
         institution_id=inst_id,
         is_published=payload.is_published,
         actor_id=current_user.id,
+        user_roles=[r.value for r in auth.roles],
         actor_ip=client_ip,
         correlation_id=correlation_id_ctx.get(),
     )
@@ -234,6 +235,7 @@ async def delete_recording(
         recording_id=recording_id,
         institution_id=inst_id,
         actor_id=current_user.id,
+        user_roles=[r.value for r in auth.roles],
         actor_ip=client_ip,
         correlation_id=correlation_id_ctx.get(),
     )

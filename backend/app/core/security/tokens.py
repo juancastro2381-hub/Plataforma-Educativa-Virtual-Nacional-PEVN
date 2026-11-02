@@ -69,6 +69,7 @@ class JWTTokenService(ITokenService):
         self._algorithm = algorithm
         self._access_token_expire_minutes = access_token_expire_minutes
         self._refresh_token_expire_days = refresh_token_expire_days
+        self._revoked_jtis: set[str] = set()
 
     async def create_access_token(
         self,
@@ -148,6 +149,22 @@ class JWTTokenService(ITokenService):
                 )
                 raise AuthenticationError("Tipo de token inválido.")
 
+            # SEC-008: Check if jti is in revocation denylist
+            jti = payload.get("jti")
+            if jti:
+                if jti in self._revoked_jtis:
+                    raise AuthenticationError("Token de autenticación revocado.")
+                try:
+                    from app.core.security.rate_limiter import rate_limiter
+                    redis_client = getattr(rate_limiter, "_redis", None)
+                    if redis_client and await redis_client.get(f"pevn:jwt:revoked:{jti}"):
+                        self._revoked_jtis.add(jti)
+                        raise AuthenticationError("Token de autenticación revocado.")
+                except AuthenticationError:
+                    raise
+                except Exception:
+                    pass
+
             return payload
 
         except ExpiredSignatureError as exc:
@@ -155,17 +172,41 @@ class JWTTokenService(ITokenService):
         except InvalidTokenError as exc:
             _logger.warning("Invalid token presented", error=str(exc))
             raise AuthenticationError("Token de autenticación inválido.") from exc
+        except AuthenticationError:
+            raise
         except Exception as exc:
             _logger.error("Unexpected error during token verification", error=str(exc))
             raise AuthenticationError("Error validando credenciales.") from exc
 
     async def revoke_token(self, token: str) -> None:
         """
-        Revocation marker for access tokens.
+        Revocation marker for access tokens. Denylists jti in Redis and memory (SEC-008).
         """
-        # In a stateless JWT access token architecture, short expiration (15m)
-        # provides standard protection; session revocation uses refresh tokens.
-        _logger.info("Access token revoked via session termination")
+        if not token:
+            return
+        try:
+            payload = jwt.decode(
+                token,
+                self._secret_key,
+                algorithms=[self._algorithm],
+                options={"verify_exp": False},
+            )
+            jti = payload.get("jti")
+            if jti:
+                self._revoked_jtis.add(jti)
+                try:
+                    from app.core.security.rate_limiter import rate_limiter
+                    redis_client = getattr(rate_limiter, "_redis", None)
+                    if redis_client:
+                        exp = payload.get("exp", 0)
+                        now_ts = int(datetime.now(UTC).timestamp())
+                        ttl = max(exp - now_ts, 60) if exp > now_ts else 60
+                        await redis_client.set(f"pevn:jwt:revoked:{jti}", "1", ex=ttl)
+                except Exception:
+                    pass
+                _logger.info("Access token revoked via session termination", jti=jti)
+        except Exception:
+            _logger.debug("Attempted to revoke invalid or malformed token")
 
 
 # Default token service singleton instance

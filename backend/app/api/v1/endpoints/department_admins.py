@@ -24,6 +24,7 @@ from app.api.deps import (
     get_auth_context,
     require_permission,
 )
+from app.core.config import settings
 from app.core.security.interfaces import SystemRole
 from app.exceptions.errors import AuthorizationError
 from app.schemas.department_admin import (
@@ -336,8 +337,8 @@ async def resend_department_admin_invitation(
         email=user_email,
         expires_at=expires_at,
         is_used=is_used,
-        raw_invitation_token=raw_token,
+        raw_invitation_token=raw_token if settings.is_development else None,
         email_delivery_status=delivery_status,
-        invitation_url=activation_url,
+        invitation_url=activation_url if settings.is_development else None,
     )
 

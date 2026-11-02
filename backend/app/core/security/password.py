@@ -20,6 +20,7 @@ SECURITY:
 
 from __future__ import annotations
 
+import asyncio
 import contextlib
 
 from argon2 import PasswordHasher
@@ -115,6 +116,18 @@ class Argon2PasswordHasher(IPasswordHasher):
         ):
             self._hasher.verify(DUMMY_ARGON2ID_HASH, plain_password)
         return False
+
+    async def async_hash(self, password: str) -> str:
+        """Execute Argon2id hashing off the asyncio event loop in a worker thread (SEC-006)."""
+        return await asyncio.to_thread(self.hash, password)
+
+    async def async_verify(self, plain_password: str, hashed_password: str) -> bool:
+        """Execute Argon2id verification off the asyncio event loop in a worker thread (SEC-006)."""
+        return await asyncio.to_thread(self.verify, plain_password, hashed_password)
+
+    async def async_verify_dummy(self, plain_password: str) -> bool:
+        """Execute timing-safe dummy verification off the asyncio event loop in a worker thread (SEC-006)."""
+        return await asyncio.to_thread(self.verify_dummy, plain_password)
 
 
 # Pre-computed valid Argon2id hash for constant-time dummy verification

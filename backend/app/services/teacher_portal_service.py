@@ -17,6 +17,7 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, date, datetime
 from decimal import Decimal
+from urllib.parse import urlparse
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -32,6 +33,7 @@ from app.core.exceptions import (
 )
 from app.core.logging import get_logger
 from app.core.storage.service import get_storage_service
+from app.exceptions.errors import UnprocessableEntityError
 from app.models.academic_activity import (
     AcademicActivity,
     AcademicPlan,
@@ -754,7 +756,11 @@ class TeacherPortalService:
         actor_id: str | None = None,
         actor_ip: str = "0.0.0.0",
     ) -> ActivityResource:
-        """Add an external web link resource to an activity."""
+        """Add an external web link resource to an activity (SEC-010)."""
+        parsed = urlparse(url.strip())
+        if parsed.scheme.lower() not in ("http", "https") or not parsed.netloc:
+            raise UnprocessableEntityError("La URL del recurso pedagógico debe usar un esquema seguro (http:// o https://).")
+
         activity = await self.get_activity(teacher, activity_id)
         resource = ActivityResource(
             activity_id=activity.id,

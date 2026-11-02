@@ -37,7 +37,7 @@ De conformidad con las reglas de gobernanza del programa, ningún componente se 
 ## 2. Línea Base de Rendimiento (Performance Baselines) vs. Objetivos de Nivel de Servicio (SLO)
 
 > [!IMPORTANT]
-> **Transparencia Metodológica:** No se inventan métricas de ejecución de carga inexistentes. La tabla siguiente distingue rigurosamente entre la **Complejidad Estática Medida en Código** (número exacto de roundtrips SQL/Redis y volumen de objetos hidratados en memoria por invocación) y los **Objetivos de Nivel de Servicio (SLO)** propuestos para la operación nacional de PEVN.
+> **Transparencia Metodológica y Alcance de Capacidad:** No se inventan métricas de ejecución de carga inexistentes. Toda referencia a soporte de concurrencia nacional masiva (ej. 500.000 usuarios concurrentes potenciales o 10.000 peticiones por segundo en horas pico a nivel país) corresponde a **Objetivos de Nivel de Servicio (SLO) y metas de diseño arquitectónico**, no a capacidades operativas certificadas en vivo. La tabla siguiente distingue rigurosamente entre la **Complejidad Estática Medida en Código** (número exacto de roundtrips SQL/Redis y volumen de objetos hidratados en memoria por invocación) y los **Objetivos de Nivel de Servicio (SLO)** propuestos para la operación de PEVN, los cuales deberán someterse al protocolo de pruebas empíricas k6 detallado en la Sección 8 previo a cualquier despliegue masivo.
 
 ### 2.1 Complejidad Estática Medida por Flujo vs. SLO Objetivo
 

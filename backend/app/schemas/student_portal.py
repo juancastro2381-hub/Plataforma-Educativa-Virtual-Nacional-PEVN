@@ -184,6 +184,8 @@ class StudentSubmissionAttemptResponse(BaseModel):
 class StudentSubmissionDraftUpdateRequest(BaseModel):
     """Payload to update an in-progress submission draft."""
 
+    model_config = ConfigDict(extra="forbid")
+
     student_response: str | None = Field(default=None, max_length=10000)
 
 

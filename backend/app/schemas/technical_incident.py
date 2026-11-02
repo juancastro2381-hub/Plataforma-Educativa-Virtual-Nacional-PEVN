@@ -11,7 +11,8 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+import json
 
 from app.models.technical_incident import (
     TechnicalIncidentCategory,
@@ -23,6 +24,8 @@ from app.models.technical_incident import (
 class TechnicalIncidentCreateRequest(BaseModel):
     """Payload to record a new technical support case or incident."""
 
+    model_config = ConfigDict(extra="forbid")
+
     title: str = Field(..., min_length=5, max_length=200, description="Resumen del incidente técnico")
     category: TechnicalIncidentCategory = Field(default=TechnicalIncidentCategory.SYSTEM, description="Categoría técnica")
     severity: TechnicalIncidentSeverity = Field(default=TechnicalIncidentSeverity.MEDIUM, description="Severidad operativa")
@@ -32,9 +35,23 @@ class TechnicalIncidentCreateRequest(BaseModel):
     technical_context: dict[str, Any] | None = Field(default=None, description="Contexto técnico sanitizado")
     assigned_operator: str | None = Field(default=None, max_length=100, description="Operador técnico asignado")
 
+    @field_validator("technical_context")
+    @classmethod
+    def validate_technical_context(cls, v: dict[str, Any] | None) -> dict[str, Any] | None:
+        if v is None:
+            return None
+        if len(v) > 25:
+            raise ValueError("technical_context no puede contener más de 25 claves.")
+        serialized = json.dumps(v, default=str)
+        if len(serialized) > 4096:
+            raise ValueError("technical_context no puede exceder 4096 bytes serializado.")
+        return v
+
 
 class TechnicalIncidentUpdateRequest(BaseModel):
     """Payload to update lifecycle, operator, or resolution of an incident."""
+
+    model_config = ConfigDict(extra="forbid")
 
     status: TechnicalIncidentStatus | None = Field(default=None, description="Nuevo estado del ciclo de vida")
     severity: TechnicalIncidentSeverity | None = Field(default=None, description="Nueva severidad operativa")

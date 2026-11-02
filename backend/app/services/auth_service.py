@@ -436,6 +436,27 @@ class AuthService:
         correlation_id: str | None,
     ) -> NoReturn:
         user.failed_login_attempts += 1
+        if user.failed_login_attempts >= _MAX_FAILED_LOGIN_ATTEMPTS:
+            user.locked_until = datetime.now(UTC) + timedelta(minutes=_LOCKOUT_DURATION_MINUTES)
+            await audit_service.record(
+                AuditEvent(
+                    event_type=AuditEventType.USER_ACCOUNT_LOCKED,
+                    actor_id=str(user.id),
+                    actor_ip=client_ip,
+                    target_id=str(user.id),
+                    target_type="user",
+                    institution_id=str(user.institution_id) if user.institution_id else None,
+                    correlation_id=correlation_id,
+                    success=False,
+                    metadata={
+                        "account": user.username,
+                        "failed_attempts": user.failed_login_attempts,
+                        "locked_until": user.locked_until.isoformat(),
+                    },
+                ),
+                session=db,
+            )
+
         await rate_limiter.record_account_failure(normalized_account, client_ip)
         await rate_limiter.record_tier2_failure(client_ip)
         await rate_limiter.record_tier3_failure(client_ip, normalized_account)
