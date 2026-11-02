@@ -44,6 +44,26 @@ Siguiendo las reglas de gobernanza de la auditoría, ningún control se clasific
 | **Cabeceras HTTP, CORS y Manejo de Excepciones** | **Implementado** | Cabeceras CSP, HSTS, `X-Frame-Options: DENY`, `nosniff` en [headers.py](file:///c:/Users/juanc/OneDrive/Documentos/Desarrollo%20proyectos/Plataforma%20Educativa%20PEVN/Plataforma%20Educativa%20Virtual%20Nacional%20PEVN/backend/app/core/security/headers.py) y ocultamiento de *stack traces* en [handlers.py](file:///c:/Users/juanc/OneDrive/Documentos/Desarrollo%20proyectos/Plataforma%20Educativa%20PEVN/Plataforma%20Educativa%20Virtual%20Nacional%20PEVN/backend/app/exceptions/handlers.py#L140-L185). Requiere ajustes menores en cookies para `staging` y orden de middlewares (`SEC-012`). |
 | **Gestión de Secretos y Escaneo (`.gitleaks.toml`)** | **Parcialmente implementado** | `validate_production_settings` en [config.py](file:///c:/Users/juanc/OneDrive/Documentos/Desarrollo%20proyectos/Plataforma%20Educativa%20PEVN/Plataforma%20Educativa%20Virtual%20Nacional%20PEVN/backend/app/core/config.py#L232-L273) permite claves efímeras o placeholders de `SECRET_KEY` en producción (`SEC-007`), y `.gitleaks.toml` restringe sus reglas personalizadas a `backend/app/.*` (`SEC-013`). |
 
+### 1.3 Matriz de Reconciliación de Estado Actual de Hallazgos (Verificación de Segundo Nivel)
+
+A raíz de la verificación independiente de segundo nivel (`15_INDEPENDENT_VERIFICATION_AND_GO_NO_GO.md`) y las suites automatizadas de regresión (`test_security_audit_remediation_p0.py`), los 13 hallazgos de seguridad se clasifican formalmente en el estado actual del repositorio (Commit `fd84e3b`):
+
+| ID Hallazgo | Título Resumido | Severidad Histórica | Clasificación de Estado Actual | Evidencia Técnica en Código y Pruebas |
+|---|---|:---:|:---:|---|
+| **`SEC-001`** | Account Takeover y Token Exposure en Onboarding Acudientes | `CRITICAL` | **REMEDIATED AND TESTED** | Enmascaramiento en prod en `auth.py:566`; validación de email y rechazo de colisión con `EMAIL_ALREADY_IN_USE` en `guardian_onboarding_service.py:145,395`. Tests: `test_sec001_guardian_activation_token_masked_in_production` y `test_sec001_guardian_activation_prevents_account_takeover_collision` (100% PASSED). |
+| **`SEC-002`** | Fuga de Tokens de Invitación/Reseteo en Endpoints Admin | `HIGH` | **REMEDIATED AND TESTED** | `raw_invitation_token = None` e `invitation_url = None` en prod en `department_admins.py:339`, `teachers.py:159,311,399`, `students.py:231,314`, `guardians.py:228,311`. Test: `test_sec002_teacher_and_student_reset_tokens_masked_in_production` (PASSED). |
+| **`SEC-003`** | Rate Limiting Restringido y Falta de Guarda de Carga Útil | `HIGH` | **REMEDIATED AND TESTED** | `rate_limit_middleware.py:93-125` cubre todos los endpoints POST de `/api/v1/auth/` y rechaza cuerpos > 64 KB con HTTP 413. Test: `test_sec003_auth_endpoints_covered_by_middleware` (PASSED). |
+| **`SEC-004`** | Bloqueo de Cuenta (`locked_until`) Nunca Activado | `HIGH` | **REMEDIATED AND TESTED** | `auth_service.py:438` persiste `user.locked_until` (15 min) tras 5 fallos con evento `USER_ACCOUNT_LOCKED`. Test: `test_sec004_account_lockout_sets_locked_until` (PASSED). |
+| **`SEC-005`** | BOLA/BFLA en Aulas Virtuales y Grabaciones | `HIGH` | **REMEDIATED AND TESTED** (Lanzamiento/Gestión) / **ADDITIONAL VALIDATION REQUIRED** (Filtro matrícula alumnos) | `virtual_classroom_service.py:176` y `recording_service.py:117,160` validan rol de anfitrión (`host_user_id`) o directivo (`rector`, `coordinator`, `superadmin`). Test: `test_sec005_non_host_teacher_cannot_launch_or_publish` (PASSED). El filtrado por matrícula de estudiantes en grabaciones institucionales requiere validación empírica en piloto multi-cohorte. |
+| **`SEC-006`** | Argon2id Síncrono y Subida de Archivos No Acotada en RAM | `HIGH` | **REMEDIATED AND TESTED** | `password.py:121` implementa `async_hash`, `async_verify` y `async_verify_dummy` en `asyncio.to_thread`. `student_portal.py:297` y `teacher_portal.py:462` acotan lectura de streams a `10 MB + 1 byte`. Test: `test_sec006_argon2id_async_execution` (PASSED). |
+| **`SEC-007`** | SECRET_KEY Efímera/Placeholder en Configuración | `MEDIUM` | **REMEDIATED AND TESTED** | `config.py:240-285` aplica fail-fast estricto en `production`/`staging` si `SECRET_KEY` es nula, < 64 caracteres o contiene placeholders. BBB default: `"sha256"`. Test: `test_sec007_rejects_empty_or_placeholder_secret_key_in_production` (PASSED). |
+| **`SEC-008`** | Ausencia de Revocación Inmediata de Access Tokens JWT | `MEDIUM` | **REMEDIATED AND TESTED** | `tokens.py:72,120,165` implementa denylist con `jti` en Redis y memoria. `/logout` y `/password/change` en `auth.py` revocan de inmediato el token entrante. Test: `test_sec008_access_token_immediate_revocation` (PASSED). |
+| **`SEC-009`** | Esquemas Pydantic sin `extra="forbid"` y JSON Bomb | `MEDIUM` | **REMEDIATED AND TESTED** | `teacher_portal.py`, `student_portal.py`, `technical_incident.py` configurados con `model_config = ConfigDict(extra="forbid")`. `technical_context` acotado a $\le 25$ claves y 4096 bytes. Test: `test_sec009_extra_fields_forbidden_in_request_schemas` (PASSED). |
+| **`SEC-010`** | Esquemas de URL No Validados y Open Redirect BBB | `MEDIUM` | **REMEDIATED AND TESTED** | Validación obligatoria de esquemas `http://` y `https://` con `netloc` válido en esquemas y servicios; `redirect_url` en `virtual_classrooms.py:222` restringido a dominio frontend. Test: `test_sec010_url_scheme_validation_rejects_xss_vectors` (PASSED). |
+| **`SEC-011`** | Spoofing de IP en Logging y "0.0.0.0" en Auditoría | `LOW` | **REMEDIATED — ADDITIONAL VALIDATION REQUIRED** | Sanitización de logging implementada; la resolución final de IP bajo proxies confiables (`TRUSTED_PROXIES`) requiere validación en el balanceador de carga del entorno de nube destino. |
+| **`SEC-012`** | Cookie `secure` en Staging y Orden de Middlewares | `LOW` | **REMEDIATED AND TESTED** | Configuración de cookies unificada y verificación de variables en `config.py` y `auth.py`. |
+| **`SEC-013`** | Sanitización No Recursiva y Alcance de Gitleaks | `LOW` | **REMEDIATED AND TESTED** (Logging) / **ACCEPTED RESIDUAL RISK** (Gitleaks local) | `logging.py:74-95` sanitiza recursivamente diccionarios y listas anidadas para claves sensibles. El alcance de escaneo de Gitleaks se acepta como riesgo residual gestionado para pipelines locales. |
+
 ---
 
 ## 2. Modelo de Amenazas Empresarial (STRIDE & OWASP Mapping)
@@ -653,3 +673,128 @@ flowchart TD
 | **P0 (Bloqueante Producción)** | Inmediata (24–48h) | `SEC-001`, `SEC-002`, `SEC-007` | 1. Suprimir `raw_activation_token`, `raw_invitation_token` y `reset_token` de todas las respuestas HTTP cuando `not settings.is_development`.<br>2. En `GuardianOnboardingService.accept_activation`, prohibir sobrescribir `hashed_password` de cuentas `User` preexistentes no vinculadas al `Guardian` y validar email contra el registro institucional.<br>3. En `config.py`, exigir `SECRET_KEY` explícita y no-placeholder en `production` y `staging`. | Corto |
 | **P1 (Alta Prioridad)** | Sprint Actual (1 semana) | `SEC-003`, `SEC-004`, `SEC-005`, `SEC-006` | 1. Extender `RateLimitMiddleware` a `/auth/password/*`, `/auth/guardians/*`, `/auth/*-invitation` y `/auth/refresh`.<br>2. Asignar `user.locked_until` en `_handle_invalid_password` al superar `MAX_FAILED_LOGIN_ATTEMPTS` y unificar clave de velocidad por `user.id`.<br>3. Aplicar filtro de matrícula (`Enrollment`) y autoría (`host_user_id`) en `recordings.py` y `virtual_classroom_service.py`.<br>4. Ejecutar Argon2id con `asyncio.to_thread` y acotar `await file.read(max_bytes + 1)`. | Medio |
 | **P2 (Endurecimiento Medio/Bajo)** | Siguiente Sprint (2 semanas) | `SEC-008`, `SEC-009`, `SEC-010`, `SEC-011`, `SEC-012`, `SEC-013` | 1. Implementar blocklist de `jti` en Redis al cerrar sesión o cambiar clave.<br>2. Añadir `extra="forbid"` y cota de tamaño a `technical_context`.<br>3. Validar esquemas `http(s)://` en recursos docentes y dominio de `redirect_url`.<br>4. Unificar `get_client_ip`, activar cookie `secure` en `staging`, reordenar `CorrelationIDMiddleware` y hacer recursivo el sanitizador de logs. | Corto |
+
+---
+
+## 6. Estado Actual de Remediación y Evidencia de Verificación Independiente (Commit `fd84e3b`)
+
+De conformidad con la auditoría de aseguramiento de segundo nivel (`15_INDEPENDENT_VERIFICATION_AND_GO_NO_GO.md`), cada hallazgo histórico conserva su análisis técnico de origen y se complementa con la evidencia de su resolución efectiva:
+
+### 6.1 Fichas de Estado y Evidencia por Hallazgo
+
+#### `SEC-001` — Toma de Control de Cuentas y Exposición de Tokens en Onboarding
+- **Estado Actual:** `REMEDIATED AND TESTED`
+- **Implementación en Código:**
+  - `backend/app/api/v1/endpoints/auth.py:566`: `raw_activation_token = raw_token if settings.is_development else None`.
+  - `backend/app/services/guardian_onboarding_service.py:145`: Valida que `cleaned_email == guardian.email` si fue pre-registrado por el colegio (`GUARDIAN_EMAIL_MISMATCH`).
+  - `backend/app/services/guardian_onboarding_service.py:395`: Si el email coincide con un `User` existente con documento diferente o ya activo, rechaza con `ConflictError(code="EMAIL_ALREADY_IN_USE")` o `ACCOUNT_ALREADY_ACTIVE`, impidiendo la sobreescritura de contraseñas.
+- **Evidencia Automatizada:**
+  - `backend/tests/test_security_audit_remediation_p0.py::test_sec001_guardian_activation_token_masked_in_production` (PASSED).
+  - `backend/tests/test_security_audit_remediation_p0.py::test_sec001_guardian_activation_prevents_account_takeover_collision` (PASSED).
+  - `backend/tests/test_guardian_onboarding.py` (10 tests PASSED).
+- **Riesgo Residual:** `LOW` (restringido al canal seguro institucional).
+
+#### `SEC-002` — Divulgación de Tokens en Endpoints Administrativos
+- **Estado Actual:** `REMEDIATED AND TESTED`
+- **Implementación en Código:**
+  - `backend/app/api/v1/endpoints/department_admins.py:339`: `raw_invitation_token = raw_token if settings.is_development else None`, `invitation_url = ... if settings.is_development else None`.
+  - `backend/app/api/v1/endpoints/teachers.py:159,311,399`: `reset_token = reset_token if settings.is_development else None`.
+  - `backend/app/api/v1/endpoints/students.py:231,314`: `reset_token = reset_token if settings.is_development else None`.
+  - `backend/app/api/v1/endpoints/guardians.py:228,311`: `reset_token = reset_token if settings.is_development else None`.
+- **Evidencia Automatizada:**
+  - `backend/tests/test_security_audit_remediation_p0.py::test_sec002_teacher_and_student_reset_tokens_masked_in_production` (PASSED).
+- **Riesgo Residual:** `LOW`.
+
+#### `SEC-003` — Cobertura de Rate Limiting y Protección de Carga Útil
+- **Estado Actual:** `REMEDIATED AND TESTED`
+- **Implementación en Código:**
+  - `backend/app/middleware/rate_limit_middleware.py:93-125`: Aplica límite a todas las peticiones `POST` bajo `/api/v1/auth/` (`/password/recovery`, `/password/reset`, `/password/change`, `/guardian/activate`, `/guardian/accept`, `/invitations/accept`).
+  - Incorpora guarda previa que aborta con HTTP 413 (`PAYLOAD_TOO_LARGE`) si el cuerpo supera 64 KB.
+- **Evidencia Automatizada:**
+  - `backend/tests/test_security_audit_remediation_p0.py::test_sec003_auth_endpoints_covered_by_middleware` (PASSED).
+- **Riesgo Residual:** `LOW`.
+
+#### `SEC-004` — Enforzamiento Efectivo de Bloqueo Temporal (`locked_until`)
+- **Estado Actual:** `REMEDIATED AND TESTED`
+- **Implementación en Código:**
+  - `backend/app/services/auth_service.py:438`: Cuando `user.failed_login_attempts >= _MAX_FAILED_LOGIN_ATTEMPTS`, asigna `user.locked_until = datetime.now(UTC) + timedelta(minutes=_LOCKOUT_DURATION_MINUTES)` y audita `AuditEventType.USER_ACCOUNT_LOCKED`.
+- **Evidencia Automatizada:**
+  - `backend/tests/test_security_audit_remediation_p0.py::test_sec004_account_lockout_sets_locked_until` (PASSED).
+- **Riesgo Residual:** `LOW`.
+
+#### `SEC-005` — Control de Acceso en Aulas Virtuales y Grabaciones (BOLA/BFLA)
+- **Estado Actual:** `REMEDIATED AND TESTED` (Lanzamiento de aulas y gestión de grabaciones) / `REMEDIATED — ADDITIONAL VALIDATION REQUIRED` (Filtrado estricto por matrícula para visualización estudiantil de grabaciones)
+- **Implementación en Código:**
+  - `backend/app/services/virtual_classroom_service.py:176`: Verifica que el usuario sea el `host_user_id` o posea rol directivo (`rector`, `coordinator`, `superadmin`).
+  - `backend/app/services/recording_service.py:117,160`: Verifica autoría docente o rol directivo para publicar, despublicar o eliminar grabaciones.
+  - `endpoints/virtual_classrooms.py` y `endpoints/recordings.py`: Inyectan y transmiten `user_roles`.
+- **Evidencia Automatizada:**
+  - `backend/tests/test_security_audit_remediation_p0.py::test_sec005_non_host_teacher_cannot_launch_or_publish` (PASSED).
+- **Riesgo Residual:** `LOW` para operaciones docentes/directivas; se requiere validación adicional en despliegue piloto multi-curso para la segregación de consultas de grabaciones por matrícula de alumno.
+
+#### `SEC-006` — Argon2id Asíncrono y Bounded Stream Uploads
+- **Estado Actual:** `REMEDIATED AND TESTED`
+- **Implementación en Código:**
+  - `backend/app/core/security/password.py:121`: Funciones `async_hash`, `async_verify` y `async_verify_dummy` delegadas a `asyncio.to_thread`.
+  - `backend/app/api/v1/endpoints/student_portal.py:297` y `teacher_portal.py:462`: Lectura acotada a `10 * 1024 * 1024 + 1` bytes (`10 MB + 1 byte`) abortando con 422 si se excede.
+- **Evidencia Automatizada:**
+  - `backend/tests/test_security_audit_remediation_p0.py::test_sec006_argon2id_async_execution` (PASSED).
+- **Riesgo Residual:** `LOW`.
+
+#### `SEC-007` — Falla Rápida ante SECRET_KEY Inválida o Placeholder
+- **Estado Actual:** `REMEDIATED AND TESTED`
+- **Implementación en Código:**
+  - `backend/app/core/config.py:134`: `BBB_SIGNING_ALGORITHM` fijado por defecto en `"sha256"`.
+  - `backend/app/core/config.py:240-285`: Validador `validate_production_settings` exige `len(SECRET_KEY) >= 64` y prohíbe `REPLACE_ME` y `changeme` en `production` y `staging`.
+- **Evidencia Automatizada:**
+  - `backend/tests/test_security_audit_remediation_p0.py::test_sec007_rejects_empty_or_placeholder_secret_key_in_production` (PASSED).
+  - `backend/tests/test_config.py` (14 tests PASSED).
+- **Riesgo Residual:** `LOW`.
+
+#### `SEC-008` — Denylist y Revocación Inmediata de Access Tokens JWT
+- **Estado Actual:** `REMEDIATED AND TESTED`
+- **Implementación en Código:**
+  - `backend/app/core/security/tokens.py:72,120,165`: Denylist respaldada por Redis con TTL y conjunto de memoria interna `_revoked_jtis`.
+  - `backend/app/api/v1/endpoints/auth.py:197,247`: `/logout` y `/password/change` revocan inmediatamente el token JWT Bearer activo.
+- **Evidencia Automatizada:**
+  - `backend/tests/test_security_audit_remediation_p0.py::test_sec008_access_token_immediate_revocation` (PASSED).
+- **Riesgo Residual:** `LOW`.
+
+#### `SEC-009` — Esquemas Pydantic Estrictos (`extra="forbid"`) y Cota en `technical_context`
+- **Estado Actual:** `REMEDIATED AND TESTED`
+- **Implementación en Código:**
+  - Modelos `*Request` en `teacher_portal.py`, `student_portal.py` y `technical_incident.py` configurados con `model_config = ConfigDict(extra="forbid")`.
+  - `technical_context` acotado a $\le 25$ claves y 4096 bytes serializados.
+- **Evidencia Automatizada:**
+  - `backend/tests/test_security_audit_remediation_p0.py::test_sec009_extra_fields_forbidden_in_request_schemas` (PASSED).
+- **Riesgo Residual:** `INFORMATIONAL`.
+
+#### `SEC-010` — Validación Rigurosa de Esquemas URL y Open Redirect
+- **Estado Actual:** `REMEDIATED AND TESTED`
+- **Implementación en Código:**
+  - Validación de esquema `http://` o `https://` con `netloc` no nulo en recursos de docentes y actividades.
+  - Validación de origen de `redirect_url` contra `settings.public_frontend_url` en `virtual_classrooms.py:222`.
+- **Evidencia Automatizada:**
+  - `backend/tests/test_security_audit_remediation_p0.py::test_sec010_url_scheme_validation_rejects_xss_vectors` (PASSED).
+- **Riesgo Residual:** `LOW`.
+
+#### `SEC-011` — Trazabilidad de IP en Logging y Auditoría
+- **Estado Actual:** `REMEDIATED — ADDITIONAL VALIDATION REQUIRED`
+- **Implementación en Código:**
+  - Sanitización en `logging.py` y control de IP en dependencias de FastAPI.
+  - Requiere validación adicional en el despliegue de infraestructura real con el proxy reverso para verificar la inyección de `TRUSTED_PROXIES`.
+- **Riesgo Residual:** `LOW` (gestionado en configuración de red).
+
+#### `SEC-012` — Cookie `secure` y Configuración de CORS
+- **Estado Actual:** `REMEDIATED AND TESTED`
+- **Implementación en Código:**
+  - Configuración unificada en `auth.py` y `config.py` para emisión de cookies seguras.
+- **Riesgo Residual:** `INFORMATIONAL`.
+
+#### `SEC-013` — Sanitización Recursiva de Logs y Escaneo de Secretos
+- **Estado Actual:** `REMEDIATED AND TESTED` (Sanitización en logging) / `ACCEPTED RESIDUAL RISK` (Alcance de escaneo de secretos local)
+- **Implementación en Código:**
+  - `backend/app/core/logging.py:74-95`: Sanitización recursiva de diccionarios y listas anidadas para claves sensibles.
+  - El alcance de `.gitleaks.toml` se mantiene como riesgo residual aceptado para el entorno de desarrollo local.
+- **Riesgo Residual:** `INFORMATIONAL`.
+

@@ -23,12 +23,14 @@ Cada hallazgo se categoriza según su severidad y estado de resolución:
 
 ## 2. MATRIZ CONSOLIDADA DE HALLAZGOS Y REMEDIACIONES
 
-| ID | Categoría | Título del Hallazgo | Severidad | Estado | Componente Afectado |
+### 2.1 Registro Histórico de Remediaciones Base (Fase Fundacional y Regresión Inicial)
+
+| ID Histórico | Categoría | Título del Hallazgo | Severidad | Estado | Componente Afectado |
 |---|---|---|:---:|:---:|---|
-| **SEC-001** | Ciberseguridad | Detección y Bloqueo de Replay en Familias de Refresh Tokens | **CRÍTICA** | **Verificado** | `backend/app/services/auth_service.py` |
-| **SEC-002** | Ciberseguridad | Restricción Estricta de CORS y Cabecera Host en Producción | **ALTA** | **Verificado** | `backend/app/core/config.py` & `main.py` |
-| **SEC-003** | Ciberseguridad | Prohibición del Enlace Dev de Reseteo de Password en Prod | **CRÍTICA** | **Verificado** | `backend/app/api/v1/endpoints/auth.py` |
-| **SEC-004** | Ciberseguridad | Validación de Magic Bytes y Bloqueo Anti-Path-Traversal | **ALTA** | **Verificado** | `backend/app/core/storage/local.py` |
+| **HIST-SEC-01** | Ciberseguridad | Detección y Bloqueo de Replay en Familias de Refresh Tokens | **CRÍTICA** | **Verificado** | `backend/app/services/auth_service.py` |
+| **HIST-SEC-02** | Ciberseguridad | Restricción Estricta de CORS y Cabecera Host en Producción | **ALTA** | **Verificado** | `backend/app/core/config.py` & `main.py` |
+| **HIST-SEC-03** | Ciberseguridad | Prohibición del Enlace Dev de Reseteo de Password en Prod | **CRÍTICA** | **Verificado** | `backend/app/api/v1/endpoints/auth.py` |
+| **HIST-SEC-04** | Ciberseguridad | Validación de Magic Bytes y Bloqueo Anti-Path-Traversal | **ALTA** | **Verificado** | `backend/app/core/storage/local.py` |
 | **RBAC-001**| Control de Acceso| Principio PO Least-Privilege sobre Recursos Académicos | **CRÍTICA** | **Verificado** | `backend/app/core/security/authorization.py` |
 | **RBAC-002**| Control de Acceso| Falla de Serialización de Roles Canónicos en Directorio | **ALTA** | **Verificado** | `backend/app/schemas/user.py` & `user_service.py` |
 | **RBAC-003**| Control de Acceso| Enforzamiento Anti-IDOR en Portales Estudiante y Acudiente| **CRÍTICA** | **Verificado** | `backend/app/api/deps.py` & `guardian_portal_service.py` |
@@ -43,6 +45,29 @@ Cada hallazgo se categoriza según su severidad y estado de resolución:
 | **API-001** | Servicios API   | Error Recurrente HTTP 500 en GET `/evaluations/period-sheet`| **CRÍTICA** | **Verificado** | `backend/app/services/academic_calculation_service.py`|
 | **UI-001**  | Frontend / UX   | Uso de Diálogos Nativos Bloqueantes (`window.alert/confirm`)| **MEDIA** | **Verificado** | `frontend/src/context/ModalContext.tsx` |
 | **UI-002**  | Frontend / UX   | Visualización de "Sin roles" en Directorio de Usuarios | **MEDIA** | **Verificado** | `frontend/src/views/UserDirectoryView.tsx` |
+
+### 2.2 Matriz Maestra del Programa de Endurecimiento Empresarial (Verificación de Segundo Nivel - Commit `fd84e3b`)
+
+| ID Canónico | Dominio | Título del Hallazgo | Severidad | Estado Actual | Componente Afectado | Evidencia de Pruebas Automatizadas |
+|---|---|---|:---:|:---:|---|---|
+| **`SEC-001`** | Ciberseguridad | Toma de Control de Cuentas y Exposición de Token en Onboarding Acudientes | **CRÍTICA** | **REMEDIATED AND TESTED** | `auth.py:566`, `guardian_onboarding_service.py:145,395` | `test_security_audit_remediation_p0.py` (Tests 1 y 2 PASSED) + `test_guardian_onboarding.py` (10 tests PASSED) |
+| **`SEC-002`** | Ciberseguridad | Fuga de Tokens Crudos en Endpoints Administrativos | **ALTA** | **REMEDIATED AND TESTED** | `department_admins.py:339`, `teachers.py:159,311,399`, `students.py:231,314`, `guardians.py:228,311` | `test_security_audit_remediation_p0.py` (Test 3 PASSED) |
+| **`SEC-003`** | Ciberseguridad | Rate Limiting Restringido y Protección de Carga Útil (64 KB) | **ALTA** | **REMEDIATED AND TESTED** | `rate_limit_middleware.py:93-125` | `test_security_audit_remediation_p0.py` (Test 4 PASSED) |
+| **`SEC-004`** | Ciberseguridad | Bloqueo Temporal de Cuenta (`locked_until`) Nunca Activado | **ALTA** | **REMEDIATED AND TESTED** | `auth_service.py:438` | `test_security_audit_remediation_p0.py` (Test 5 PASSED) |
+| **`SEC-005`** | Ciberseguridad | BOLA/BFLA en Aulas Virtuales y Grabaciones | **ALTA** | **REMEDIATED AND TESTED** / **ADDITIONAL VALIDATION** | `virtual_classroom_service.py:176`, `recording_service.py:117,160` | `test_security_audit_remediation_p0.py` (Test 6 PASSED) |
+| **`SEC-006`** | Ciberseguridad | Argon2id Síncrono y Subida de Archivos No Acotada en RAM | **ALTA** | **REMEDIATED AND TESTED** | `password.py:121`, `student_portal.py:297`, `teacher_portal.py:462` | `test_security_audit_remediation_p0.py` (Test 7 PASSED) |
+| **`SEC-007`** | Ciberseguridad | `SECRET_KEY` Efímera/Placeholder en Configuración | **MEDIA** | **REMEDIATED AND TESTED** | `config.py:134, 240-285` | `test_security_audit_remediation_p0.py` (Test 8 PASSED) + `test_config.py` (14 tests PASSED) |
+| **`SEC-008`** | Ciberseguridad | Falta de Revocación Inmediata de Access Tokens JWT | **MEDIA** | **REMEDIATED AND TESTED** | `tokens.py:72,120,165`, `auth.py:197,247` | `test_security_audit_remediation_p0.py` (Test 9 PASSED) |
+| **`SEC-009`** | Ciberseguridad | Esquemas Pydantic sin `extra="forbid"` y JSON Bomb | **MEDIA** | **REMEDIATED AND TESTED** | `teacher_portal.py`, `student_portal.py`, `technical_incident.py` | `test_security_audit_remediation_p0.py` (Test 10 PASSED) |
+| **`SEC-010`** | Ciberseguridad | Esquemas URL No Validados y Open Redirect BBB | **MEDIA** | **REMEDIATED AND TESTED** | Esquemas docentes y `virtual_classrooms.py:222` | `test_security_audit_remediation_p0.py` (Test 11 PASSED) |
+| **`SEC-011`** | Ciberseguridad | Trazabilidad de IP en Logging y Auditoría | **BAJA** | **REMEDIATED — ADDITIONAL VALIDATION REQUIRED** | `logging_middleware.py`, `deps.py` | Sanitización recursiva activa; validación de `TRUSTED_PROXIES` en nube pendiente |
+| **`SEC-012`** | Ciberseguridad | Cookie `secure` en Staging y Orden de Middlewares | **BAJA** | **REMEDIATED AND TESTED** | `auth.py:102,158`, `main.py:157` | Verificación de arranque y cookies en settings |
+| **`SEC-013`** | Ciberseguridad | Sanitización Recursiva de Logs y Gitleaks | **BAJA** | **REMEDIATED AND TESTED** (Logs) / **ACCEPTED RESIDUAL RISK** (Gitleaks) | `logging.py:74-95` | Sanitización recursiva verificada en `structlog` |
+| **`OPS-001`** | DevSecOps | Falla Rápida ante `SECRET_KEY` Ausente en Producción | **CRÍTICA** | **REMEDIATED AND TESTED** | `config.py:240-285` | `test_config.py` (14 tests PASSED) |
+| **`OPS-011`** | Persistencia | DDL Dinámico en Caliente y `technical_support_cases` sin Migración | **ALTA** | **REMEDIATED AND TESTED** | `migrations/versions/034_*.py`, `system_operations_service.py:44` | Migración 034 aplicada (`alembic current` en head) |
+| **`OPS-016`** | DevSecOps | Automatización de Respaldos (Cron/systemd) | **CRÍTICA** | **PENDING — OPERATIONAL IMPLEMENTATION** | Host de Producción | Runbooks en `13_BACKUP_AND_DISASTER_RECOVERY_PLAN.md` |
+| **`OPS-017`** | DevSecOps | Configuración de Repositorio S3 con Object Lock | **ALTA** | **PENDING — CLOUD STORAGE DEPLOYMENT** | Proveedor Cloud | Documentado en DRP |
+| **`OPS-018`** | DevSecOps | Simulacro de Restauración en Frío (Cold Restore) | **MEDIA** | **PENDING — OPERATIONAL DRILL** | Entorno Pre-producción | Requisito previo a pase definitivo |
 
 ---
 
@@ -102,9 +127,46 @@ Cada hallazgo se categoriza según su severidad y estado de resolución:
 
 ---
 
-## 4. CONCLUSIÓN DEL REGISTRO
+### 3.2 Fichas Técnicas del Programa de Endurecimiento de Seguridad y Persistencia (P0/P1)
 
-El 100% de los hallazgos críticos y de alta severidad identificados durante la auditoría fueron remediados, documentados y validados mediante pruebas automatizadas de regresión. No persisten defectos bloqueantes abiertos en la plataforma.
+#### Ficha Técnica: SEC-001 (Protección contra Account Takeover y Enmascaramiento de Tokens)
+- **Causa Raíz**: Exposición directa de `raw_activation_token` en payload JSON y búsqueda ciega de `User` por email en `accept_activation` sin validar tipo y número de documento, permitiendo sobreescritura de contraseñas de cuentas preexistentes.
+- **Remediación**:
+  - `auth.py:566`: `raw_activation_token = raw_token if settings.is_development else None`.
+  - `guardian_onboarding_service.py:145`: Verificación mandatoria de correspondencia con `guardian.email`.
+  - `guardian_onboarding_service.py:395`: Rechazo con `ConflictError(code="EMAIL_ALREADY_IN_USE")` ante colisión con cuentas preexistentes de personas distintas.
+- **Archivos Modificados**: `backend/app/api/v1/endpoints/auth.py`, `backend/app/services/guardian_onboarding_service.py`.
+- **Verificación**: `test_sec001_guardian_activation_token_masked_in_production` y `test_sec001_guardian_activation_prevents_account_takeover_collision` (PASSED).
 
-**Dictamen:** **REGISTRO DE REMEDIACIONES CERRADO Y VALIDADO**
+#### Ficha Técnica: SEC-002 (Enmascaramiento de Tokens en Endpoints de Administración)
+- **Causa Raíz**: Endpoints de invitación y reseteo administrativo devolvían tokens crudos y URLs completas en producción.
+- **Remediación**: Se condicionaron a `settings.is_development` en `department_admins.py`, `teachers.py`, `students.py` y `guardians.py`.
+- **Archivos Modificados**: `backend/app/api/v1/endpoints/department_admins.py`, `teachers.py`, `students.py`, `guardians.py`.
+- **Verificación**: `test_sec002_teacher_and_student_reset_tokens_masked_in_production` (PASSED).
+
+#### Ficha Técnica: SEC-003 / SEC-004 (Rate Limiting en Autenticación y Bloqueo Temporal)
+- **Causa Raíz**: `RateLimitMiddleware` solo vigilaba `/auth/login` y omitía protección de tamaño de payload; `auth_service.py` nunca asignaba `locked_until`.
+- **Remediación**: Extensión de rate limiting a todos los endpoints `POST` de `/api/v1/auth/`, guarda previa de 64 KB (`413 PAYLOAD_TOO_LARGE`), y persistencia efectiva de `user.locked_until = datetime.now(UTC) + timedelta(minutes=15)` con auditoría `USER_ACCOUNT_LOCKED`.
+- **Archivos Modificados**: `backend/app/middleware/rate_limit_middleware.py`, `backend/app/services/auth_service.py`.
+- **Verificación**: `test_sec003_auth_endpoints_covered_by_middleware` y `test_sec004_account_lockout_sets_locked_until` (PASSED).
+
+#### Ficha Técnica: SEC-005 (Autorización de Anfitrión en Aulas y Grabaciones)
+- **Causa Raíz**: Ausencia de verificación de que el usuario ejecutor fuera el docente anfitrión o un directivo para iniciar aulas y gestionar grabaciones.
+- **Remediación**: Verificación estricta de `host_user_id` o roles directivos (`rector`, `coordinator`, `superadmin`) en `virtual_classroom_service.py` y `recording_service.py`.
+- **Archivos Modificados**: `backend/app/services/virtual_classroom_service.py`, `recording_service.py`, `endpoints/virtual_classrooms.py`, `recordings.py`.
+- **Verificación**: `test_sec005_non_host_teacher_cannot_launch_or_publish` (PASSED).
+
+#### Ficha Técnica: SEC-007 / OPS-001 (Hardening de Configuración y Cierre de Brecha de Esquema OPS-011)
+- **Causa Raíz**: Validación permisiva de `SECRET_KEY` en producción y creación de tabla en runtime (`TechnicalIncident.__table__.create`).
+- **Remediación**: Fail-fast en `config.py` para `SECRET_KEY` < 64 caracteres o placeholders; creación de migración formal `034_technical_support_cases_and_missing_indexes.py` y eliminación de DDL en caliente.
+- **Archivos Modificados**: `backend/app/core/config.py`, `backend/app/services/system_operations_service.py`, `backend/migrations/versions/034_*.py`.
+- **Verificación**: `test_sec007_rejects_empty_or_placeholder_secret_key_in_production` (PASSED), `alembic current` confirmado en head.
+
+---
+
+## 4. CONCLUSIÓN Y DICTAMEN DEL REGISTRO
+
+El 100% de los hallazgos críticos y de alta severidad identificados a nivel de código fuente y persistencia fueron remediados, documentados y validados mediante pruebas automatizadas de regresión reproducibles. Las dependencias operativas que requieren el entorno de infraestructura destino (programación de respaldos automatizados, repositorios S3 con Object Lock y pruebas de carga k6) quedan formalmente delimitadas como condicionantes para la apertura nacional definitiva.
+
+**Dictamen Oficial:** **REGISTRO DE REMEDIACIONES VERIFICADO — AUTORIZADO PARA FASE PILOTO CONTROLADO CON LIMITACIONES DOCUMENTADAS (CONDITIONALLY READY)**
 

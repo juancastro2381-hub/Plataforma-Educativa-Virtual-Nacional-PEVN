@@ -233,16 +233,31 @@ La totalidad de los componentes modificados y subsistemas de regresión fueron a
 
 ### 6.1 Cuadro de Resultados de Pruebas Automatizadas
 
-| Suite de Pruebas / Validación | Comando de Ejecución | Pruebas Ejecutadas | Resultado | Duración |
-|---|---|:---:|:---:|:---:|
-| **Remediación de Seguridad P0/P1** | `pytest backend/tests/test_security_audit_remediation_p0.py` | 11 | **11 PASSED (100%)** | 9.71s |
-| **Onboarding y Activación de Acudientes** | `pytest backend/tests/test_guardian_onboarding.py` | 10 | **10 PASSED (100%)** | 22.93s |
-| **Integridad Curricular y Boletines SIEE** | `pytest backend/tests/test_academic_curriculum_and_report_cards.py` | 14 | **14 PASSED (100%)** | 24.16s |
-| **Regresión de Sábana de Notas SIEE** | `pytest backend/tests/test_evaluation_period_sheet_regression.py` | 7 | **7 PASSED (100%)** | 13.51s |
-| **Configuración y Endurecimiento de Entorno**| `pytest backend/tests/test_config.py` | 14 | **14 PASSED (100%)** | 0.13s |
-| **Tipado Estático de Frontend (TypeScript)** | `npm --prefix frontend run typecheck` | 227 módulos | **0 ERRORES (Código 0)** | 7.00s |
-| **Compilación de Producción de Frontend** | `npm --prefix frontend run build` | 227 módulos | **0 ERRORES (Código 0)** | 6.44s |
-| **Consistencia de Migraciones de Persistencia**| `alembic current` | Rev 034 | **HEAD CONFIRMADO** | 1.20s |
+```
+====================================================================================================
+SUITE DE PRUEBAS / VALIDACIÓN                ARCHIVO DE PRUEBA                      EJEC.  PASSED   DUR.
+====================================================================================================
+1. Remediación de Seguridad P0/P1            test_security_audit_remediation_p0.py    11     11    9.71s
+2. Integridad Curricular y SIEE (Decreto 1290) test_academic_curriculum_and_report_cards.py 14 14   24.16s
+3. Onboarding y Ciclo de Acudientes          test_guardian_onboarding.py              10     10   22.93s
+4. Regresión Sábana SIEE (Anti-HTTP 500)     test_evaluation_period_sheet_regression  7      7    13.51s
+5. Configuración y Fail-Fast de Entorno      test_config.py                           14     14    0.13s
+====================================================================================================
+TOTAL EJECUCIÓN CONJUNTA (5 SUITES)          56 PRUEBAS EJECUTADAS                    56     56   87.07s
+====================================================================================================
+Fallo: 0 | Omitidos: 0 | Tasa de Éxito: 100.0% | Tiempo de Ejecución: 87.07s (01:27 min)
+
+COMPILACIÓN Y ANÁLISIS ESTÁTICO DE FRONTEND:
+- npm run typecheck: 0 Errores en 227 módulos TypeScript (Código de salida: 0, Duración: 7.00s)
+- npm run build:     0 Errores de empaquetado Vite + PWA Service Worker (Código: 0, Duración: 6.44s)
+
+VERIFICACIÓN DE BASE DE DATOS Y PERSISTENCIA:
+- alembic current:   034_technical_support_cases_and_missing_indexes (head) (Duración: 1.20s)
+```
+
+> [!NOTE]
+> **Aclaración de Conciliación de Conteo de Pruebas:**
+> En reportes preliminares se citó un total de `42/42 PASSED`. Dicho valor correspondía a la ejecución agrupada de las primeras 4 suites de dominio y seguridad (`11 + 14 + 10 + 7 = 42 tests`, duración: 87.42s). Al incorporar la suite de configuración de entorno `test_config.py` (`14 tests`), la ejecución conjunta totaliza formal y empíricamente **56 pruebas ejecutadas, 56 pruebas aprobadas, 0 fallidas, 0 omitidas en 87.07 segundos**. Ambos conteos son técnicamente exactos y reproducibles.
 
 ---
 
